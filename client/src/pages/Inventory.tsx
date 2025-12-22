@@ -1,15 +1,26 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { MOCK_INVENTORY } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { InventoryCar } from "@shared/schema";
+import placeholderCar from '@assets/stock_images/luxury_sports_car_ex_2a1585ad.jpg';
 
 export default function Inventory() {
   const [search, setSearch] = useState("");
 
-  const filteredInventory = MOCK_INVENTORY.filter(car => 
+  const { data: inventory = [], isLoading } = useQuery<InventoryCar[]>({
+    queryKey: ["/api/inventory"],
+    queryFn: async () => {
+      const res = await fetch("/api/inventory");
+      if (!res.ok) throw new Error("Failed to fetch inventory");
+      return res.json();
+    },
+  });
+
+  const filteredInventory = inventory.filter(car => 
     car.make.toLowerCase().includes(search.toLowerCase()) || 
     car.model.toLowerCase().includes(search.toLowerCase())
   );
@@ -33,6 +44,7 @@ export default function Inventory() {
                 className="pl-9"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                data-testid="input-search"
               />
             </div>
             <Button variant="outline" size="icon">
@@ -41,44 +53,52 @@ export default function Inventory() {
           </div>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {filteredInventory.map((car) => (
-            <div key={car.id} className="group overflow-hidden rounded-lg bg-card border border-border transition-all hover:shadow-xl hover:shadow-primary/5">
-              <div className="relative aspect-[16/9] overflow-hidden">
-                <img 
-                  src={car.image} 
-                  alt={`${car.make} ${car.model}`}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute top-4 right-4 rounded bg-black/70 px-3 py-1 text-xs font-medium text-white backdrop-blur-md">
-                  {car.status}
-                </div>
-              </div>
-              <div className="p-6">
-                <div className="mb-2 text-sm font-medium text-primary">{car.year} {car.make}</div>
-                <h3 className="mb-4 font-serif text-2xl font-bold">{car.model}</h3>
-                
-                <div className="grid grid-cols-2 gap-4 border-t border-border pt-4 text-sm">
-                  <div>
-                    <span className="block text-muted-foreground">Price</span>
-                    <span className="font-semibold text-lg">${car.price.toLocaleString()}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="block text-muted-foreground">Mileage</span>
-                    <span className="font-semibold text-lg">{car.mileage.toLocaleString()} mi</span>
-                  </div>
-                </div>
-                
-                <Button className="mt-6 w-full">View Details</Button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {filteredInventory.length === 0 && (
+        {isLoading ? (
+          <div className="py-24 text-center">
+            <p className="text-muted-foreground">Loading inventory...</p>
+          </div>
+        ) : filteredInventory.length === 0 ? (
           <div className="py-24 text-center">
             <h3 className="text-xl font-semibold">No vehicles found</h3>
-            <p className="text-muted-foreground">Try adjusting your search criteria.</p>
+            <p className="text-muted-foreground">
+              {inventory.length === 0 
+                ? "Check back soon for new arrivals." 
+                : "Try adjusting your search criteria."}
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {filteredInventory.map((car) => (
+              <div key={car.id} className="group overflow-hidden rounded-lg bg-card border border-border transition-all hover:shadow-xl hover:shadow-primary/5" data-testid={`card-car-${car.id}`}>
+                <div className="relative aspect-[16/9] overflow-hidden">
+                  <img 
+                    src={car.photos && car.photos.length > 0 ? car.photos[0] : placeholderCar}
+                    alt={`${car.make} ${car.model}`}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute top-4 right-4 rounded bg-black/70 px-3 py-1 text-xs font-medium text-white backdrop-blur-md capitalize">
+                    {car.status}
+                  </div>
+                </div>
+                <div className="p-6">
+                  <div className="mb-2 text-sm font-medium text-primary">{car.year} {car.make}</div>
+                  <h3 className="mb-4 font-serif text-2xl font-bold">{car.model}</h3>
+                  
+                  <div className="grid grid-cols-2 gap-4 border-t border-border pt-4 text-sm">
+                    <div>
+                      <span className="block text-muted-foreground">Price</span>
+                      <span className="font-semibold text-lg">${car.price.toLocaleString()}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="block text-muted-foreground">Mileage</span>
+                      <span className="font-semibold text-lg">{car.mileage.toLocaleString()} mi</span>
+                    </div>
+                  </div>
+                  
+                  <Button className="mt-6 w-full" data-testid={`button-view-${car.id}`}>View Details</Button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
