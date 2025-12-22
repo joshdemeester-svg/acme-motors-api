@@ -1,0 +1,81 @@
+import { createContext, useContext, useEffect, ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { SiteSettings } from "@shared/schema";
+
+interface SettingsContextType {
+  settings: SiteSettings | null;
+  isLoading: boolean;
+}
+
+const SettingsContext = createContext<SettingsContextType>({
+  settings: null,
+  isLoading: true,
+});
+
+export function SettingsProvider({ children }: { children: ReactNode }) {
+  const { data: settings, isLoading } = useQuery<SiteSettings>({
+    queryKey: ["/api/settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/settings");
+      return res.json();
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  useEffect(() => {
+    if (settings?.primaryColor) {
+      document.documentElement.style.setProperty("--primary-custom", settings.primaryColor);
+      const hsl = hexToHSL(settings.primaryColor);
+      if (hsl) {
+        document.documentElement.style.setProperty("--primary", `${hsl.h} ${hsl.s}% ${hsl.l}%`);
+      }
+    }
+  }, [settings?.primaryColor]);
+
+  return (
+    <SettingsContext.Provider value={{ settings: settings || null, isLoading }}>
+      {children}
+    </SettingsContext.Provider>
+  );
+}
+
+export function useSettings() {
+  return useContext(SettingsContext);
+}
+
+function hexToHSL(hex: string): { h: number; s: number; l: number } | null {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return null;
+
+  let r = parseInt(result[1], 16) / 255;
+  let g = parseInt(result[2], 16) / 255;
+  let b = parseInt(result[3], 16) / 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+        break;
+      case g:
+        h = ((b - r) / d + 2) / 6;
+        break;
+      case b:
+        h = ((r - g) / d + 4) / 6;
+        break;
+    }
+  }
+
+  return {
+    h: Math.round(h * 360),
+    s: Math.round(s * 100),
+    l: Math.round(l * 100),
+  };
+}

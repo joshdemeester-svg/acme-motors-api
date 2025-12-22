@@ -1,13 +1,17 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Car, Menu, X } from "lucide-react";
+import { Car, Menu } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { useSettings } from "@/contexts/SettingsContext";
 
 export function Navbar() {
   const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const { settings } = useSettings();
+
+  const siteName = settings?.siteName || "PRESTIGE";
 
   const links = [
     { href: "/", label: "Home" },
@@ -19,8 +23,12 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-background/80 backdrop-blur-md">
       <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2 font-serif text-2xl font-bold tracking-tighter text-foreground transition-opacity hover:opacity-80">
-          <Car className="h-8 w-8 text-primary" />
-          <span>PRESTIGE</span>
+          {settings?.logoUrl ? (
+            <img src={settings.logoUrl} alt={siteName} className="h-8 w-auto" />
+          ) : (
+            <Car className="h-8 w-8 text-primary" />
+          )}
+          <span>{siteName}</span>
         </Link>
 
         {/* Desktop Nav */}
@@ -54,8 +62,12 @@ export function Navbar() {
           <SheetContent side="right" className="bg-background border-l-white/10">
             <div className="flex flex-col gap-8 pt-10">
               <Link href="/" className="flex items-center gap-2 font-serif text-2xl font-bold" onClick={() => setIsOpen(false)}>
-                <Car className="h-6 w-6 text-primary" />
-                <span>PRESTIGE</span>
+                {settings?.logoUrl ? (
+                  <img src={settings.logoUrl} alt={siteName} className="h-6 w-auto" />
+                ) : (
+                  <Car className="h-6 w-6 text-primary" />
+                )}
+                <span>{siteName}</span>
               </Link>
               <div className="flex flex-col gap-4">
                 {links.map((link) => (

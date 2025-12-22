@@ -83,3 +83,19 @@ export const insertInventoryCarSchema = createInsertSchema(inventoryCars).omit({
 
 export type InsertInventoryCar = z.infer<typeof insertInventoryCarSchema>;
 export type InventoryCar = typeof inventoryCars.$inferSelect;
+
+export const siteSettings = pgTable("site_settings", {
+  id: varchar("id").primaryKey().default(sql`'default'`),
+  primaryColor: text("primary_color").default("#D4AF37"),
+  logoUrl: text("logo_url"),
+  siteName: text("site_name").default("PRESTIGE"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSiteSettingsSchema = createInsertSchema(siteSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertSiteSettings = z.infer<typeof insertSiteSettingsSchema>;
+export type SiteSettings = typeof siteSettings.$inferSelect;
