@@ -127,6 +127,17 @@ function generateVerificationCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+function normalizePhoneNumber(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 10) {
+    return `+1${digits}`;
+  }
+  if (digits.length === 11 && digits.startsWith("1")) {
+    return `+${digits}`;
+  }
+  return `+${digits}`;
+}
+
 const SALT_LENGTH = 16;
 const ITERATIONS = 100000;
 const KEY_LENGTH = 64;
@@ -213,6 +224,15 @@ export async function registerRoutes(
       if (!password || password.length < 6) {
         return res.status(400).json({ error: "Password must be at least 6 characters" });
       }
+      if (!/[A-Z]/.test(password)) {
+        return res.status(400).json({ error: "Password must contain at least one uppercase letter" });
+      }
+      if (!/[a-z]/.test(password)) {
+        return res.status(400).json({ error: "Password must contain at least one lowercase letter" });
+      }
+      if (!/[0-9]/.test(password)) {
+        return res.status(400).json({ error: "Password must contain at least one number" });
+      }
 
       const user = await storage.createUser({
         username: "admin",
@@ -240,17 +260,18 @@ export async function registerRoutes(
   app.post("/api/verify/send", async (req, res) => {
     try {
       const { phone, firstName } = req.body;
-      if (!phone || phone.length < 10) {
+      if (!phone || phone.replace(/\D/g, "").length < 10) {
         return res.status(400).json({ error: "Valid phone number required" });
       }
 
-      const contactId = await createGHLContactForVerification(phone, firstName || "Customer");
+      const normalizedPhone = normalizePhoneNumber(phone);
+      const contactId = await createGHLContactForVerification(normalizedPhone, firstName || "Customer");
       if (!contactId) {
         return res.status(500).json({ error: "Unable to send verification code. Please try again." });
       }
 
       const code = generateVerificationCode();
-      await storage.createPhoneVerification(phone, code, contactId);
+      await storage.createPhoneVerification(normalizedPhone, code, contactId);
 
       const smsSuccess = await sendGHLSMS(contactId, `Your verification code is: ${code}. This code expires in 10 minutes.`);
       if (!smsSuccess) {
@@ -271,7 +292,8 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Phone and code are required" });
       }
 
-      const verification = await storage.getValidPhoneVerification(phone, code);
+      const normalizedPhone = normalizePhoneNumber(phone);
+      const verification = await storage.getValidPhoneVerification(normalizedPhone, code);
       if (!verification) {
         return res.status(400).json({ error: "Invalid or expired verification code" });
       }
@@ -288,12 +310,16 @@ export async function registerRoutes(
     try {
       const validatedData = insertConsignmentSchema.parse(req.body);
       
-      const isVerified = await storage.isPhoneVerified(validatedData.phone);
+      const normalizedPhone = normalizePhoneNumber(validatedData.phone);
+      const isVerified = await storage.isPhoneVerified(normalizedPhone);
       if (!isVerified) {
         return res.status(400).json({ error: "Phone number must be verified before submitting" });
       }
       
-      const submission = await storage.createConsignment(validatedData);
+      const submission = await storage.createConsignment({
+        ...validatedData,
+        phone: normalizedPhone,
+      });
       
       createGHLContact({ ...validatedData, id: submission.id }).catch((err) => {
         console.error("Background GHL sync failed:", err);

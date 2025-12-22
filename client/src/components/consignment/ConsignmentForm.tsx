@@ -497,9 +497,24 @@ export function ConsignmentForm() {
                             {verifyCodeMutation.isPending ? "Verifying..." : "Verify"}
                           </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          Enter the 6-digit code sent to your phone. Code expires in 10 minutes.
-                        </p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-muted-foreground">
+                            Enter the 6-digit code sent to your phone. Code expires in 10 minutes.
+                          </p>
+                          <Button
+                            type="button"
+                            variant="link"
+                            size="sm"
+                            onClick={() => {
+                              setCodeSent(false);
+                              setVerificationCode("");
+                            }}
+                            className="text-xs h-auto p-0"
+                            data-testid="button-resend-code"
+                          >
+                            Didn't receive it? Send again
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>

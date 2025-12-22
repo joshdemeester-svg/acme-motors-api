@@ -209,10 +209,28 @@ function SettingsPanel() {
   );
 }
 
+function PasswordRequirement({ met, text }: { met: boolean; text: string }) {
+  return (
+    <div className={`flex items-center gap-2 text-sm ${met ? "text-green-600" : "text-muted-foreground"}`}>
+      {met ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+      <span>{text}</span>
+    </div>
+  );
+}
+
 function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const { toast } = useToast();
+
+  const passwordRequirements = {
+    minLength: password.length >= 6,
+    hasUppercase: /[A-Z]/.test(password),
+    hasLowercase: /[a-z]/.test(password),
+    hasNumber: /[0-9]/.test(password),
+  };
+
+  const allRequirementsMet = Object.values(passwordRequirements).every(Boolean);
 
   const { data: hasAdmin, isLoading: checkingAdmin } = useQuery({
     queryKey: ["/api/auth/has-admin"],
@@ -316,6 +334,15 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
               placeholder={needsSetup ? "Create a strong password" : "Enter password"}
               data-testid="input-login-password"
             />
+            {needsSetup && password.length > 0 && (
+              <div className="mt-3 space-y-1 rounded-lg bg-muted p-3">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Password Requirements:</p>
+                <PasswordRequirement met={passwordRequirements.minLength} text="At least 6 characters" />
+                <PasswordRequirement met={passwordRequirements.hasUppercase} text="One uppercase letter (A-Z)" />
+                <PasswordRequirement met={passwordRequirements.hasLowercase} text="One lowercase letter (a-z)" />
+                <PasswordRequirement met={passwordRequirements.hasNumber} text="One number (0-9)" />
+              </div>
+            )}
           </div>
         </CardContent>
         <CardFooter>
@@ -323,7 +350,7 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
             <Button
               className="w-full"
               onClick={() => setupMutation.mutate()}
-              disabled={!password || password.length < 6 || setupMutation.isPending}
+              disabled={!allRequirementsMet || setupMutation.isPending}
               data-testid="button-setup-admin"
             >
               {setupMutation.isPending ? "Creating..." : "Create Admin Account"}
