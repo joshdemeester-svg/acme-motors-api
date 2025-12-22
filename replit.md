@@ -1,0 +1,84 @@
+# Prestige Auto Consignment
+
+## Overview
+
+Prestige Auto Consignment is a premium automotive consignment platform that enables users to submit their luxury and exotic vehicles for professional sale. The application provides a public-facing website for vehicle submissions and inventory browsing, along with an admin panel for managing consignment requests and inventory.
+
+The platform handles the complete consignment workflow: vehicle submission with photo uploads, admin review and approval, pricing, and inventory management.
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
+
+## System Architecture
+
+### Frontend Architecture
+
+- **Framework**: React 18 with TypeScript
+- **Routing**: Wouter (lightweight client-side routing)
+- **State Management**: TanStack React Query for server state
+- **Styling**: Tailwind CSS v4 with shadcn/ui component library (New York style)
+- **Animations**: Framer Motion for page transitions and UI interactions
+- **Form Handling**: React Hook Form with Zod validation
+
+The frontend follows a component-based architecture with:
+- `/pages` - Route-level components (Home, Inventory, Consign, Admin)
+- `/components/ui` - Reusable shadcn/ui primitives
+- `/components/layout` - Navbar and Footer
+- `/components/home` - Hero section
+- `/components/consignment` - Multi-step consignment form
+
+### Backend Architecture
+
+- **Framework**: Express.js with TypeScript
+- **Database ORM**: Drizzle ORM with PostgreSQL
+- **API Pattern**: RESTful JSON APIs under `/api/*` prefix
+- **File Uploads**: Uppy client with presigned URL uploads to Google Cloud Storage (via Replit Object Storage integration)
+
+Key API endpoints:
+- `POST /api/consignments` - Create new consignment submission
+- `GET /api/consignments` - List all consignments (admin)
+- `PATCH /api/consignments/:id/status` - Update consignment status
+- `GET /api/inventory` - List available vehicles
+- `POST /api/uploads/request-url` - Get presigned upload URL
+
+### Data Storage
+
+PostgreSQL database with Drizzle ORM. Core tables:
+- `users` - Admin authentication
+- `consignment_submissions` - Vehicle submission data with status tracking
+- `inventory_cars` - Approved vehicles listed for sale
+
+### File Storage
+
+Uses Replit's Object Storage integration (Google Cloud Storage backend):
+- Presigned URL upload flow for security
+- Direct client-to-storage uploads
+- Custom upload hooks and components provided
+
+### Build System
+
+- **Development**: Vite dev server with HMR
+- **Production**: Vite builds client to `dist/public`, esbuild bundles server to `dist/index.cjs`
+- **Database Migrations**: `drizzle-kit push` for schema synchronization
+
+## External Dependencies
+
+### Database
+- PostgreSQL (required, configured via `DATABASE_URL` environment variable)
+- Drizzle ORM for type-safe database operations
+
+### Cloud Storage
+- Google Cloud Storage via Replit Object Storage integration
+- Accessed through Replit sidecar service at `http://127.0.0.1:1106`
+
+### UI Libraries
+- shadcn/ui components (Radix UI primitives)
+- Lucide React icons
+- Embla Carousel for image carousels
+- Uppy for file upload management
+
+### Fonts
+- Inter (sans-serif body text)
+- Playfair Display (serif headings)
+- Loaded from Google Fonts CDN
