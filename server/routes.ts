@@ -48,6 +48,85 @@ async function createGHLContact(consignment: InsertConsignment & { id: string })
   }
 }
 
+async function createGHLContactForVerification(phone: string, firstName: string): Promise<string | null> {
+  if (!GHL_LOCATION_ID || !GHL_API_TOKEN) {
+    console.log("[GHL] Not configured, skipping verification contact creation");
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${GHL_API_BASE}/contacts/upsert`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${GHL_API_TOKEN}`,
+        "Version": "2021-07-28",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({
+        firstName: firstName || "Customer",
+        phone,
+        locationId: GHL_LOCATION_ID,
+        tags: ["Phone Verification"],
+        source: "Consignment Website - Verification",
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[GHL] Failed to create verification contact:`, response.status, errorText);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.contact?.id || null;
+  } catch (error) {
+    console.error(`[GHL] Network error creating verification contact:`, error);
+    return null;
+  }
+}
+
+async function sendGHLSMS(contactId: string, message: string): Promise<boolean> {
+  if (!GHL_LOCATION_ID || !GHL_API_TOKEN) {
+    console.log("[GHL] Not configured, skipping SMS send");
+    return false;
+  }
+
+  try {
+    const response = await fetch(`${GHL_API_BASE}/conversations/messages`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${GHL_API_TOKEN}`,
+        "Version": "2021-07-28",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({
+        type: "SMS",
+        contactId,
+        locationId: GHL_LOCATION_ID,
+        message,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[GHL] Failed to send SMS:`, response.status, errorText);
+      return false;
+    }
+
+    console.log(`[GHL] SMS sent successfully to contact ${contactId}`);
+    return true;
+  } catch (error) {
+    console.error(`[GHL] Network error sending SMS:`, error);
+    return false;
+  }
+}
+
+function generateVerificationCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
 const SALT_LENGTH = 16;
 const ITERATIONS = 100000;
 const KEY_LENGTH = 64;
@@ -158,9 +237,62 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/verify/send", async (req, res) => {
+    try {
+      const { phone, firstName } = req.body;
+      if (!phone || phone.length < 10) {
+        return res.status(400).json({ error: "Valid phone number required" });
+      }
+
+      const contactId = await createGHLContactForVerification(phone, firstName || "Customer");
+      if (!contactId) {
+        return res.status(500).json({ error: "Unable to send verification code. Please try again." });
+      }
+
+      const code = generateVerificationCode();
+      await storage.createPhoneVerification(phone, code, contactId);
+
+      const smsSuccess = await sendGHLSMS(contactId, `Your verification code is: ${code}. This code expires in 10 minutes.`);
+      if (!smsSuccess) {
+        return res.status(500).json({ error: "Failed to send verification SMS. Please try again." });
+      }
+
+      res.json({ success: true, message: "Verification code sent" });
+    } catch (error) {
+      console.error("Error sending verification code:", error);
+      res.status(500).json({ error: "Failed to send verification code" });
+    }
+  });
+
+  app.post("/api/verify/check", async (req, res) => {
+    try {
+      const { phone, code } = req.body;
+      if (!phone || !code) {
+        return res.status(400).json({ error: "Phone and code are required" });
+      }
+
+      const verification = await storage.getValidPhoneVerification(phone, code);
+      if (!verification) {
+        return res.status(400).json({ error: "Invalid or expired verification code" });
+      }
+
+      await storage.markPhoneVerified(verification.id);
+      res.json({ success: true, verified: true });
+    } catch (error) {
+      console.error("Error verifying code:", error);
+      res.status(500).json({ error: "Failed to verify code" });
+    }
+  });
+
   app.post("/api/consignments", async (req, res) => {
     try {
       const validatedData = insertConsignmentSchema.parse(req.body);
+      
+      const isVerified = await storage.isPhoneVerified(validatedData.phone);
+      if (!isVerified) {
+        return res.status(400).json({ error: "Phone number must be verified before submitting" });
+      }
+      
       const submission = await storage.createConsignment(validatedData);
       
       createGHLContact({ ...validatedData, id: submission.id }).catch((err) => {

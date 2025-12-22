@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Check, ChevronRight, ChevronLeft, Car, FileText, User, X } from "lucide-react";
+import { Upload, Check, ChevronRight, ChevronLeft, Car, FileText, User, X, Phone, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +46,10 @@ export function ConsignmentForm() {
   const { toast } = useToast();
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [verifiedPhone, setVerifiedPhone] = useState("");
 
   const { uploadFile, isUploading } = useUpload({
     onSuccess: (response) => {
@@ -63,6 +67,65 @@ export function ConsignmentForm() {
       condition: "excellent",
       accidentHistory: "clean",
     }
+  });
+
+  const sendCodeMutation = useMutation({
+    mutationFn: async ({ phone, firstName }: { phone: string; firstName: string }) => {
+      const res = await fetch("/api/verify/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, firstName }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to send code");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setCodeSent(true);
+      toast({
+        title: "Verification Code Sent",
+        description: "Please check your phone for the verification code.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Send Code",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const verifyCodeMutation = useMutation({
+    mutationFn: async ({ phone, code }: { phone: string; code: string }) => {
+      const res = await fetch("/api/verify/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, code }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Invalid code");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setPhoneVerified(true);
+      setVerifiedPhone(form.getValues("phone"));
+      toast({
+        title: "Phone Verified",
+        description: "Your cell phone has been verified successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Verification Failed",
+        description: error.message || "Please check your code and try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const submitMutation = useMutation({
@@ -93,6 +156,15 @@ export function ConsignmentForm() {
       });
     },
   });
+
+  const currentPhone = form.watch("phone");
+  useEffect(() => {
+    if (currentPhone !== verifiedPhone) {
+      setPhoneVerified(false);
+      setCodeSent(false);
+      setVerificationCode("");
+    }
+  }, [currentPhone, verifiedPhone]);
 
   const nextStep = async () => {
     let fieldsToValidate: (keyof FormData)[] = [];
@@ -354,10 +426,82 @@ export function ConsignmentForm() {
                     <Input id="email" type="email" {...form.register("email")} data-testid="input-email" />
                     {form.formState.errors.email && <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>}
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="phone">Cell Phone</Label>
-                    <Input id="phone" type="tel" placeholder="(555) 123-4567" {...form.register("phone")} data-testid="input-phone" />
+                    <div className="flex gap-2">
+                      <Input 
+                        id="phone" 
+                        type="tel" 
+                        placeholder="(555) 123-4567" 
+                        {...form.register("phone")} 
+                        data-testid="input-phone"
+                        disabled={phoneVerified}
+                        className={phoneVerified ? "bg-green-50 border-green-300" : ""}
+                      />
+                      {phoneVerified ? (
+                        <div className="flex items-center gap-1 text-green-600 px-3">
+                          <CheckCircle className="h-5 w-5" />
+                          <span className="text-sm font-medium">Verified</span>
+                        </div>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const phone = form.getValues("phone");
+                            const firstName = form.getValues("firstName");
+                            if (phone.length >= 10) {
+                              sendCodeMutation.mutate({ phone, firstName });
+                            } else {
+                              toast({
+                                title: "Invalid Phone",
+                                description: "Please enter a valid cell phone number.",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          disabled={sendCodeMutation.isPending || codeSent}
+                          className="shrink-0"
+                          data-testid="button-send-code"
+                        >
+                          <Phone className="h-4 w-4 mr-1" />
+                          {sendCodeMutation.isPending ? "Sending..." : codeSent ? "Code Sent" : "Send Code"}
+                        </Button>
+                      )}
+                    </div>
                     {form.formState.errors.phone && <p className="text-xs text-destructive">{form.formState.errors.phone.message}</p>}
+                    
+                    {codeSent && !phoneVerified && (
+                      <div className="space-y-2 mt-3 p-3 bg-muted rounded-lg">
+                        <Label htmlFor="verificationCode">Enter Verification Code</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="verificationCode"
+                            type="text"
+                            placeholder="123456"
+                            value={verificationCode}
+                            onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                            maxLength={6}
+                            data-testid="input-verification-code"
+                            className="font-mono text-lg tracking-widest"
+                          />
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              const phone = form.getValues("phone");
+                              verifyCodeMutation.mutate({ phone, code: verificationCode });
+                            }}
+                            disabled={verificationCode.length !== 6 || verifyCodeMutation.isPending}
+                            data-testid="button-verify-code"
+                          >
+                            {verifyCodeMutation.isPending ? "Verifying..." : "Verify"}
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Enter the 6-digit code sent to your phone. Code expires in 10 minutes.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -381,11 +525,11 @@ export function ConsignmentForm() {
           ) : (
             <Button 
               onClick={form.handleSubmit(onSubmit)} 
-              disabled={submitMutation.isPending}
+              disabled={submitMutation.isPending || !phoneVerified}
               className="min-w-[140px]"
               data-testid="button-submit"
             >
-              {submitMutation.isPending ? "Submitting..." : "Submit Consignment"}
+              {submitMutation.isPending ? "Submitting..." : !phoneVerified ? "Verify Phone First" : "Submit Consignment"}
             </Button>
           )}
         </CardFooter>

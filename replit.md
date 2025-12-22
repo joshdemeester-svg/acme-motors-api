@@ -101,5 +101,9 @@ Uses Replit's Object Storage integration (Google Cloud Storage backend):
 - Automatically creates contacts in GoHighLevel when consignment forms are submitted
 - Syncs customer name, email, phone, and vehicle details
 - Tags leads with "Consignment Lead" and vehicle info
+- **Phone Verification via SMS**: Users must verify their cell phone before submitting the consignment form
+  - Sends 6-digit verification code via GoHighLevel SMS
+  - Codes expire after 10 minutes
+  - Prevents form submission until phone is verified
 - Requires `GHL_LOCATION_ID` and `GHL_API_TOKEN` secrets to be configured
 - Uses GoHighLevel API v2 with Private Integration Token authentication

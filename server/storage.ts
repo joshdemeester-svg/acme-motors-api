@@ -3,6 +3,7 @@ import {
   consignmentSubmissions, 
   inventoryCars,
   siteSettings,
+  phoneVerifications,
   type User, 
   type InsertUser,
   type ConsignmentSubmission,
@@ -10,10 +11,11 @@ import {
   type InventoryCar,
   type InsertInventoryCar,
   type SiteSettings,
-  type InsertSiteSettings
+  type InsertSiteSettings,
+  type PhoneVerification
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, gt } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -35,6 +37,11 @@ export interface IStorage {
   
   getSiteSettings(): Promise<SiteSettings | undefined>;
   updateSiteSettings(data: InsertSiteSettings): Promise<SiteSettings>;
+  
+  createPhoneVerification(phone: string, code: string, ghlContactId?: string): Promise<PhoneVerification>;
+  getValidPhoneVerification(phone: string, code: string): Promise<PhoneVerification | undefined>;
+  markPhoneVerified(id: string): Promise<void>;
+  isPhoneVerified(phone: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -142,6 +149,51 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return created;
     }
+  }
+
+  async createPhoneVerification(phone: string, code: string, ghlContactId?: string): Promise<PhoneVerification> {
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const [verification] = await db
+      .insert(phoneVerifications)
+      .values({ phone, code, ghlContactId, expiresAt })
+      .returning();
+    return verification;
+  }
+
+  async getValidPhoneVerification(phone: string, code: string): Promise<PhoneVerification | undefined> {
+    const [verification] = await db
+      .select()
+      .from(phoneVerifications)
+      .where(
+        and(
+          eq(phoneVerifications.phone, phone),
+          eq(phoneVerifications.code, code),
+          eq(phoneVerifications.verified, false),
+          gt(phoneVerifications.expiresAt, new Date())
+        )
+      );
+    return verification || undefined;
+  }
+
+  async markPhoneVerified(id: string): Promise<void> {
+    await db
+      .update(phoneVerifications)
+      .set({ verified: true })
+      .where(eq(phoneVerifications.id, id));
+  }
+
+  async isPhoneVerified(phone: string): Promise<boolean> {
+    const [verification] = await db
+      .select()
+      .from(phoneVerifications)
+      .where(
+        and(
+          eq(phoneVerifications.phone, phone),
+          eq(phoneVerifications.verified, true),
+          gt(phoneVerifications.expiresAt, new Date())
+        )
+      );
+    return !!verification;
   }
 }
 
