@@ -30,7 +30,7 @@ const formSchema = z.object({
   firstName: z.string().min(2, "First name is required"),
   lastName: z.string().min(2, "Last name is required"),
   email: z.string().email("Invalid email address"),
-  phone: z.string().min(10, "Phone number is required"),
+  phone: z.string().min(10, "Cell phone number is required"),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -355,8 +355,8 @@ export function ConsignmentForm() {
                     {form.formState.errors.email && <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input id="phone" type="tel" {...form.register("phone")} data-testid="input-phone" />
+                    <Label htmlFor="phone">Cell Phone</Label>
+                    <Input id="phone" type="tel" placeholder="(555) 123-4567" {...form.register("phone")} data-testid="input-phone" />
                     {form.formState.errors.phone && <p className="text-xs text-destructive">{form.formState.errors.phone.message}</p>}
                   </div>
                 </motion.div>
