@@ -72,7 +72,10 @@ export function ConsignmentForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed to submit");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to submit");
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -82,10 +85,10 @@ export function ConsignmentForm() {
         description: "We have received your vehicle details. An agent will contact you shortly.",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Submission Failed",
-        description: "Please try again later.",
+        description: error.message || "Please try again later.",
         variant: "destructive",
       });
     },
