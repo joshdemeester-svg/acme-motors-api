@@ -1,20 +1,30 @@
 import { Hero } from "@/components/home/Hero";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { MOCK_INVENTORY } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import type { InventoryCar } from "@shared/schema";
+import placeholderCar from '@assets/stock_images/luxury_sports_car_ex_2a1585ad.jpg';
 
 export default function Home() {
-  const featuredCars = MOCK_INVENTORY.slice(0, 3);
+  const { data: inventory = [] } = useQuery<InventoryCar[]>({
+    queryKey: ["/api/inventory"],
+    queryFn: async () => {
+      const res = await fetch("/api/inventory");
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const featuredCars = inventory.slice(0, 3);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       <Hero />
       
-      {/* How It Works Section */}
       <section className="py-24 bg-card/30">
         <div className="container px-4 md:px-6">
           <div className="mb-16 text-center">
@@ -42,55 +52,55 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Inventory */}
-      <section className="py-24">
-        <div className="container px-4 md:px-6">
-          <div className="mb-12 flex items-end justify-between">
-            <div>
-              <h2 className="mb-2 font-serif text-3xl font-bold md:text-4xl">Featured Inventory</h2>
-              <p className="text-muted-foreground">Curated selection of available vehicles.</p>
-            </div>
-            <Link href="/inventory">
-              <Button variant="ghost" className="hidden gap-2 md:flex">
-                View All <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {featuredCars.map((car) => (
-              <div key={car.id} className="group overflow-hidden rounded-lg bg-card transition-all hover:shadow-xl hover:shadow-primary/5">
-                <div className="relative aspect-[16/9] overflow-hidden">
-                  <img 
-                    src={car.image} 
-                    alt={`${car.make} ${car.model}`}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute top-4 right-4 rounded bg-black/70 px-3 py-1 text-xs font-medium text-white backdrop-blur-md">
-                    {car.status}
-                  </div>
-                </div>
-                <div className="p-6">
-                  <div className="mb-2 text-sm font-medium text-primary">{car.year} {car.make}</div>
-                  <h3 className="mb-4 font-serif text-2xl font-bold">{car.model}</h3>
-                  <div className="flex items-center justify-between border-t border-border pt-4">
-                    <span className="text-muted-foreground">{car.mileage.toLocaleString()} miles</span>
-                    <span className="font-semibold">${car.price.toLocaleString()}</span>
-                  </div>
-                </div>
+      {featuredCars.length > 0 && (
+        <section className="py-24">
+          <div className="container px-4 md:px-6">
+            <div className="mb-12 flex items-end justify-between">
+              <div>
+                <h2 className="mb-2 font-serif text-3xl font-bold md:text-4xl">Featured Inventory</h2>
+                <p className="text-muted-foreground">Curated selection of available vehicles.</p>
               </div>
-            ))}
-          </div>
-          
-          <div className="mt-12 flex justify-center md:hidden">
-            <Link href="/inventory">
-              <Button variant="outline" className="w-full">View All Inventory</Button>
-            </Link>
-          </div>
-        </div>
-      </section>
+              <Link href="/inventory">
+                <Button variant="ghost" className="hidden gap-2 md:flex">
+                  View All <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
 
-      {/* Trust Indicators */}
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {featuredCars.map((car) => (
+                <div key={car.id} className="group overflow-hidden rounded-lg bg-card transition-all hover:shadow-xl hover:shadow-primary/5">
+                  <div className="relative aspect-[16/9] overflow-hidden">
+                    <img 
+                      src={car.photos && car.photos.length > 0 ? car.photos[0] : placeholderCar}
+                      alt={`${car.make} ${car.model}`}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute top-4 right-4 rounded bg-black/70 px-3 py-1 text-xs font-medium text-white backdrop-blur-md capitalize">
+                      {car.status}
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <div className="mb-2 text-sm font-medium text-primary">{car.year} {car.make}</div>
+                    <h3 className="mb-4 font-serif text-2xl font-bold">{car.model}</h3>
+                    <div className="flex items-center justify-between border-t border-border pt-4">
+                      <span className="text-muted-foreground">{car.mileage.toLocaleString()} miles</span>
+                      <span className="font-semibold">${car.price.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-12 flex justify-center md:hidden">
+              <Link href="/inventory">
+                <Button variant="outline" className="w-full">View All Inventory</Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="bg-secondary/30 py-24">
         <div className="container px-4 text-center md:px-6">
           <h2 className="mb-12 font-serif text-3xl font-bold">Why Consign With Prestige?</h2>
