@@ -96,3 +96,10 @@ Uses Replit's Object Storage integration (Google Cloud Storage backend):
 - Inter (sans-serif body text)
 - Playfair Display (serif headings)
 - Loaded from Google Fonts CDN
+
+### GoHighLevel CRM Integration
+- Automatically creates contacts in GoHighLevel when consignment forms are submitted
+- Syncs customer name, email, phone, and vehicle details
+- Tags leads with "Consignment Lead" and vehicle info
+- Requires `GHL_LOCATION_ID` and `GHL_API_TOKEN` secrets to be configured
+- Uses GoHighLevel API v2 with Private Integration Token authentication

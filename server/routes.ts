@@ -1,10 +1,52 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertConsignmentSchema, insertInventoryCarSchema } from "@shared/schema";
+import { insertConsignmentSchema, insertInventoryCarSchema, type InsertConsignment } from "@shared/schema";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { z } from "zod";
 import crypto from "crypto";
+
+const GHL_API_BASE = "https://services.leadconnectorhq.com";
+const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID;
+const GHL_API_TOKEN = process.env.GHL_API_TOKEN;
+
+async function createGHLContact(consignment: InsertConsignment & { id: string }): Promise<void> {
+  if (!GHL_LOCATION_ID || !GHL_API_TOKEN) {
+    console.log("GoHighLevel not configured, skipping contact creation");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${GHL_API_BASE}/contacts/upsert`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${GHL_API_TOKEN}`,
+        "Version": "2021-07-28",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({
+        firstName: consignment.firstName,
+        lastName: consignment.lastName,
+        email: consignment.email,
+        phone: consignment.phone,
+        locationId: GHL_LOCATION_ID,
+        tags: ["Consignment Lead", `${consignment.year} ${consignment.make} ${consignment.model}`],
+        source: "Consignment Website",
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[GHL] Failed to sync contact for consignment ${consignment.id}:`, response.status, errorText);
+    } else {
+      const data = await response.json();
+      console.log(`[GHL] Contact synced for consignment ${consignment.id}:`, data.contact?.id || "updated");
+    }
+  } catch (error) {
+    console.error(`[GHL] Network error syncing consignment ${consignment.id}:`, error);
+  }
+}
 
 const SALT_LENGTH = 16;
 const ITERATIONS = 100000;
@@ -120,6 +162,11 @@ export async function registerRoutes(
     try {
       const validatedData = insertConsignmentSchema.parse(req.body);
       const submission = await storage.createConsignment(validatedData);
+      
+      createGHLContact({ ...validatedData, id: submission.id }).catch((err) => {
+        console.error("Background GHL sync failed:", err);
+      });
+      
       res.status(201).json(submission);
     } catch (error) {
       if (error instanceof z.ZodError) {
