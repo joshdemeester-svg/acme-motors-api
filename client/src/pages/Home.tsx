@@ -1,0 +1,116 @@
+import { Hero } from "@/components/home/Hero";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
+import { MOCK_INVENTORY } from "@/lib/mockData";
+import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
+
+export default function Home() {
+  const featuredCars = MOCK_INVENTORY.slice(0, 3);
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar />
+      <Hero />
+      
+      {/* How It Works Section */}
+      <section className="py-24 bg-card/30">
+        <div className="container px-4 md:px-6">
+          <div className="mb-16 text-center">
+            <h2 className="mb-4 font-serif text-3xl font-bold md:text-5xl">The Consignment Process</h2>
+            <p className="mx-auto max-w-2xl text-muted-foreground">
+              We make selling your exotic or luxury vehicle effortless. From valuation to final sale, we handle every detail.
+            </p>
+          </div>
+
+          <div className="grid gap-12 md:grid-cols-3">
+            {[
+              { title: "Submit Details", desc: "Share your vehicle's information and photos through our secure online portal." },
+              { title: "Expert Valuation", desc: "Our market analysts provide a competitive valuation based on real-time market data." },
+              { title: "Global Exposure", desc: "Your vehicle is marketed to our exclusive network of qualified buyers worldwide." }
+            ].map((step, i) => (
+              <div key={i} className="flex flex-col items-center text-center">
+                <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-2xl font-bold text-primary">
+                  {i + 1}
+                </div>
+                <h3 className="mb-3 font-serif text-xl font-semibold">{step.title}</h3>
+                <p className="text-muted-foreground">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Inventory */}
+      <section className="py-24">
+        <div className="container px-4 md:px-6">
+          <div className="mb-12 flex items-end justify-between">
+            <div>
+              <h2 className="mb-2 font-serif text-3xl font-bold md:text-4xl">Featured Inventory</h2>
+              <p className="text-muted-foreground">Curated selection of available vehicles.</p>
+            </div>
+            <Link href="/inventory">
+              <Button variant="ghost" className="hidden gap-2 md:flex">
+                View All <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {featuredCars.map((car) => (
+              <div key={car.id} className="group overflow-hidden rounded-lg bg-card transition-all hover:shadow-xl hover:shadow-primary/5">
+                <div className="relative aspect-[16/9] overflow-hidden">
+                  <img 
+                    src={car.image} 
+                    alt={`${car.make} ${car.model}`}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute top-4 right-4 rounded bg-black/70 px-3 py-1 text-xs font-medium text-white backdrop-blur-md">
+                    {car.status}
+                  </div>
+                </div>
+                <div className="p-6">
+                  <div className="mb-2 text-sm font-medium text-primary">{car.year} {car.make}</div>
+                  <h3 className="mb-4 font-serif text-2xl font-bold">{car.model}</h3>
+                  <div className="flex items-center justify-between border-t border-border pt-4">
+                    <span className="text-muted-foreground">{car.mileage.toLocaleString()} miles</span>
+                    <span className="font-semibold">${car.price.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-12 flex justify-center md:hidden">
+            <Link href="/inventory">
+              <Button variant="outline" className="w-full">View All Inventory</Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Indicators */}
+      <section className="bg-secondary/30 py-24">
+        <div className="container px-4 text-center md:px-6">
+          <h2 className="mb-12 font-serif text-3xl font-bold">Why Consign With Prestige?</h2>
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              "Market Leading Prices",
+              "Secure Storage",
+              "Professional Photography",
+              "Verified Buyers"
+            ].map((item, i) => (
+              <div key={i} className="flex items-center justify-center gap-2 rounded-lg border border-border bg-background p-4">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+                <span className="font-medium">{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
+  );
+}
