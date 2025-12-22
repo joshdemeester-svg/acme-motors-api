@@ -1,17 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, Eye, DollarSign } from "lucide-react";
-import type { ConsignmentSubmission, InventoryCar } from "@shared/schema";
+import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image } from "lucide-react";
+import type { ConsignmentSubmission, InventoryCar, SiteSettings } from "@shared/schema";
 
 function StatusBadge({ status }: { status: string }) {
   const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode }> = {
@@ -31,7 +31,320 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export default function Admin() {
+function SettingsPanel() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [siteName, setSiteName] = useState("");
+  const [primaryColor, setPrimaryColor] = useState("#D4AF37");
+  const [logoUrl, setLogoUrl] = useState("");
+
+  const { data: settings, isLoading } = useQuery<SiteSettings>({
+    queryKey: ["/api/settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/settings");
+      return res.json();
+    },
+  });
+
+  useEffect(() => {
+    if (settings) {
+      setSiteName(settings.siteName || "PRESTIGE");
+      setPrimaryColor(settings.primaryColor || "#D4AF37");
+      setLogoUrl(settings.logoUrl || "");
+    }
+  }, [settings]);
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ siteName, primaryColor, logoUrl: logoUrl || null }),
+      });
+      if (!res.ok) throw new Error("Failed to update settings");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      toast({ title: "Settings Updated", description: "Your changes have been saved." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to save settings.", variant: "destructive" });
+    },
+  });
+
+  if (isLoading) {
+    return <p>Loading settings...</p>;
+  }
+
+  const colorPresets = [
+    { name: "Gold", value: "#D4AF37" },
+    { name: "Silver", value: "#A8A8A8" },
+    { name: "Blue", value: "#2563EB" },
+    { name: "Red", value: "#DC2626" },
+    { name: "Green", value: "#16A34A" },
+    { name: "Purple", value: "#9333EA" },
+  ];
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-5 w-5" /> Branding
+          </CardTitle>
+          <CardDescription>Customize your website appearance</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="siteName">Site Name</Label>
+            <Input
+              id="siteName"
+              value={siteName}
+              onChange={(e) => setSiteName(e.target.value)}
+              placeholder="PRESTIGE"
+              data-testid="input-site-name"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Primary Color</Label>
+            <div className="flex flex-wrap gap-2">
+              {colorPresets.map((preset) => (
+                <button
+                  key={preset.value}
+                  onClick={() => setPrimaryColor(preset.value)}
+                  className={`h-10 w-10 rounded-full border-2 transition-all ${
+                    primaryColor === preset.value ? "border-foreground scale-110" : "border-transparent"
+                  }`}
+                  style={{ backgroundColor: preset.value }}
+                  title={preset.name}
+                  data-testid={`color-${preset.name.toLowerCase()}`}
+                />
+              ))}
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <Input
+                type="color"
+                value={primaryColor}
+                onChange={(e) => setPrimaryColor(e.target.value)}
+                className="h-10 w-14 p-1 cursor-pointer"
+                data-testid="input-color-picker"
+              />
+              <Input
+                value={primaryColor}
+                onChange={(e) => setPrimaryColor(e.target.value)}
+                placeholder="#D4AF37"
+                className="flex-1"
+                data-testid="input-color-hex"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Image className="h-5 w-5" /> Logo
+          </CardTitle>
+          <CardDescription>Upload a custom logo for your website</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="logoUrl">Logo URL</Label>
+            <Input
+              id="logoUrl"
+              value={logoUrl}
+              onChange={(e) => setLogoUrl(e.target.value)}
+              placeholder="https://example.com/logo.png"
+              data-testid="input-logo-url"
+            />
+            <p className="text-xs text-muted-foreground">
+              Enter a URL for your logo image. Leave empty to use the default car icon.
+            </p>
+          </div>
+          
+          {logoUrl && (
+            <div className="mt-4">
+              <Label>Preview</Label>
+              <div className="mt-2 flex items-center gap-2 rounded-lg border bg-card p-4">
+                <img
+                  src={logoUrl}
+                  alt="Logo preview"
+                  className="h-12 w-auto"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+                <span className="font-serif text-xl font-bold">{siteName}</span>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="md:col-span-2">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium">Preview Changes</h3>
+                <p className="text-sm text-muted-foreground">
+                  Changes will be applied immediately after saving
+                </p>
+              </div>
+              <Button
+                onClick={() => updateMutation.mutate()}
+                disabled={updateMutation.isPending}
+                data-testid="button-save-settings"
+              >
+                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function LoginForm({ onSuccess }: { onSuccess: () => void }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const { toast } = useToast();
+
+  const { data: hasAdmin, isLoading: checkingAdmin } = useQuery({
+    queryKey: ["/api/auth/has-admin"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/has-admin");
+      return res.json();
+    },
+  });
+
+  const loginMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Login failed");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Welcome back!" });
+      onSuccess();
+    },
+    onError: (error: Error) => {
+      toast({ title: "Login Failed", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const setupMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/auth/setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Setup failed");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Admin Account Created", description: "You can now log in with username 'admin'" });
+      setUsername("admin");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Setup Failed", description: error.message, variant: "destructive" });
+    },
+  });
+
+  if (checkingAdmin) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  const needsSetup = !hasAdmin?.hasAdmin;
+
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center px-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <Lock className="h-6 w-6 text-primary" />
+          </div>
+          <CardTitle className="font-serif text-2xl">
+            {needsSetup ? "Create Admin Account" : "Admin Login"}
+          </CardTitle>
+          <CardDescription>
+            {needsSetup 
+              ? "Set up your admin password to get started" 
+              : "Enter your credentials to access the admin panel"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!needsSetup && (
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="admin"
+                data-testid="input-login-username"
+              />
+            </div>
+          )}
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={needsSetup ? "Create a strong password" : "Enter password"}
+              data-testid="input-login-password"
+            />
+          </div>
+        </CardContent>
+        <CardFooter>
+          {needsSetup ? (
+            <Button
+              className="w-full"
+              onClick={() => setupMutation.mutate()}
+              disabled={!password || password.length < 6 || setupMutation.isPending}
+              data-testid="button-setup-admin"
+            >
+              {setupMutation.isPending ? "Creating..." : "Create Admin Account"}
+            </Button>
+          ) : (
+            <Button
+              className="w-full"
+              onClick={() => loginMutation.mutate()}
+              disabled={!username || !password || loginMutation.isPending}
+              data-testid="button-login"
+            >
+              {loginMutation.isPending ? "Logging in..." : "Login"}
+            </Button>
+          )}
+        </CardFooter>
+      </Card>
+    </div>
+  );
+}
+
+function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedSubmission, setSelectedSubmission] = useState<ConsignmentSubmission | null>(null);
@@ -95,16 +408,30 @@ export default function Admin() {
     },
   });
 
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      if (!res.ok) throw new Error("Failed to logout");
+      return res.json();
+    },
+    onSuccess: () => {
+      onLogout();
+    },
+  });
+
   const pendingSubmissions = submissions.filter(s => s.status === "pending");
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Navbar />
-      
+    <>
       <div className="container px-4 py-12 md:px-6">
-        <div className="mb-8">
-          <h1 className="mb-2 font-serif text-4xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Manage consignment submissions and inventory.</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="mb-2 font-serif text-4xl font-bold">Admin Dashboard</h1>
+            <p className="text-muted-foreground">Manage consignment submissions and inventory.</p>
+          </div>
+          <Button variant="outline" onClick={() => logoutMutation.mutate()} className="gap-2" data-testid="button-logout">
+            <LogOut className="h-4 w-4" /> Logout
+          </Button>
         </div>
 
         <Tabs defaultValue="submissions" className="space-y-6">
@@ -116,6 +443,9 @@ export default function Admin() {
               )}
             </TabsTrigger>
             <TabsTrigger value="inventory">Inventory ({inventory.length})</TabsTrigger>
+            <TabsTrigger value="settings" className="gap-2">
+              <Settings className="h-4 w-4" /> Settings
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="submissions" className="space-y-4">
@@ -252,6 +582,10 @@ export default function Admin() {
               </div>
             )}
           </TabsContent>
+
+          <TabsContent value="settings">
+            <SettingsPanel />
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -292,6 +626,52 @@ export default function Admin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </>
+  );
+}
+
+export default function Admin() {
+  const queryClient = useQueryClient();
+
+  const { data: session, isLoading } = useQuery({
+    queryKey: ["/api/auth/session"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/session");
+      return res.json();
+    },
+  });
+
+  const handleLoginSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/auth/session"] });
+  };
+
+  const handleLogout = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/auth/session"] });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Navbar />
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  const isAuthenticated = session?.authenticated && session?.isAdmin;
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar />
+      
+      {isAuthenticated ? (
+        <AdminDashboard onLogout={handleLogout} />
+      ) : (
+        <LoginForm onSuccess={handleLoginSuccess} />
+      )}
 
       <Footer />
     </div>

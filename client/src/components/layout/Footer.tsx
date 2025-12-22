@@ -1,15 +1,23 @@
 import { Car, Facebook, Instagram, Twitter, Lock } from "lucide-react";
 import { Link } from "wouter";
+import { useSettings } from "@/contexts/SettingsContext";
 
 export function Footer() {
+  const { settings } = useSettings();
+  const siteName = settings?.siteName || "PRESTIGE";
+
   return (
     <footer className="border-t border-white/10 bg-card py-12 md:py-16">
       <div className="container px-4 md:px-6">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2 font-serif text-xl font-bold">
-              <Car className="h-6 w-6 text-primary" />
-              <span>PRESTIGE</span>
+              {settings?.logoUrl ? (
+                <img src={settings.logoUrl} alt={siteName} className="h-6 w-auto" />
+              ) : (
+                <Car className="h-6 w-6 text-primary" />
+              )}
+              <span>{siteName}</span>
             </Link>
             <p className="text-sm text-muted-foreground">
               The premier destination for buying and selling exceptional automobiles. 
@@ -54,7 +62,7 @@ export function Footer() {
         </div>
         
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-8 text-xs text-muted-foreground md:flex-row">
-          <p>&copy; {new Date().getFullYear()} Prestige Auto Consignment. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {siteName} Auto Consignment. All rights reserved.</p>
           <div className="flex gap-4">
             <a href="#" className="hover:text-foreground">Privacy Policy</a>
             <a href="#" className="hover:text-foreground">Terms of Service</a>

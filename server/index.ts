@@ -2,6 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import session from "express-session";
+import MemoryStore from "memorystore";
 
 const app = express();
 const httpServer = createServer(app);
@@ -11,6 +13,31 @@ declare module "http" {
     rawBody: unknown;
   }
 }
+
+declare module "express-session" {
+  interface SessionData {
+    userId?: string;
+    isAdmin?: boolean;
+  }
+}
+
+const MemoryStoreSession = MemoryStore(session);
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "prestige-auto-secret-key-change-in-production",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    },
+    store: new MemoryStoreSession({
+      checkPeriod: 86400000,
+    }),
+  })
+);
 
 app.use(
   express.json({

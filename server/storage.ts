@@ -2,12 +2,15 @@ import {
   users, 
   consignmentSubmissions, 
   inventoryCars,
+  siteSettings,
   type User, 
   type InsertUser,
   type ConsignmentSubmission,
   type InsertConsignment,
   type InventoryCar,
-  type InsertInventoryCar
+  type InsertInventoryCar,
+  type SiteSettings,
+  type InsertSiteSettings
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -16,6 +19,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  setUserAdmin(id: string, isAdmin: boolean): Promise<User | undefined>;
   
   createConsignment(data: InsertConsignment): Promise<ConsignmentSubmission>;
   getConsignment(id: string): Promise<ConsignmentSubmission | undefined>;
@@ -28,6 +32,9 @@ export interface IStorage {
   getAllInventoryCars(): Promise<InventoryCar[]>;
   getAvailableInventoryCars(): Promise<InventoryCar[]>;
   updateInventoryCarStatus(id: string, status: string): Promise<InventoryCar | undefined>;
+  
+  getSiteSettings(): Promise<SiteSettings | undefined>;
+  updateSiteSettings(data: InsertSiteSettings): Promise<SiteSettings>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -44,6 +51,15 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
+  }
+
+  async setUserAdmin(id: string, isAdmin: boolean): Promise<User | undefined> {
+    const [updated] = await db
+      .update(users)
+      .set({ isAdmin })
+      .where(eq(users.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async createConsignment(data: InsertConsignment): Promise<ConsignmentSubmission> {
@@ -103,6 +119,29 @@ export class DatabaseStorage implements IStorage {
       .where(eq(inventoryCars.id, id))
       .returning();
     return updated || undefined;
+  }
+
+  async getSiteSettings(): Promise<SiteSettings | undefined> {
+    const [settings] = await db.select().from(siteSettings).where(eq(siteSettings.id, "default"));
+    return settings || undefined;
+  }
+
+  async updateSiteSettings(data: InsertSiteSettings): Promise<SiteSettings> {
+    const existing = await this.getSiteSettings();
+    if (existing) {
+      const [updated] = await db
+        .update(siteSettings)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(siteSettings.id, "default"))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(siteSettings)
+        .values({ id: "default", ...data })
+        .returning();
+      return created;
+    }
   }
 }
 

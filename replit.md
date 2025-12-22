@@ -41,13 +41,27 @@ Key API endpoints:
 - `PATCH /api/consignments/:id/status` - Update consignment status
 - `GET /api/inventory` - List available vehicles
 - `POST /api/uploads/request-url` - Get presigned upload URL
+- `POST /api/auth/login` - Admin login
+- `POST /api/auth/logout` - Admin logout
+- `GET /api/auth/session` - Check session status
+- `POST /api/auth/setup` - Create initial admin account
+- `GET /api/settings` - Get site settings (public)
+- `PATCH /api/settings` - Update site settings (admin only)
+
+### Authentication
+
+Session-based authentication using express-session with memorystore:
+- Secure password hashing using PBKDF2 with per-password salt (100,000 iterations, SHA-512)
+- Admin-only route protection via `requireAdmin` middleware
+- First-time admin setup via `/api/auth/setup` endpoint
 
 ### Data Storage
 
 PostgreSQL database with Drizzle ORM. Core tables:
-- `users` - Admin authentication
+- `users` - Admin authentication (username, hashed password, isAdmin flag)
 - `consignment_submissions` - Vehicle submission data with status tracking
 - `inventory_cars` - Approved vehicles listed for sale
+- `site_settings` - Customizable site branding (colors, logo, site name)
 
 ### File Storage
 
