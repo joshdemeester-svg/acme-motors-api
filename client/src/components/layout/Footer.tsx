@@ -1,4 +1,4 @@
-import { Car, Facebook, Instagram, Twitter } from "lucide-react";
+import { Car, Facebook, Instagram, Twitter, Lock } from "lucide-react";
 import { Link } from "wouter";
 
 export function Footer() {
@@ -7,11 +7,9 @@ export function Footer() {
       <div className="container px-4 md:px-6">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-4">
-            <Link href="/">
-              <a className="flex items-center gap-2 font-serif text-xl font-bold">
-                <Car className="h-6 w-6 text-primary" />
-                <span>PRESTIGE</span>
-              </a>
+            <Link href="/" className="flex items-center gap-2 font-serif text-xl font-bold">
+              <Car className="h-6 w-6 text-primary" />
+              <span>PRESTIGE</span>
             </Link>
             <p className="text-sm text-muted-foreground">
               The premier destination for buying and selling exceptional automobiles. 
@@ -22,9 +20,9 @@ export function Footer() {
           <div>
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-foreground">Navigation</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="/"><a className="hover:text-primary">Home</a></Link></li>
-              <li><Link href="/inventory"><a className="hover:text-primary">Inventory</a></Link></li>
-              <li><Link href="/consign"><a className="hover:text-primary">Consign Your Car</a></Link></li>
+              <li><Link href="/" className="hover:text-primary">Home</Link></li>
+              <li><Link href="/inventory" className="hover:text-primary">Inventory</Link></li>
+              <li><Link href="/consign" className="hover:text-primary">Consign Your Car</Link></li>
               <li><a href="#" className="hover:text-primary">About Us</a></li>
             </ul>
           </div>
@@ -60,6 +58,10 @@ export function Footer() {
           <div className="flex gap-4">
             <a href="#" className="hover:text-foreground">Privacy Policy</a>
             <a href="#" className="hover:text-foreground">Terms of Service</a>
+            <Link href="/admin" className="flex items-center gap-1 hover:text-foreground" data-testid="link-admin-login">
+              <Lock className="h-3 w-3" />
+              Admin
+            </Link>
           </div>
         </div>
       </div>

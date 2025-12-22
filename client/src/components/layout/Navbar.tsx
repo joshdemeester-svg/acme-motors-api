@@ -18,27 +18,25 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-background/80 backdrop-blur-md">
       <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
-        <Link href="/">
-          <a className="flex items-center gap-2 font-serif text-2xl font-bold tracking-tighter text-foreground transition-opacity hover:opacity-80">
-            <Car className="h-8 w-8 text-primary" />
-            <span>PRESTIGE</span>
-          </a>
+        <Link href="/" className="flex items-center gap-2 font-serif text-2xl font-bold tracking-tighter text-foreground transition-opacity hover:opacity-80">
+          <Car className="h-8 w-8 text-primary" />
+          <span>PRESTIGE</span>
         </Link>
 
         {/* Desktop Nav */}
         <div className="hidden md:flex md:items-center md:gap-8">
           {links.map((link) => (
-            <Link key={link.href} href={link.href}>
-              <a
-                className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary",
-                  location === link.href
-                    ? "text-primary"
-                    : "text-muted-foreground"
-                )}
-              >
-                {link.label}
-              </a>
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "text-sm font-medium transition-colors hover:text-primary",
+                location === link.href
+                  ? "text-primary"
+                  : "text-muted-foreground"
+              )}
+            >
+              {link.label}
             </Link>
           ))}
           <Button variant="outline" className="ml-4 border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground">
@@ -55,26 +53,24 @@ export function Navbar() {
           </SheetTrigger>
           <SheetContent side="right" className="bg-background border-l-white/10">
             <div className="flex flex-col gap-8 pt-10">
-              <Link href="/">
-                <a className="flex items-center gap-2 font-serif text-2xl font-bold" onClick={() => setIsOpen(false)}>
-                  <Car className="h-6 w-6 text-primary" />
-                  <span>PRESTIGE</span>
-                </a>
+              <Link href="/" className="flex items-center gap-2 font-serif text-2xl font-bold" onClick={() => setIsOpen(false)}>
+                <Car className="h-6 w-6 text-primary" />
+                <span>PRESTIGE</span>
               </Link>
               <div className="flex flex-col gap-4">
                 {links.map((link) => (
-                  <Link key={link.href} href={link.href}>
-                    <a
-                      className={cn(
-                        "text-lg font-medium transition-colors hover:text-primary",
-                        location === link.href
-                          ? "text-primary"
-                          : "text-muted-foreground"
-                      )}
-                      onClick={() => setIsOpen(false)}
-                    >
-                      {link.label}
-                    </a>
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      "text-lg font-medium transition-colors hover:text-primary",
+                      location === link.href
+                        ? "text-primary"
+                        : "text-muted-foreground"
+                    )}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {link.label}
                   </Link>
                 ))}
               </div>
