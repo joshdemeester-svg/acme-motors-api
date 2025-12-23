@@ -222,6 +222,7 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const passwordRequirements = {
     minLength: password.length >= 6,
@@ -278,6 +279,8 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
     onSuccess: () => {
       toast({ title: "Admin Account Created", description: "You can now log in with username 'admin'" });
       setUsername("admin");
+      setPassword("");
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/has-admin"] });
     },
     onError: (error: Error) => {
       toast({ title: "Setup Failed", description: error.message, variant: "destructive" });
