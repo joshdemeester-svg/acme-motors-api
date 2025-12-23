@@ -809,14 +809,15 @@ export default function VehicleDetails({ id }: { id: string }) {
       </div>
 
       <Dialog open={contactOpen} onOpenChange={handleContactClose}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[85vh] max-w-md flex-col overflow-hidden">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Inquire About This Vehicle</DialogTitle>
             <DialogDescription>
               {car.year} {car.make} {car.model}
             </DialogDescription>
           </DialogHeader>
 
+          <div className="flex-1 overflow-y-auto">
           {contactSuccess ? (
             <div className="flex flex-col items-center gap-4 py-6 text-center">
               <CheckCircle className="h-12 w-12 text-green-500" />
@@ -905,6 +906,7 @@ export default function VehicleDetails({ id }: { id: string }) {
               </Button>
             </form>
           )}
+          </div>
         </DialogContent>
       </Dialog>
 
