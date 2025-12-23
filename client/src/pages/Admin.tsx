@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -799,10 +800,12 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
 export default function Admin() {
   const queryClient = useQueryClient();
+  const [location] = useLocation();
+  const loginRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [location]);
 
   const { data: session, isLoading } = useQuery({
     queryKey: ["/api/auth/session"],
@@ -811,6 +814,12 @@ export default function Admin() {
       return res.json();
     },
   });
+
+  useEffect(() => {
+    if (!isLoading && !session?.authenticated && loginRef.current) {
+      loginRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [isLoading, session]);
 
   const handleLoginSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ["/api/auth/session"] });
@@ -841,7 +850,9 @@ export default function Admin() {
       {isAuthenticated ? (
         <AdminDashboard onLogout={handleLogout} />
       ) : (
-        <LoginForm onSuccess={handleLoginSuccess} />
+        <div ref={loginRef}>
+          <LoginForm onSuccess={handleLoginSuccess} />
+        </div>
       )}
 
       <Footer />
