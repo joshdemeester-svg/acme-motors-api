@@ -474,6 +474,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   
   const [selectedCar, setSelectedCar] = useState<InventoryCar | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editVin, setEditVin] = useState("");
   const [editYear, setEditYear] = useState("");
   const [editMake, setEditMake] = useState("");
   const [editModel, setEditModel] = useState("");
@@ -590,6 +591,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
   const openEditDialog = (car: InventoryCar) => {
     setSelectedCar(car);
+    setEditVin(car.vin);
     setEditYear(car.year.toString());
     setEditMake(car.make);
     setEditModel(car.model);
@@ -605,6 +607,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     if (!selectedCar) return;
     
     const data: Record<string, unknown> = {};
+    
+    if (editVin.trim() && editVin.trim().length >= 11) data.vin = editVin.trim().toUpperCase();
     
     const yearNum = parseInt(editYear);
     if (!isNaN(yearNum) && yearNum > 0) data.year = yearNum;
@@ -891,6 +895,17 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="editVin">VIN</Label>
+              <Input
+                id="editVin"
+                value={editVin}
+                onChange={(e) => setEditVin(e.target.value.toUpperCase())}
+                placeholder="17-character VIN"
+                maxLength={17}
+                data-testid="input-edit-vin"
+              />
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="editYear">Year</Label>
