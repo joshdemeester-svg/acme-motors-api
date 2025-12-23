@@ -560,7 +560,20 @@ export async function registerRoutes(
   app.get("/api/settings", async (req, res) => {
     try {
       const settings = await storage.getSiteSettings();
-      res.json(settings || { primaryColor: "#D4AF37", siteName: "PRESTIGE", logoUrl: null });
+      res.json(settings || { 
+        primaryColor: "#D4AF37", 
+        siteName: "PRESTIGE", 
+        logoUrl: null,
+        contactAddress1: null,
+        contactAddress2: null,
+        contactPhone: null,
+        contactEmail: null,
+        facebookUrl: null,
+        instagramUrl: null,
+        twitterUrl: null,
+        youtubeUrl: null,
+        tiktokUrl: null
+      });
     } catch (error) {
       console.error("Error fetching settings:", error);
       res.status(500).json({ error: "Failed to fetch settings" });
@@ -569,8 +582,34 @@ export async function registerRoutes(
 
   app.patch("/api/settings", requireAdmin, async (req, res) => {
     try {
-      const { primaryColor, siteName, logoUrl } = req.body;
-      const settings = await storage.updateSiteSettings({ primaryColor, siteName, logoUrl });
+      const { 
+        primaryColor, 
+        siteName, 
+        logoUrl,
+        contactAddress1,
+        contactAddress2,
+        contactPhone,
+        contactEmail,
+        facebookUrl,
+        instagramUrl,
+        twitterUrl,
+        youtubeUrl,
+        tiktokUrl
+      } = req.body;
+      const settings = await storage.updateSiteSettings({ 
+        primaryColor, 
+        siteName, 
+        logoUrl,
+        contactAddress1,
+        contactAddress2,
+        contactPhone,
+        contactEmail,
+        facebookUrl,
+        instagramUrl,
+        twitterUrl,
+        youtubeUrl,
+        tiktokUrl
+      });
       res.json(settings);
     } catch (error) {
       console.error("Error updating settings:", error);
