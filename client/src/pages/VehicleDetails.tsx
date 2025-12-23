@@ -1,12 +1,16 @@
-import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Car, Fuel, Gauge, Calendar, Palette, FileText, Settings, MapPin, Shield, Zap, Users, Factory, Cog, DollarSign, Weight, CircleDot, Lightbulb, Battery } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, Car, Fuel, Gauge, Calendar, Palette, FileText, Settings, MapPin, Shield, Zap, Users, Factory, Cog, DollarSign, Weight, CircleDot, Lightbulb, Battery, Loader2, CheckCircle, MessageSquare } from "lucide-react";
 import { Link } from "wouter";
 import type { InventoryCar } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
@@ -144,6 +148,14 @@ interface VinData {
 
 export default function VehicleDetails({ id }: { id: string }) {
   const [, setLocation] = useLocation();
+  const [contactOpen, setContactOpen] = useState(false);
+  const [contactSuccess, setContactSuccess] = useState(false);
+  const [formData, setFormData] = useState({
+    buyerName: "",
+    buyerPhone: "",
+    buyerEmail: "",
+    message: "",
+  });
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -168,6 +180,47 @@ export default function VehicleDetails({ id }: { id: string }) {
     },
     enabled: !!car?.vin && car.vin.length >= 11,
   });
+
+  const inquiryMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      if (!car) throw new Error("No vehicle data");
+      const res = await fetch("/api/vehicle-inquiry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vehicleId: car.id,
+          vin: car.vin,
+          year: car.year,
+          make: car.make,
+          model: car.model,
+          ...data,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to send inquiry");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setContactSuccess(true);
+      setFormData({ buyerName: "", buyerPhone: "", buyerEmail: "", message: "" });
+    },
+  });
+
+  const handleContactSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    inquiryMutation.mutate(formData);
+  };
+
+  const handleContactClose = () => {
+    setContactOpen(false);
+    setContactSuccess(false);
+    inquiryMutation.reset();
+  };
 
   if (carLoading) {
     return (
@@ -742,12 +795,118 @@ export default function VehicleDetails({ id }: { id: string }) {
                 </CardContent>
               </Card>
 
-            <Button className="w-full" size="lg" data-testid="button-contact">
+            <Button 
+              className="w-full gap-2" 
+              size="lg" 
+              data-testid="button-contact"
+              onClick={() => setContactOpen(true)}
+            >
+              <MessageSquare className="h-5 w-5" />
               Contact Us About This Vehicle
             </Button>
           </div>
         </div>
       </div>
+
+      <Dialog open={contactOpen} onOpenChange={handleContactClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Inquire About This Vehicle</DialogTitle>
+            <DialogDescription>
+              {car.year} {car.make} {car.model}
+            </DialogDescription>
+          </DialogHeader>
+
+          {contactSuccess ? (
+            <div className="flex flex-col items-center gap-4 py-6 text-center">
+              <CheckCircle className="h-12 w-12 text-green-500" />
+              <div>
+                <p className="text-lg font-semibold">Inquiry Sent!</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  We've received your message and will be in touch shortly.
+                </p>
+              </div>
+              <Button onClick={handleContactClose} className="mt-2">
+                Close
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={handleContactSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="buyerName">Your Name *</Label>
+                <Input
+                  id="buyerName"
+                  data-testid="input-buyer-name"
+                  value={formData.buyerName}
+                  onChange={(e) => setFormData({ ...formData, buyerName: e.target.value })}
+                  placeholder="John Smith"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="buyerPhone">Phone Number *</Label>
+                <Input
+                  id="buyerPhone"
+                  type="tel"
+                  data-testid="input-buyer-phone"
+                  value={formData.buyerPhone}
+                  onChange={(e) => setFormData({ ...formData, buyerPhone: e.target.value })}
+                  placeholder="(555) 123-4567"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="buyerEmail">Email *</Label>
+                <Input
+                  id="buyerEmail"
+                  type="email"
+                  data-testid="input-buyer-email"
+                  value={formData.buyerEmail}
+                  onChange={(e) => setFormData({ ...formData, buyerEmail: e.target.value })}
+                  placeholder="john@example.com"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="message">Message (Optional)</Label>
+                <Textarea
+                  id="message"
+                  data-testid="input-message"
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  placeholder="I'm interested in this vehicle..."
+                  rows={3}
+                />
+              </div>
+
+              {inquiryMutation.error && (
+                <p className="text-sm text-red-500">
+                  {inquiryMutation.error.message}
+                </p>
+              )}
+
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={inquiryMutation.isPending}
+                data-testid="button-submit-inquiry"
+              >
+                {inquiryMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send Inquiry"
+                )}
+              </Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
