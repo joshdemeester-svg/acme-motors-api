@@ -213,6 +213,30 @@ export async function registerRoutes(
     }
   });
 
+  // Temporary secured endpoint to create admin in production
+  app.get("/api/create-admin-now", async (req, res) => {
+    const secretKey = req.query.key;
+    if (secretKey !== "SETUP-PRESTIGE-2024-SECURE") {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+    try {
+      const existingAdmin = await storage.getUserByUsername("Josh");
+      if (existingAdmin) {
+        return res.json({ success: true, message: "Admin user 'Josh' already exists. You can login now!" });
+      }
+      const hashedPassword = "d7da12f7f0b51ba5ab3e7bb2617161d7:a5d33d043a5bfc73921e861303f31e6a9a6909740dc0368989809ddec3b64526e3f4cab9bd1569dd166d2f4043dc441645c821b0e1582b6547a0ebebeed9e00d";
+      await storage.createUser({
+        username: "Josh",
+        password: hashedPassword,
+        isAdmin: true,
+      });
+      res.json({ success: true, message: "Admin user 'Josh' created successfully! You can now login with username 'Josh' and password 'Sunshine2024!'" });
+    } catch (error) {
+      console.error("Error creating admin:", error);
+      res.status(500).json({ success: false, message: "Error creating admin user" });
+    }
+  });
+
   app.post("/api/auth/setup", async (req, res) => {
     try {
       const existingAdmin = await storage.getUserByUsername("admin");
@@ -533,5 +557,24 @@ export async function initializeDefaultAdmin(): Promise<void> {
     }
   } catch (error) {
     console.error("[auth] Error initializing default admin:", error);
+  }
+}
+
+export async function createAdminIfNotExists(): Promise<{ created: boolean; message: string }> {
+  try {
+    const existingAdmin = await storage.getUserByUsername("Josh");
+    if (existingAdmin) {
+      return { created: false, message: "Admin user 'Josh' already exists" };
+    }
+    const hashedPassword = "d7da12f7f0b51ba5ab3e7bb2617161d7:a5d33d043a5bfc73921e861303f31e6a9a6909740dc0368989809ddec3b64526e3f4cab9bd1569dd166d2f4043dc441645c821b0e1582b6547a0ebebeed9e00d";
+    await storage.createUser({
+      username: "Josh",
+      password: hashedPassword,
+      isAdmin: true,
+    });
+    return { created: true, message: "Admin user 'Josh' created successfully" };
+  } catch (error) {
+    console.error("[auth] Error creating admin:", error);
+    return { created: false, message: "Error creating admin user" };
   }
 }
