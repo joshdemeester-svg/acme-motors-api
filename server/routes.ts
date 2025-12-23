@@ -515,3 +515,20 @@ export async function registerRoutes(
 
   return httpServer;
 }
+
+export async function initializeDefaultAdmin(): Promise<void> {
+  try {
+    const existingAdmin = await storage.getUserByUsername("Josh");
+    if (!existingAdmin) {
+      const hashedPassword = "d7da12f7f0b51ba5ab3e7bb2617161d7:a5d33d043a5bfc73921e861303f31e6a9a6909740dc0368989809ddec3b64526e3f4cab9bd1569dd166d2f4043dc441645c821b0e1582b6547a0ebebeed9e00d";
+      await storage.createUser({
+        username: "Josh",
+        password: hashedPassword,
+        isAdmin: true,
+      });
+      console.log("[auth] Default admin user 'Josh' created");
+    }
+  } catch (error) {
+    console.error("[auth] Error initializing default admin:", error);
+  }
+}

@@ -222,24 +222,6 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const passwordRequirements = {
-    minLength: password.length >= 6,
-    hasUppercase: /[A-Z]/.test(password),
-    hasLowercase: /[a-z]/.test(password),
-    hasNumber: /[0-9]/.test(password),
-  };
-
-  const allRequirementsMet = Object.values(passwordRequirements).every(Boolean);
-
-  const { data: hasAdmin, isLoading: checkingAdmin } = useQuery({
-    queryKey: ["/api/auth/has-admin"],
-    queryFn: async () => {
-      const res = await fetch("/api/auth/has-admin");
-      return res.json();
-    },
-  });
 
   const loginMutation = useMutation({
     mutationFn: async () => {
@@ -263,40 +245,6 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
     },
   });
 
-  const setupMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch("/api/auth/setup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Setup failed");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Admin Account Created", description: "You can now log in with username 'admin'" });
-      setUsername("admin");
-      setPassword("");
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/has-admin"] });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Setup Failed", description: error.message, variant: "destructive" });
-    },
-  });
-
-  if (checkingAdmin) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    );
-  }
-
-  const needsSetup = !hasAdmin?.hasAdmin;
-
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
       <Card className="w-full max-w-md">
@@ -304,29 +252,23 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <Lock className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle className="font-serif text-2xl">
-            {needsSetup ? "Create Admin Account" : "Admin Login"}
-          </CardTitle>
+          <CardTitle className="font-serif text-2xl">Admin Login</CardTitle>
           <CardDescription>
-            {needsSetup 
-              ? "Set up your admin password to get started" 
-              : "Enter your credentials to access the admin panel"}
+            Enter your credentials to access the admin panel
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!needsSetup && (
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin"
-                data-testid="input-login-username"
-              />
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Username"
+              data-testid="input-login-username"
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
@@ -334,40 +276,20 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder={needsSetup ? "Create a strong password" : "Enter password"}
+              placeholder="Password"
               data-testid="input-login-password"
             />
-            {needsSetup && password.length > 0 && (
-              <div className="mt-3 space-y-1 rounded-lg bg-muted p-3">
-                <p className="text-xs font-medium text-muted-foreground mb-2">Password Requirements:</p>
-                <PasswordRequirement met={passwordRequirements.minLength} text="At least 6 characters" />
-                <PasswordRequirement met={passwordRequirements.hasUppercase} text="One uppercase letter (A-Z)" />
-                <PasswordRequirement met={passwordRequirements.hasLowercase} text="One lowercase letter (a-z)" />
-                <PasswordRequirement met={passwordRequirements.hasNumber} text="One number (0-9)" />
-              </div>
-            )}
           </div>
         </CardContent>
         <CardFooter>
-          {needsSetup ? (
-            <Button
-              className="w-full"
-              onClick={() => setupMutation.mutate()}
-              disabled={!allRequirementsMet || setupMutation.isPending}
-              data-testid="button-setup-admin"
-            >
-              {setupMutation.isPending ? "Creating..." : "Create Admin Account"}
-            </Button>
-          ) : (
-            <Button
-              className="w-full"
-              onClick={() => loginMutation.mutate()}
-              disabled={!username || !password || loginMutation.isPending}
-              data-testid="button-login"
-            >
-              {loginMutation.isPending ? "Logging in..." : "Login"}
-            </Button>
-          )}
+          <Button
+            className="w-full"
+            onClick={() => loginMutation.mutate()}
+            disabled={!username || !password || loginMutation.isPending}
+            data-testid="button-login"
+          >
+            {loginMutation.isPending ? "Logging in..." : "Login"}
+          </Button>
         </CardFooter>
       </Card>
     </div>
