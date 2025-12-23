@@ -1,19 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head><title>Admin Setup</title></head>
-<body style="font-family: sans-serif; padding: 40px; text-align: center;">
+<body style="font-family: sans-serif; padding: 40px; text-align: center; background: #1a1a1a; color: white;">
 <h1>Admin Setup</h1>
 <p id="status">Setting up admin account...</p>
 <script>
-fetch('/api/create-admin-now?key=SETUP-PRESTIGE-2024-SECURE')
+fetch('/api/create-admin-now', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ key: 'SETUP-PRESTIGE-2024-SECURE' })
+})
   .then(r => r.json())
   .then(data => {
     document.getElementById('status').innerHTML = data.success 
-      ? '<span style="color:green">✓ ' + data.message + '</span><br><br><a href="/admin">Go to Admin Login</a>'
-      : '<span style="color:red">Error: ' + JSON.stringify(data) + '</span>';
+      ? '<span style="color:#4ade80">✓ ' + data.message + '</span><br><br><a href="/admin" style="color:#60a5fa">Go to Admin Login</a>'
+      : '<span style="color:#f87171">Error: ' + JSON.stringify(data) + '</span>';
   })
   .catch(e => {
-    document.getElementById('status').innerHTML = '<span style="color:red">Network Error: ' + e.message + '</span>';
+    document.getElementById('status').innerHTML = '<span style="color:#f87171">Network Error: ' + e.message + '</span>';
   });
 </script>
 </body>
