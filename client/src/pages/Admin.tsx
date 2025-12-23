@@ -1019,14 +1019,14 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       </Dialog>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-lg">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Edit Listing</DialogTitle>
             <DialogDescription>
               Update the vehicle information for this listing.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="flex-1 overflow-y-auto space-y-4 py-4 px-1">
             <div className="space-y-2">
               <Label htmlFor="editVin">VIN</Label>
               <Input
@@ -1038,7 +1038,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 data-testid="input-edit-vin"
               />
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="editYear">Year</Label>
                 <Input
@@ -1114,19 +1114,20 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
                 placeholder="Enter vehicle description..."
-                rows={4}
+                rows={3}
                 data-testid="input-edit-description"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+          <DialogFooter className="flex-shrink-0 flex-col gap-2 sm:flex-row border-t pt-4">
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
             <Button
               onClick={handleSaveEdit}
               disabled={updateCarMutation.isPending}
               data-testid="button-save-edit"
+              className="w-full sm:w-auto"
             >
               {updateCarMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
@@ -1135,14 +1136,14 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       </Dialog>
 
       <Dialog open={quickAddDialogOpen} onOpenChange={setQuickAddDialogOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-lg">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Quick Add Vehicle</DialogTitle>
             <DialogDescription>
               Enter a VIN to auto-fill vehicle details, then add mileage and price.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="flex-1 overflow-y-auto space-y-4 py-4 px-1">
             <div className="space-y-2">
               <Label htmlFor="quickAddVin">VIN</Label>
               <div className="flex gap-2">
@@ -1169,7 +1170,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               </div>
             </div>
             
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="quickAddYear">Year</Label>
                 <Input
@@ -1258,14 +1259,15 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setQuickAddDialogOpen(false); resetQuickAddForm(); }}>
+          <DialogFooter className="flex-shrink-0 flex-col gap-2 sm:flex-row border-t pt-4">
+            <Button variant="outline" onClick={() => { setQuickAddDialogOpen(false); resetQuickAddForm(); }} className="w-full sm:w-auto">
               Cancel
             </Button>
             <Button
               onClick={handleQuickAdd}
               disabled={createCarMutation.isPending}
               data-testid="button-add-vehicle"
+              className="w-full sm:w-auto"
             >
               {createCarMutation.isPending ? "Adding..." : "Add Vehicle"}
             </Button>
