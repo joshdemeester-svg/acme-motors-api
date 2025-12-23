@@ -321,7 +321,7 @@ export default function VehicleDetails({ id }: { id: string }) {
                 </h3>
                 {vinLoading ? (
                   <p className="text-sm text-muted-foreground">Loading VIN data...</p>
-                ) : !vinData || vinData.ErrorCode ? (
+                ) : !vinData || (vinData.ErrorCode && vinData.ErrorCode !== "0") ? (
                   <div className="rounded-lg border border-dashed p-6 text-center">
                     <Car className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
                     <p className="font-medium text-muted-foreground">VIN Information Not Available</p>
