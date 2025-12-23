@@ -313,16 +313,23 @@ export default function VehicleDetails({ id }: { id: string }) {
               </Card>
             )}
 
-            {vinData && !vinData.ErrorCode && (
-              <Card>
-                <CardContent className="p-4">
-                  <h3 className="mb-4 flex items-center gap-2 font-semibold">
-                    <Car className="h-5 w-5" />
-                    VIN Decoded Information
-                  </h3>
-                  {vinLoading ? (
-                    <p className="text-sm text-muted-foreground">Loading VIN data...</p>
-                  ) : (
+            <Card>
+              <CardContent className="p-4">
+                <h3 className="mb-4 flex items-center gap-2 font-semibold">
+                  <Car className="h-5 w-5" />
+                  VIN Decoded Information
+                </h3>
+                {vinLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading VIN data...</p>
+                ) : !vinData || vinData.ErrorCode ? (
+                  <div className="rounded-lg border border-dashed p-6 text-center">
+                    <Car className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                    <p className="font-medium text-muted-foreground">VIN Information Not Available</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {vinData?.ErrorText || "Unable to decode VIN. The vehicle information could not be retrieved from the database."}
+                    </p>
+                  </div>
+                ) : (
                     <div className="space-y-6">
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         {vinData.VehicleType && (
@@ -734,7 +741,6 @@ export default function VehicleDetails({ id }: { id: string }) {
                   )}
                 </CardContent>
               </Card>
-            )}
 
             <Button className="w-full" size="lg" data-testid="button-contact">
               Contact Us About This Vehicle
