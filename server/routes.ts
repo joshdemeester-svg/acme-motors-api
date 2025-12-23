@@ -123,6 +123,43 @@ async function sendGHLSMS(contactId: string, message: string): Promise<boolean> 
   }
 }
 
+async function getOrCreateGHLContactByPhone(phone: string, name: string): Promise<string | null> {
+  if (!GHL_LOCATION_ID || !GHL_API_TOKEN) {
+    console.log("[GHL] Not configured, skipping contact lookup");
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${GHL_API_BASE}/contacts/upsert`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${GHL_API_TOKEN}`,
+        "Version": "2021-07-28",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({
+        phone,
+        firstName: name,
+        locationId: GHL_LOCATION_ID,
+        tags: ["Owner"],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[GHL] Failed to get/create owner contact:`, response.status, errorText);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.contact?.id || null;
+  } catch (error) {
+    console.error(`[GHL] Network error getting owner contact:`, error);
+    return null;
+  }
+}
+
 function generateVerificationCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
@@ -491,6 +528,53 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error decoding VIN:", error);
       res.status(500).json({ error: "Failed to decode VIN" });
+    }
+  });
+
+  app.post("/api/vehicle-inquiry", async (req, res) => {
+    try {
+      const inquirySchema = z.object({
+        vehicleId: z.string(),
+        vin: z.string(),
+        year: z.number(),
+        make: z.string(),
+        model: z.string(),
+        buyerName: z.string().min(1, "Name is required"),
+        buyerPhone: z.string().min(10, "Phone is required"),
+        buyerEmail: z.string().email("Valid email is required"),
+        message: z.string().optional(),
+      });
+
+      const data = inquirySchema.parse(req.body);
+
+      const settings = await storage.getSiteSettings();
+      if (!settings?.contactPhone) {
+        return res.status(400).json({ error: "Owner contact phone not configured" });
+      }
+
+      const ownerPhone = normalizePhoneNumber(settings.contactPhone);
+      const contactId = await getOrCreateGHLContactByPhone(ownerPhone, "Owner");
+
+      if (!contactId) {
+        return res.status(500).json({ error: "Failed to connect to messaging service" });
+      }
+
+      const smsMessage = `New Vehicle Inquiry!\n\nVehicle: ${data.year} ${data.make} ${data.model}\nVIN: ${data.vin}\n\nBuyer Info:\nName: ${data.buyerName}\nPhone: ${data.buyerPhone}\nEmail: ${data.buyerEmail}${data.message ? `\n\nMessage: ${data.message}` : ""}`;
+
+      const success = await sendGHLSMS(contactId, smsMessage);
+
+      if (!success) {
+        return res.status(500).json({ error: "Failed to send inquiry message" });
+      }
+
+      console.log(`[Inquiry] Vehicle inquiry sent for ${data.vin} from ${data.buyerName}`);
+      res.json({ success: true, message: "Your inquiry has been sent! We'll be in touch soon." });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      console.error("Error sending vehicle inquiry:", error);
+      res.status(500).json({ error: "Failed to send inquiry" });
     }
   });
 
