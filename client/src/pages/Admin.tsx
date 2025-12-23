@@ -800,6 +800,10 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 export default function Admin() {
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const { data: session, isLoading } = useQuery({
     queryKey: ["/api/auth/session"],
     queryFn: async () => {
