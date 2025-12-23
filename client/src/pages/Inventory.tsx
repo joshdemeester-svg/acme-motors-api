@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import type { InventoryCar } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/luxury_sports_car_ex_2a1585ad.jpg';
 
@@ -95,7 +96,9 @@ export default function Inventory() {
                     </div>
                   </div>
                   
-                  <Button className="mt-6 w-full" data-testid={`button-view-${car.id}`}>View Details</Button>
+                  <Link href={`/vehicle/${car.id}`}>
+                    <Button className="mt-6 w-full" data-testid={`button-view-${car.id}`}>View Details</Button>
+                  </Link>
                 </div>
               </div>
             ))}

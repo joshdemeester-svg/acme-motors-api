@@ -467,6 +467,33 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/vin-decode/:vin", async (req, res) => {
+    try {
+      const { vin } = req.params;
+      if (!vin || vin.length < 11) {
+        return res.status(400).json({ error: "Invalid VIN" });
+      }
+      
+      const nhtsaUrl = `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`;
+      const response = await fetch(nhtsaUrl);
+      
+      if (!response.ok) {
+        throw new Error("NHTSA API request failed");
+      }
+      
+      const data = await response.json();
+      
+      if (data.Results && data.Results.length > 0) {
+        res.json(data.Results[0]);
+      } else {
+        res.json({ ErrorCode: "1", ErrorText: "No results found" });
+      }
+    } catch (error) {
+      console.error("Error decoding VIN:", error);
+      res.status(500).json({ error: "Failed to decode VIN" });
+    }
+  });
+
   app.get("/api/inventory/all", async (req, res) => {
     try {
       const cars = await storage.getAllInventoryCars();
