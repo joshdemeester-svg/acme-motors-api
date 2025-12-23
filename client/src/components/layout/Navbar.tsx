@@ -1,16 +1,27 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Car, Menu } from "lucide-react";
+import { Car, Menu, Settings } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useQuery } from "@tanstack/react-query";
 
 export function Navbar() {
   const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const { settings } = useSettings();
 
+  const { data: session } = useQuery({
+    queryKey: ["/api/auth/session"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/session");
+      return res.json();
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const isAdmin = session?.authenticated && session?.isAdmin;
   const siteName = settings?.siteName || "PRESTIGE";
 
   const links = [
@@ -47,6 +58,17 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className={cn(
+                "flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary",
+                location === "/admin" ? "text-primary" : "text-muted-foreground"
+              )}
+            >
+              <Settings className="h-4 w-4" /> Admin
+            </Link>
+          )}
           <Button variant="outline" className="ml-4 border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground">
             Contact Us
           </Button>
@@ -85,6 +107,18 @@ export function Navbar() {
                     {link.label}
                   </Link>
                 ))}
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className={cn(
+                      "flex items-center gap-2 text-lg font-medium transition-colors hover:text-primary",
+                      location === "/admin" ? "text-primary" : "text-muted-foreground"
+                    )}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Settings className="h-5 w-5" /> Admin Dashboard
+                  </Link>
+                )}
               </div>
             </div>
           </SheetContent>

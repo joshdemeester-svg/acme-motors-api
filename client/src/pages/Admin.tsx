@@ -360,6 +360,29 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     },
   });
 
+  const updateCarStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const res = await fetch(`/api/inventory/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Failed to update status");
+      return res.json();
+    },
+    onSuccess: (_, { status }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      toast({ 
+        title: status === "sold" ? "Marked as Sold" : "Marked as Available",
+        description: "Inventory status updated."
+      });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update status.", variant: "destructive" });
+    },
+  });
+
   const logoutMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch("/api/auth/logout", { method: "POST" });
@@ -524,9 +547,34 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                       </div>
                       <StatusBadge status={car.status} />
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-4">
                       <div className="text-2xl font-bold text-primary">
                         ${car.price.toLocaleString()}
+                      </div>
+                      <div className="flex gap-2">
+                        {car.status === "available" ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateCarStatusMutation.mutate({ id: car.id, status: "sold" })}
+                            disabled={updateCarStatusMutation.isPending}
+                            className="flex-1"
+                            data-testid={`button-mark-sold-${car.id}`}
+                          >
+                            Mark as Sold
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateCarStatusMutation.mutate({ id: car.id, status: "available" })}
+                            disabled={updateCarStatusMutation.isPending}
+                            className="flex-1"
+                            data-testid={`button-mark-available-${car.id}`}
+                          >
+                            Mark as Available
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
