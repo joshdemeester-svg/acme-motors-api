@@ -7,6 +7,7 @@ import { SettingsProvider } from "@/contexts/SettingsContext";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Inventory from "@/pages/Inventory";
+import VehicleDetails from "@/pages/VehicleDetails";
 import Consign from "@/pages/Consign";
 import Admin from "@/pages/Admin";
 
@@ -15,6 +16,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/inventory" component={Inventory} />
+      <Route path="/vehicle/:id">{(params) => <VehicleDetails id={params.id} />}</Route>
       <Route path="/consign" component={Consign} />
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
