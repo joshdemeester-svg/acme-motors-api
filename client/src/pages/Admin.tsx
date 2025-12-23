@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image } from "lucide-react";
+import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube } from "lucide-react";
 import type { ConsignmentSubmission, InventoryCar, SiteSettings } from "@shared/schema";
 
 function StatusBadge({ status }: { status: string }) {
@@ -37,6 +37,15 @@ function SettingsPanel() {
   const [siteName, setSiteName] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#D4AF37");
   const [logoUrl, setLogoUrl] = useState("");
+  const [contactAddress1, setContactAddress1] = useState("");
+  const [contactAddress2, setContactAddress2] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [facebookUrl, setFacebookUrl] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
+  const [twitterUrl, setTwitterUrl] = useState("");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [tiktokUrl, setTiktokUrl] = useState("");
 
   const { data: settings, isLoading } = useQuery<SiteSettings>({
     queryKey: ["/api/settings"],
@@ -51,6 +60,15 @@ function SettingsPanel() {
       setSiteName(settings.siteName || "PRESTIGE");
       setPrimaryColor(settings.primaryColor || "#D4AF37");
       setLogoUrl(settings.logoUrl || "");
+      setContactAddress1(settings.contactAddress1 || "");
+      setContactAddress2(settings.contactAddress2 || "");
+      setContactPhone(settings.contactPhone || "");
+      setContactEmail(settings.contactEmail || "");
+      setFacebookUrl(settings.facebookUrl || "");
+      setInstagramUrl(settings.instagramUrl || "");
+      setTwitterUrl(settings.twitterUrl || "");
+      setYoutubeUrl(settings.youtubeUrl || "");
+      setTiktokUrl(settings.tiktokUrl || "");
     }
   }, [settings]);
 
@@ -59,7 +77,20 @@ function SettingsPanel() {
       const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ siteName, primaryColor, logoUrl: logoUrl || null }),
+        body: JSON.stringify({ 
+          siteName, 
+          primaryColor, 
+          logoUrl: logoUrl || null,
+          contactAddress1: contactAddress1 || null,
+          contactAddress2: contactAddress2 || null,
+          contactPhone: contactPhone || null,
+          contactEmail: contactEmail || null,
+          facebookUrl: facebookUrl || null,
+          instagramUrl: instagramUrl || null,
+          twitterUrl: twitterUrl || null,
+          youtubeUrl: youtubeUrl || null,
+          tiktokUrl: tiktokUrl || null,
+        }),
       });
       if (!res.ok) throw new Error("Failed to update settings");
       return res.json();
@@ -184,12 +215,148 @@ function SettingsPanel() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" /> Contact Information
+          </CardTitle>
+          <CardDescription>Update your footer contact details</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="contactAddress1">Address Line 1</Label>
+            <Input
+              id="contactAddress1"
+              value={contactAddress1}
+              onChange={(e) => setContactAddress1(e.target.value)}
+              placeholder="123 Luxury Lane"
+              data-testid="input-contact-address1"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="contactAddress2">Address Line 2</Label>
+            <Input
+              id="contactAddress2"
+              value={contactAddress2}
+              onChange={(e) => setContactAddress2(e.target.value)}
+              placeholder="Beverly Hills, CA 90210"
+              data-testid="input-contact-address2"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="contactPhone">Phone Number</Label>
+            <div className="flex items-center gap-2">
+              <Phone className="h-4 w-4 text-muted-foreground" />
+              <Input
+                id="contactPhone"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                placeholder="(555) 123-4567"
+                data-testid="input-contact-phone"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="contactEmail">Email Address</Label>
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <Input
+                id="contactEmail"
+                type="email"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                placeholder="info@prestigeauto.com"
+                data-testid="input-contact-email"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Instagram className="h-5 w-5" /> Social Media
+          </CardTitle>
+          <CardDescription>Add your social media profile links</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="facebookUrl">Facebook</Label>
+            <div className="flex items-center gap-2">
+              <Facebook className="h-4 w-4 text-muted-foreground" />
+              <Input
+                id="facebookUrl"
+                value={facebookUrl}
+                onChange={(e) => setFacebookUrl(e.target.value)}
+                placeholder="https://facebook.com/yourpage"
+                data-testid="input-facebook-url"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="instagramUrl">Instagram</Label>
+            <div className="flex items-center gap-2">
+              <Instagram className="h-4 w-4 text-muted-foreground" />
+              <Input
+                id="instagramUrl"
+                value={instagramUrl}
+                onChange={(e) => setInstagramUrl(e.target.value)}
+                placeholder="https://instagram.com/yourprofile"
+                data-testid="input-instagram-url"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="twitterUrl">Twitter / X</Label>
+            <div className="flex items-center gap-2">
+              <Twitter className="h-4 w-4 text-muted-foreground" />
+              <Input
+                id="twitterUrl"
+                value={twitterUrl}
+                onChange={(e) => setTwitterUrl(e.target.value)}
+                placeholder="https://twitter.com/yourhandle"
+                data-testid="input-twitter-url"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="youtubeUrl">YouTube</Label>
+            <div className="flex items-center gap-2">
+              <Youtube className="h-4 w-4 text-muted-foreground" />
+              <Input
+                id="youtubeUrl"
+                value={youtubeUrl}
+                onChange={(e) => setYoutubeUrl(e.target.value)}
+                placeholder="https://youtube.com/@yourchannel"
+                data-testid="input-youtube-url"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="tiktokUrl">TikTok</Label>
+            <div className="flex items-center gap-2">
+              <svg className="h-4 w-4 text-muted-foreground" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+              </svg>
+              <Input
+                id="tiktokUrl"
+                value={tiktokUrl}
+                onChange={(e) => setTiktokUrl(e.target.value)}
+                placeholder="https://tiktok.com/@yourhandle"
+                data-testid="input-tiktok-url"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="md:col-span-2">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-medium">Preview Changes</h3>
+                <h3 className="font-medium">Save All Settings</h3>
                 <p className="text-sm text-muted-foreground">
                   Changes will be applied immediately after saving
                 </p>

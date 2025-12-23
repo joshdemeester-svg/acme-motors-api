@@ -61,7 +61,10 @@ PostgreSQL database with Drizzle ORM. Core tables:
 - `users` - Admin authentication (username, hashed password, isAdmin flag)
 - `consignment_submissions` - Vehicle submission data with status tracking
 - `inventory_cars` - Approved vehicles listed for sale
-- `site_settings` - Customizable site branding (colors, logo, site name)
+- `site_settings` - Customizable site branding and contact info:
+  - Branding: primary color, logo URL, site name
+  - Contact: address lines, phone, email
+  - Social media: Facebook, Instagram, Twitter, YouTube, TikTok URLs
 
 ### File Storage
 
