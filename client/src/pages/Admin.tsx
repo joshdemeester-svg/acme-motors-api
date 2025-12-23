@@ -1090,8 +1090,20 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-lg">
+      <Dialog open={editDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          (document.activeElement as HTMLElement)?.blur();
+        }
+        setEditDialogOpen(open);
+      }}>
+        <DialogContent 
+          className="flex max-h-[85vh] flex-col sm:max-w-lg"
+          onPointerDown={(e) => {
+            if ((e.target as HTMLElement).tagName !== 'INPUT' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
+              (document.activeElement as HTMLElement)?.blur();
+            }
+          }}
+        >
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>Edit Listing</DialogTitle>
             <DialogDescription>
@@ -1192,11 +1204,21 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             </div>
           </div>
           <DialogFooter className="flex-shrink-0 flex-col gap-2 sm:flex-row border-t pt-4">
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)} className="w-full sm:w-auto">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                (document.activeElement as HTMLElement)?.blur();
+                setEditDialogOpen(false);
+              }} 
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
             <Button
-              onClick={handleSaveEdit}
+              onClick={() => {
+                (document.activeElement as HTMLElement)?.blur();
+                handleSaveEdit();
+              }}
               disabled={updateCarMutation.isPending}
               data-testid="button-save-edit"
               className="w-full sm:w-auto"
@@ -1207,8 +1229,20 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={quickAddDialogOpen} onOpenChange={setQuickAddDialogOpen}>
-        <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-lg">
+      <Dialog open={quickAddDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          (document.activeElement as HTMLElement)?.blur();
+        }
+        setQuickAddDialogOpen(open);
+      }}>
+        <DialogContent 
+          className="flex max-h-[85vh] flex-col sm:max-w-lg"
+          onPointerDown={(e) => {
+            if ((e.target as HTMLElement).tagName !== 'INPUT' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
+              (document.activeElement as HTMLElement)?.blur();
+            }
+          }}
+        >
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>Quick Add Vehicle</DialogTitle>
             <DialogDescription>
@@ -1332,11 +1366,22 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             </div>
           </div>
           <DialogFooter className="flex-shrink-0 flex-col gap-2 sm:flex-row border-t pt-4">
-            <Button variant="outline" onClick={() => { setQuickAddDialogOpen(false); resetQuickAddForm(); }} className="w-full sm:w-auto">
+            <Button 
+              variant="outline" 
+              onClick={() => { 
+                (document.activeElement as HTMLElement)?.blur();
+                setQuickAddDialogOpen(false); 
+                resetQuickAddForm(); 
+              }} 
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
             <Button
-              onClick={handleQuickAdd}
+              onClick={() => {
+                (document.activeElement as HTMLElement)?.blur();
+                handleQuickAdd();
+              }}
               disabled={createCarMutation.isPending}
               data-testid="button-add-vehicle"
               className="w-full sm:w-auto"
