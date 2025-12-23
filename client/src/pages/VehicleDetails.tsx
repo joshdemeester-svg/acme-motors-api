@@ -309,6 +309,15 @@ export default function VehicleDetails({ id }: { id: string }) {
               <p className="mt-2 text-3xl font-bold text-primary" data-testid="text-price">
                 ${car.price.toLocaleString()}
               </p>
+              <Button 
+                className="mt-4 w-full gap-2" 
+                size="lg"
+                onClick={() => setContactOpen(true)}
+                data-testid="button-contact-top"
+              >
+                <MessageSquare className="h-5 w-5" />
+                Interested? Contact Us
+              </Button>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
