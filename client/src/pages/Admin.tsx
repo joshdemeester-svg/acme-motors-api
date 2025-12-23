@@ -11,10 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search } from "lucide-react";
+import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { ConsignmentSubmission, InventoryCar, SiteSettings } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
+import { ObjectUploader } from "@/components/ObjectUploader";
+import { useUpload } from "@/hooks/use-upload";
 
 function StatusBadge({ status }: { status: string }) {
   const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode }> = {
@@ -31,6 +33,115 @@ function StatusBadge({ status }: { status: string }) {
       {config.icon}
       {status}
     </Badge>
+  );
+}
+
+function LogoUploadCard({ logoUrl, setLogoUrl, siteName }: { logoUrl: string; setLogoUrl: (url: string) => void; siteName: string }) {
+  const { getUploadParameters } = useUpload();
+  
+  const handleUploadComplete = async (result: any) => {
+    if (result.successful && result.successful.length > 0) {
+      const uploadedFile = result.successful[0];
+      const response = await fetch("/api/uploads/request-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: uploadedFile.name,
+          size: uploadedFile.size,
+          contentType: uploadedFile.type || "image/png",
+        }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setLogoUrl(data.objectPath);
+      }
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Image className="h-5 w-5" /> Logo
+        </CardTitle>
+        <CardDescription>Upload a custom logo for your website</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+          {logoUrl ? (
+            <div className="relative">
+              <div className="rounded-lg border bg-card p-4">
+                <img
+                  src={logoUrl}
+                  alt="Current logo"
+                  className="h-16 w-auto max-w-[200px] object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = placeholderCar;
+                  }}
+                />
+              </div>
+              <Button
+                variant="destructive"
+                size="icon"
+                className="absolute -top-2 -right-2 h-6 w-6"
+                onClick={() => setLogoUrl("")}
+                data-testid="button-remove-logo"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed bg-muted/50 p-8 text-center">
+              <Image className="mx-auto h-8 w-8 text-muted-foreground" />
+              <p className="mt-2 text-sm text-muted-foreground">No logo uploaded</p>
+            </div>
+          )}
+          <div className="flex-1 space-y-3">
+            <ObjectUploader
+              maxNumberOfFiles={1}
+              maxFileSize={5242880}
+              onGetUploadParameters={getUploadParameters}
+              onComplete={handleUploadComplete}
+              buttonClassName="w-full sm:w-auto"
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              {logoUrl ? "Replace Logo" : "Upload Logo"}
+            </ObjectUploader>
+            <p className="text-xs text-muted-foreground">
+              Upload a PNG, JPG, or SVG file (max 5MB). Leave empty to use the default car icon.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="logoUrl" className="text-xs">Or enter a URL:</Label>
+              <Input
+                id="logoUrl"
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
+                placeholder="https://example.com/logo.png"
+                className="text-sm"
+                data-testid="input-logo-url"
+              />
+            </div>
+          </div>
+        </div>
+        
+        {logoUrl && (
+          <div className="mt-4 border-t pt-4">
+            <Label className="text-xs text-muted-foreground">Preview in navbar:</Label>
+            <div className="mt-2 flex items-center gap-2 rounded-lg border bg-card p-3">
+              <img
+                src={logoUrl}
+                alt="Logo preview"
+                className="h-8 w-auto"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
+              <span className="font-serif text-lg font-bold">{siteName}</span>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -177,46 +288,7 @@ function SettingsPanel() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Image className="h-5 w-5" /> Logo
-          </CardTitle>
-          <CardDescription>Upload a custom logo for your website</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="logoUrl">Logo URL</Label>
-            <Input
-              id="logoUrl"
-              value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-              placeholder="https://example.com/logo.png"
-              data-testid="input-logo-url"
-            />
-            <p className="text-xs text-muted-foreground">
-              Enter a URL for your logo image. Leave empty to use the default car icon.
-            </p>
-          </div>
-          
-          {logoUrl && (
-            <div className="mt-4">
-              <Label>Preview</Label>
-              <div className="mt-2 flex items-center gap-2 rounded-lg border bg-card p-4">
-                <img
-                  src={logoUrl}
-                  alt="Logo preview"
-                  className="h-12 w-auto"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-                <span className="font-serif text-xl font-bold">{siteName}</span>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <LogoUploadCard logoUrl={logoUrl} setLogoUrl={setLogoUrl} siteName={siteName} />
 
       <Card>
         <CardHeader>
