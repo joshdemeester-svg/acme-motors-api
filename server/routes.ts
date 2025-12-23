@@ -548,6 +548,40 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/inventory/:id", requireAdmin, async (req, res) => {
+    try {
+      const updateSchema = z.object({
+        year: z.number().int().min(1900).max(2100).optional(),
+        make: z.string().min(1).max(100).optional(),
+        model: z.string().min(1).max(100).optional(),
+        mileage: z.number().int().min(0).optional(),
+        color: z.string().min(1).max(50).optional(),
+        price: z.number().int().min(0).optional(),
+        condition: z.string().min(1).max(100).optional(),
+        description: z.string().max(2000).optional(),
+        photos: z.array(z.string()).optional(),
+      });
+
+      const validatedData = updateSchema.parse(req.body);
+
+      if (Object.keys(validatedData).length === 0) {
+        return res.status(400).json({ error: "No valid fields to update" });
+      }
+
+      const updated = await storage.updateInventoryCar(req.params.id, validatedData);
+      if (!updated) {
+        return res.status(404).json({ error: "Car not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      console.error("Error updating inventory car:", error);
+      res.status(500).json({ error: "Failed to update car" });
+    }
+  });
+
   app.post("/api/consignments/:id/approve", async (req, res) => {
     try {
       const { price } = req.body;

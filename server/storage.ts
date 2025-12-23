@@ -34,6 +34,7 @@ export interface IStorage {
   getAllInventoryCars(): Promise<InventoryCar[]>;
   getAvailableInventoryCars(): Promise<InventoryCar[]>;
   updateInventoryCarStatus(id: string, status: string): Promise<InventoryCar | undefined>;
+  updateInventoryCar(id: string, data: Partial<InsertInventoryCar>): Promise<InventoryCar | undefined>;
   
   getSiteSettings(): Promise<SiteSettings | undefined>;
   updateSiteSettings(data: InsertSiteSettings): Promise<SiteSettings>;
@@ -123,6 +124,15 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db
       .update(inventoryCars)
       .set({ status })
+      .where(eq(inventoryCars.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async updateInventoryCar(id: string, data: Partial<InsertInventoryCar>): Promise<InventoryCar | undefined> {
+    const [updated] = await db
+      .update(inventoryCars)
+      .set(data)
       .where(eq(inventoryCars.id, id))
       .returning();
     return updated || undefined;
