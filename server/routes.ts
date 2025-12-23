@@ -217,23 +217,32 @@ export async function registerRoutes(
   app.get("/api/create-admin-now", async (req, res) => {
     const secretKey = req.query.key;
     if (secretKey !== "SETUP-PRESTIGE-2024-SECURE") {
-      return res.status(403).json({ error: "Unauthorized" });
+      return res.status(403).json({ error: "Unauthorized - invalid key" });
     }
     try {
+      console.log("[admin-setup] Checking for existing admin...");
       const existingAdmin = await storage.getUserByUsername("Josh");
       if (existingAdmin) {
+        console.log("[admin-setup] Admin already exists");
         return res.json({ success: true, message: "Admin user 'Josh' already exists. You can login now!" });
       }
+      console.log("[admin-setup] Creating new admin...");
       const hashedPassword = "d7da12f7f0b51ba5ab3e7bb2617161d7:a5d33d043a5bfc73921e861303f31e6a9a6909740dc0368989809ddec3b64526e3f4cab9bd1569dd166d2f4043dc441645c821b0e1582b6547a0ebebeed9e00d";
       await storage.createUser({
         username: "Josh",
         password: hashedPassword,
         isAdmin: true,
       });
+      console.log("[admin-setup] Admin created successfully");
       res.json({ success: true, message: "Admin user 'Josh' created successfully! You can now login with username 'Josh' and password 'Sunshine2024!'" });
-    } catch (error) {
-      console.error("Error creating admin:", error);
-      res.status(500).json({ success: false, message: "Error creating admin user" });
+    } catch (error: any) {
+      console.error("[admin-setup] Error creating admin:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Error creating admin user", 
+        error: error?.message || "Unknown error",
+        hint: "Database might not be connected or users table doesn't exist"
+      });
     }
   });
 
