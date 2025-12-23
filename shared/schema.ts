@@ -90,6 +90,15 @@ export const siteSettings = pgTable("site_settings", {
   primaryColor: text("primary_color").default("#D4AF37"),
   logoUrl: text("logo_url"),
   siteName: text("site_name").default("PRESTIGE"),
+  contactAddress1: text("contact_address_1"),
+  contactAddress2: text("contact_address_2"),
+  contactPhone: text("contact_phone"),
+  contactEmail: text("contact_email"),
+  facebookUrl: text("facebook_url"),
+  instagramUrl: text("instagram_url"),
+  twitterUrl: text("twitter_url"),
+  youtubeUrl: text("youtube_url"),
+  tiktokUrl: text("tiktok_url"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
