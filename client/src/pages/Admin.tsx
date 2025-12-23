@@ -11,7 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube } from "lucide-react";
+import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import type { ConsignmentSubmission, InventoryCar, SiteSettings } from "@shared/schema";
 
 function StatusBadge({ status }: { status: string }) {
@@ -470,6 +471,17 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [selectedSubmission, setSelectedSubmission] = useState<ConsignmentSubmission | null>(null);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [price, setPrice] = useState("");
+  
+  const [selectedCar, setSelectedCar] = useState<InventoryCar | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editYear, setEditYear] = useState("");
+  const [editMake, setEditMake] = useState("");
+  const [editModel, setEditModel] = useState("");
+  const [editMileage, setEditMileage] = useState("");
+  const [editColor, setEditColor] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+  const [editCondition, setEditCondition] = useState("");
+  const [editDescription, setEditDescription] = useState("");
 
   const { data: submissions = [], isLoading: loadingSubmissions } = useQuery<ConsignmentSubmission[]>({
     queryKey: ["/api/consignments"],
@@ -550,6 +562,74 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       toast({ title: "Error", description: "Failed to update status.", variant: "destructive" });
     },
   });
+
+  const updateCarMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) => {
+      const res = await fetch(`/api/inventory/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update car");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      toast({ 
+        title: "Listing Updated",
+        description: "Vehicle information has been saved."
+      });
+      setEditDialogOpen(false);
+      setSelectedCar(null);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update listing.", variant: "destructive" });
+    },
+  });
+
+  const openEditDialog = (car: InventoryCar) => {
+    setSelectedCar(car);
+    setEditYear(car.year.toString());
+    setEditMake(car.make);
+    setEditModel(car.model);
+    setEditMileage(car.mileage.toString());
+    setEditColor(car.color);
+    setEditPrice(car.price.toString());
+    setEditCondition(car.condition);
+    setEditDescription(car.description || "");
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (!selectedCar) return;
+    
+    const data: Record<string, unknown> = {};
+    
+    const yearNum = parseInt(editYear);
+    if (!isNaN(yearNum) && yearNum > 0) data.year = yearNum;
+    
+    if (editMake.trim()) data.make = editMake.trim();
+    if (editModel.trim()) data.model = editModel.trim();
+    
+    const mileageNum = parseInt(editMileage);
+    if (!isNaN(mileageNum) && mileageNum >= 0) data.mileage = mileageNum;
+    
+    if (editColor.trim()) data.color = editColor.trim();
+    
+    const priceNum = parseInt(editPrice);
+    if (!isNaN(priceNum) && priceNum >= 0) data.price = priceNum;
+    
+    if (editCondition.trim()) data.condition = editCondition.trim();
+    data.description = editDescription.trim();
+
+    if (Object.keys(data).length === 0) {
+      toast({ title: "Error", description: "Please fill in at least one field.", variant: "destructive" });
+      return;
+    }
+
+    updateCarMutation.mutate({ id: selectedCar.id, data });
+  };
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -719,14 +799,22 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                       <div className="text-2xl font-bold text-primary">
                         ${car.price.toLocaleString()}
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openEditDialog(car)}
+                          className="gap-2"
+                          data-testid={`button-edit-${car.id}`}
+                        >
+                          <Pencil className="h-3 w-3" /> Edit Listing
+                        </Button>
                         {car.status === "available" ? (
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => updateCarStatusMutation.mutate({ id: car.id, status: "sold" })}
                             disabled={updateCarStatusMutation.isPending}
-                            className="flex-1"
                             data-testid={`button-mark-sold-${car.id}`}
                           >
                             Mark as Sold
@@ -737,7 +825,6 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                             variant="outline"
                             onClick={() => updateCarStatusMutation.mutate({ id: car.id, status: "available" })}
                             disabled={updateCarStatusMutation.isPending}
-                            className="flex-1"
                             data-testid={`button-mark-available-${car.id}`}
                           >
                             Mark as Available
@@ -790,6 +877,111 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               disabled={!price || approveMutation.isPending}
             >
               {approveMutation.isPending ? "Approving..." : "Approve"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Listing</DialogTitle>
+            <DialogDescription>
+              Update the vehicle information for this listing.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="editYear">Year</Label>
+                <Input
+                  id="editYear"
+                  type="number"
+                  value={editYear}
+                  onChange={(e) => setEditYear(e.target.value)}
+                  data-testid="input-edit-year"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editMake">Make</Label>
+                <Input
+                  id="editMake"
+                  value={editMake}
+                  onChange={(e) => setEditMake(e.target.value)}
+                  data-testid="input-edit-make"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editModel">Model</Label>
+                <Input
+                  id="editModel"
+                  value={editModel}
+                  onChange={(e) => setEditModel(e.target.value)}
+                  data-testid="input-edit-model"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editColor">Color</Label>
+                <Input
+                  id="editColor"
+                  value={editColor}
+                  onChange={(e) => setEditColor(e.target.value)}
+                  data-testid="input-edit-color"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editMileage">Mileage</Label>
+                <Input
+                  id="editMileage"
+                  type="number"
+                  value={editMileage}
+                  onChange={(e) => setEditMileage(e.target.value)}
+                  data-testid="input-edit-mileage"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editPrice">Price ($)</Label>
+                <Input
+                  id="editPrice"
+                  type="number"
+                  value={editPrice}
+                  onChange={(e) => setEditPrice(e.target.value)}
+                  data-testid="input-edit-price"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editCondition">Condition</Label>
+              <Input
+                id="editCondition"
+                value={editCondition}
+                onChange={(e) => setEditCondition(e.target.value)}
+                placeholder="e.g. Excellent, Good, Fair"
+                data-testid="input-edit-condition"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editDescription">Description</Label>
+              <Textarea
+                id="editDescription"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Enter vehicle description..."
+                rows={4}
+                data-testid="input-edit-description"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={updateCarMutation.isPending}
+              data-testid="button-save-edit"
+            >
+              {updateCarMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
