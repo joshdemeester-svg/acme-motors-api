@@ -6,7 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Car, Fuel, Gauge, Calendar, Palette, FileText, Settings, MapPin } from "lucide-react";
+import { ArrowLeft, Car, Fuel, Gauge, Calendar, Palette, FileText, Settings, MapPin, Shield, Zap, Users, Factory } from "lucide-react";
 import { Link } from "wouter";
 import type { InventoryCar } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
@@ -18,16 +18,44 @@ interface VinData {
   BodyClass?: string;
   DriveType?: string;
   FuelTypePrimary?: string;
+  FuelTypeSecondary?: string;
   EngineCylinders?: string;
   EngineHP?: string;
   DisplacementL?: string;
+  DisplacementCC?: string;
   TransmissionStyle?: string;
+  TransmissionSpeeds?: string;
   Doors?: string;
   PlantCity?: string;
+  PlantState?: string;
   PlantCountry?: string;
   VehicleType?: string;
   ErrorCode?: string;
   ErrorText?: string;
+  Manufacturer?: string;
+  Series?: string;
+  Trim?: string;
+  GVWR?: string;
+  CurbWeightLB?: string;
+  Turbo?: string;
+  ElectronicStabilityControl?: string;
+  ABS?: string;
+  AirBagLocFront?: string;
+  AirBagLocSide?: string;
+  AirBagLocCurtain?: string;
+  BlindSpotMon?: string;
+  ForwardCollisionWarning?: string;
+  LaneDepartureWarning?: string;
+  RearVisibilitySystem?: string;
+  AdaptiveCruiseControl?: string;
+  ParkAssist?: string;
+  SeatRows?: string;
+  Seats?: string;
+  WheelBaseType?: string;
+  WheelSizeFront?: string;
+  BatteryKWH?: string;
+  ChargerLevel?: string;
+  EVDriveUnit?: string;
 }
 
 export default function VehicleDetails({ id }: { id: string }) {
@@ -211,62 +239,180 @@ export default function VehicleDetails({ id }: { id: string }) {
                   {vinLoading ? (
                     <p className="text-sm text-muted-foreground">Loading VIN data...</p>
                   ) : (
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      {vinData.BodyClass && (
-                        <div>
-                          <p className="text-muted-foreground">Body Style</p>
-                          <p className="font-medium">{vinData.BodyClass}</p>
-                        </div>
-                      )}
-                      {vinData.DriveType && (
-                        <div>
-                          <p className="text-muted-foreground">Drive Type</p>
-                          <p className="font-medium">{vinData.DriveType}</p>
-                        </div>
-                      )}
-                      {vinData.FuelTypePrimary && (
-                        <div className="flex items-start gap-2">
-                          <Fuel className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        {vinData.VehicleType && (
                           <div>
-                            <p className="text-muted-foreground">Fuel Type</p>
-                            <p className="font-medium">{vinData.FuelTypePrimary}</p>
+                            <p className="text-muted-foreground">Vehicle Type</p>
+                            <p className="font-medium">{vinData.VehicleType}</p>
+                          </div>
+                        )}
+                        {vinData.BodyClass && (
+                          <div>
+                            <p className="text-muted-foreground">Body Style</p>
+                            <p className="font-medium">{vinData.BodyClass}</p>
+                          </div>
+                        )}
+                        {(vinData.Series || vinData.Trim) && (
+                          <div>
+                            <p className="text-muted-foreground">Trim/Series</p>
+                            <p className="font-medium">{[vinData.Series, vinData.Trim].filter(Boolean).join(" ")}</p>
+                          </div>
+                        )}
+                        {vinData.DriveType && (
+                          <div>
+                            <p className="text-muted-foreground">Drive Type</p>
+                            <p className="font-medium">{vinData.DriveType}</p>
+                          </div>
+                        )}
+                        {vinData.Doors && (
+                          <div>
+                            <p className="text-muted-foreground">Doors</p>
+                            <p className="font-medium">{vinData.Doors}</p>
+                          </div>
+                        )}
+                        {vinData.Seats && (
+                          <div className="flex items-start gap-2">
+                            <Users className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-muted-foreground">Seating</p>
+                              <p className="font-medium">{vinData.Seats} seats{vinData.SeatRows ? ` (${vinData.SeatRows} rows)` : ""}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="border-t pt-4">
+                        <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+                          <Settings className="h-4 w-4" />
+                          Engine & Powertrain
+                        </h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          {vinData.EngineCylinders && (
+                            <div>
+                              <p className="text-muted-foreground">Engine</p>
+                              <p className="font-medium">
+                                {vinData.EngineCylinders} Cylinder
+                                {vinData.DisplacementL && ` / ${vinData.DisplacementL}L`}
+                                {vinData.Turbo && vinData.Turbo !== "Not Applicable" && " Turbo"}
+                              </p>
+                            </div>
+                          )}
+                          {vinData.EngineHP && (
+                            <div className="flex items-start gap-2">
+                              <Zap className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-muted-foreground">Horsepower</p>
+                                <p className="font-medium">{vinData.EngineHP} HP</p>
+                              </div>
+                            </div>
+                          )}
+                          {vinData.FuelTypePrimary && (
+                            <div className="flex items-start gap-2">
+                              <Fuel className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-muted-foreground">Fuel Type</p>
+                                <p className="font-medium">
+                                  {vinData.FuelTypePrimary}
+                                  {vinData.FuelTypeSecondary && ` / ${vinData.FuelTypeSecondary}`}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                          {vinData.TransmissionStyle && (
+                            <div>
+                              <p className="text-muted-foreground">Transmission</p>
+                              <p className="font-medium">
+                                {vinData.TransmissionStyle}
+                                {vinData.TransmissionSpeeds && ` (${vinData.TransmissionSpeeds}-Speed)`}
+                              </p>
+                            </div>
+                          )}
+                          {vinData.BatteryKWH && (
+                            <div>
+                              <p className="text-muted-foreground">Battery</p>
+                              <p className="font-medium">{vinData.BatteryKWH} kWh</p>
+                            </div>
+                          )}
+                          {vinData.EVDriveUnit && (
+                            <div>
+                              <p className="text-muted-foreground">EV Drive</p>
+                              <p className="font-medium">{vinData.EVDriveUnit}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {(vinData.AirBagLocFront || vinData.ElectronicStabilityControl || vinData.BlindSpotMon || vinData.RearVisibilitySystem) && (
+                        <div className="border-t pt-4">
+                          <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+                            <Shield className="h-4 w-4" />
+                            Safety Features
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {vinData.AirBagLocFront && (
+                              <Badge variant="secondary">Front Airbags</Badge>
+                            )}
+                            {vinData.AirBagLocSide && (
+                              <Badge variant="secondary">Side Airbags</Badge>
+                            )}
+                            {vinData.AirBagLocCurtain && (
+                              <Badge variant="secondary">Curtain Airbags</Badge>
+                            )}
+                            {vinData.ABS && vinData.ABS !== "Not Applicable" && (
+                              <Badge variant="secondary">ABS</Badge>
+                            )}
+                            {vinData.ElectronicStabilityControl && vinData.ElectronicStabilityControl !== "Not Applicable" && (
+                              <Badge variant="secondary">Stability Control</Badge>
+                            )}
+                            {vinData.BlindSpotMon && vinData.BlindSpotMon !== "Not Applicable" && (
+                              <Badge variant="secondary">Blind Spot Monitor</Badge>
+                            )}
+                            {vinData.ForwardCollisionWarning && vinData.ForwardCollisionWarning !== "Not Applicable" && (
+                              <Badge variant="secondary">Forward Collision Warning</Badge>
+                            )}
+                            {vinData.LaneDepartureWarning && vinData.LaneDepartureWarning !== "Not Applicable" && (
+                              <Badge variant="secondary">Lane Departure Warning</Badge>
+                            )}
+                            {vinData.RearVisibilitySystem && vinData.RearVisibilitySystem !== "Not Applicable" && (
+                              <Badge variant="secondary">Backup Camera</Badge>
+                            )}
+                            {vinData.AdaptiveCruiseControl && vinData.AdaptiveCruiseControl !== "Not Applicable" && (
+                              <Badge variant="secondary">Adaptive Cruise</Badge>
+                            )}
+                            {vinData.ParkAssist && vinData.ParkAssist !== "Not Applicable" && (
+                              <Badge variant="secondary">Park Assist</Badge>
+                            )}
                           </div>
                         </div>
                       )}
-                      {vinData.EngineCylinders && (
-                        <div className="flex items-start gap-2">
-                          <Settings className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="text-muted-foreground">Engine</p>
-                            <p className="font-medium">
-                              {vinData.EngineCylinders} Cylinder
-                              {vinData.DisplacementL && ` / ${vinData.DisplacementL}L`}
-                              {vinData.EngineHP && ` / ${vinData.EngineHP} HP`}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                      {vinData.TransmissionStyle && (
-                        <div>
-                          <p className="text-muted-foreground">Transmission</p>
-                          <p className="font-medium">{vinData.TransmissionStyle}</p>
-                        </div>
-                      )}
-                      {vinData.Doors && (
-                        <div>
-                          <p className="text-muted-foreground">Doors</p>
-                          <p className="font-medium">{vinData.Doors}</p>
-                        </div>
-                      )}
-                      {vinData.PlantCountry && (
-                        <div className="flex items-start gap-2">
-                          <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="text-muted-foreground">Manufactured In</p>
-                            <p className="font-medium">
-                              {vinData.PlantCity && `${vinData.PlantCity}, `}
-                              {vinData.PlantCountry}
-                            </p>
+
+                      {(vinData.PlantCountry || vinData.Manufacturer) && (
+                        <div className="border-t pt-4">
+                          <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+                            <Factory className="h-4 w-4" />
+                            Manufacturing
+                          </h4>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            {vinData.Manufacturer && (
+                              <div>
+                                <p className="text-muted-foreground">Manufacturer</p>
+                                <p className="font-medium">{vinData.Manufacturer}</p>
+                              </div>
+                            )}
+                            {vinData.PlantCountry && (
+                              <div className="flex items-start gap-2">
+                                <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                                <div>
+                                  <p className="text-muted-foreground">Assembly Plant</p>
+                                  <p className="font-medium">
+                                    {vinData.PlantCity && `${vinData.PlantCity}, `}
+                                    {vinData.PlantState && `${vinData.PlantState}, `}
+                                    {vinData.PlantCountry}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
