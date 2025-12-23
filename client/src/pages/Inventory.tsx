@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import type { InventoryCar } from "@shared/schema";
-import placeholderCar from '@assets/stock_images/luxury_sports_car_ex_2a1585ad.jpg';
+import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
 
 export default function Inventory() {
   const [search, setSearch] = useState("");
@@ -77,6 +77,11 @@ export default function Inventory() {
                     alt={`${car.make} ${car.model}`}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
+                  {(!car.photos || car.photos.length === 0) && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                      <span className="text-white font-semibold text-lg">Photo Coming Soon</span>
+                    </div>
+                  )}
                   <div className="absolute top-4 right-4 rounded bg-black/70 px-3 py-1 text-xs font-medium text-white backdrop-blur-md capitalize">
                     {car.status}
                   </div>

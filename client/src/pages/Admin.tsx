@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { ConsignmentSubmission, InventoryCar, SiteSettings } from "@shared/schema";
+import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
 
 function StatusBadge({ status }: { status: string }) {
   const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode }> = {
@@ -907,15 +908,18 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {inventory.map((car) => (
                   <Card key={car.id} className="overflow-hidden">
-                    {car.photos && car.photos.length > 0 && (
-                      <div className="aspect-[16/9] overflow-hidden">
-                        <img
-                          src={car.photos[0]}
-                          alt={`${car.make} ${car.model}`}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                    )}
+                    <div className="aspect-[16/9] overflow-hidden relative">
+                      <img
+                        src={car.photos && car.photos.length > 0 ? car.photos[0] : placeholderCar}
+                        alt={`${car.make} ${car.model}`}
+                        className="h-full w-full object-cover"
+                      />
+                      {(!car.photos || car.photos.length === 0) && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                          <span className="text-white font-semibold text-lg">Photo Coming Soon</span>
+                        </div>
+                      )}
+                    </div>
                     <CardHeader className="flex flex-row items-start justify-between">
                       <div>
                         <CardTitle className="font-serif text-lg">

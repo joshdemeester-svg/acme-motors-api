@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Car, Fuel, Gauge, Calendar, Palette, FileText, Settings, MapPin } from "lucide-react";
 import { Link } from "wouter";
 import type { InventoryCar } from "@shared/schema";
-import placeholderCar from '@assets/stock_images/luxury_sports_car_ex_2a1585ad.jpg';
+import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
 
 interface VinData {
   Make?: string;
@@ -112,6 +112,11 @@ export default function VehicleDetails({ id }: { id: string }) {
                 alt={`${car.year} ${car.make} ${car.model}`}
                 className="h-full w-full object-cover"
               />
+              {(!car.photos || car.photos.length === 0) && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                  <span className="text-white font-semibold text-xl">Photo Coming Soon</span>
+                </div>
+              )}
               <Badge className="absolute top-4 right-4 capitalize" data-testid="badge-status">
                 {car.status}
               </Badge>
