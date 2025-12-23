@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil } from "lucide-react";
+import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { ConsignmentSubmission, InventoryCar, SiteSettings } from "@shared/schema";
 
@@ -483,6 +483,18 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [editPrice, setEditPrice] = useState("");
   const [editCondition, setEditCondition] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  
+  const [quickAddDialogOpen, setQuickAddDialogOpen] = useState(false);
+  const [quickAddVin, setQuickAddVin] = useState("");
+  const [quickAddYear, setQuickAddYear] = useState("");
+  const [quickAddMake, setQuickAddMake] = useState("");
+  const [quickAddModel, setQuickAddModel] = useState("");
+  const [quickAddColor, setQuickAddColor] = useState("");
+  const [quickAddMileage, setQuickAddMileage] = useState("");
+  const [quickAddPrice, setQuickAddPrice] = useState("");
+  const [quickAddCondition, setQuickAddCondition] = useState("Excellent");
+  const [quickAddDescription, setQuickAddDescription] = useState("");
+  const [vinLookupLoading, setVinLookupLoading] = useState(false);
 
   const { data: submissions = [], isLoading: loadingSubmissions } = useQuery<ConsignmentSubmission[]>({
     queryKey: ["/api/consignments"],
@@ -601,6 +613,117 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     setEditCondition(car.condition);
     setEditDescription(car.description || "");
     setEditDialogOpen(true);
+  };
+
+  const createCarMutation = useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const res = await fetch("/api/inventory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to create car");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      toast({ 
+        title: "Vehicle Added",
+        description: "New vehicle has been added to inventory."
+      });
+      setQuickAddDialogOpen(false);
+      resetQuickAddForm();
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to add vehicle.", variant: "destructive" });
+    },
+  });
+
+  const resetQuickAddForm = () => {
+    setQuickAddVin("");
+    setQuickAddYear("");
+    setQuickAddMake("");
+    setQuickAddModel("");
+    setQuickAddColor("");
+    setQuickAddMileage("");
+    setQuickAddPrice("");
+    setQuickAddCondition("Excellent");
+    setQuickAddDescription("");
+  };
+
+  const handleVinLookup = async () => {
+    if (!quickAddVin || quickAddVin.length < 11) {
+      toast({ title: "Error", description: "Please enter a valid VIN (at least 11 characters).", variant: "destructive" });
+      return;
+    }
+    
+    setVinLookupLoading(true);
+    try {
+      const res = await fetch(`/api/vin-decode/${quickAddVin}`);
+      if (!res.ok) throw new Error("Failed to decode VIN");
+      const data = await res.json();
+      
+      if (data.ErrorCode && data.ErrorCode !== "0") {
+        toast({ title: "VIN Not Found", description: "Could not find vehicle information for this VIN.", variant: "destructive" });
+        return;
+      }
+      
+      setQuickAddYear(data.ModelYear || "");
+      setQuickAddMake(data.Make || "");
+      setQuickAddModel(data.Model || "");
+      
+      toast({ title: "VIN Decoded", description: `Found: ${data.ModelYear} ${data.Make} ${data.Model}` });
+    } catch {
+      toast({ title: "Error", description: "Failed to lookup VIN.", variant: "destructive" });
+    } finally {
+      setVinLookupLoading(false);
+    }
+  };
+
+  const handleQuickAdd = () => {
+    const mileage = parseInt(quickAddMileage);
+    const price = parseInt(quickAddPrice);
+    const year = parseInt(quickAddYear);
+    
+    if (!quickAddVin || quickAddVin.length < 11) {
+      toast({ title: "Error", description: "VIN is required.", variant: "destructive" });
+      return;
+    }
+    if (isNaN(year) || year < 1900) {
+      toast({ title: "Error", description: "Valid year is required.", variant: "destructive" });
+      return;
+    }
+    if (!quickAddMake.trim()) {
+      toast({ title: "Error", description: "Make is required.", variant: "destructive" });
+      return;
+    }
+    if (!quickAddModel.trim()) {
+      toast({ title: "Error", description: "Model is required.", variant: "destructive" });
+      return;
+    }
+    if (isNaN(mileage) || mileage < 0) {
+      toast({ title: "Error", description: "Valid mileage is required.", variant: "destructive" });
+      return;
+    }
+    if (isNaN(price) || price < 0) {
+      toast({ title: "Error", description: "Valid price is required.", variant: "destructive" });
+      return;
+    }
+
+    createCarMutation.mutate({
+      vin: quickAddVin.toUpperCase(),
+      year,
+      make: quickAddMake.trim(),
+      model: quickAddModel.trim(),
+      color: quickAddColor.trim() || "Unknown",
+      mileage,
+      price,
+      condition: quickAddCondition || "Excellent",
+      description: quickAddDescription.trim(),
+      photos: [],
+      status: "available",
+    });
   };
 
   const handleSaveEdit = () => {
@@ -767,12 +890,17 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </TabsContent>
 
           <TabsContent value="inventory" className="space-y-4">
+            <div className="flex justify-end">
+              <Button onClick={() => setQuickAddDialogOpen(true)} className="gap-2" data-testid="button-quick-add">
+                <Plus className="h-4 w-4" /> Quick Add Vehicle
+              </Button>
+            </div>
             {loadingInventory ? (
               <p>Loading...</p>
             ) : inventory.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
-                  <p className="text-muted-foreground">No vehicles in inventory yet.</p>
+                  <p className="text-muted-foreground">No vehicles in inventory yet. Use Quick Add to add your first vehicle!</p>
                 </CardContent>
               </Card>
             ) : (
@@ -997,6 +1125,145 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               data-testid="button-save-edit"
             >
               {updateCarMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={quickAddDialogOpen} onOpenChange={setQuickAddDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Quick Add Vehicle</DialogTitle>
+            <DialogDescription>
+              Enter a VIN to auto-fill vehicle details, then add mileage and price.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="quickAddVin">VIN</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="quickAddVin"
+                  value={quickAddVin}
+                  onChange={(e) => setQuickAddVin(e.target.value.toUpperCase())}
+                  placeholder="Enter 17-character VIN"
+                  maxLength={17}
+                  className="flex-1"
+                  data-testid="input-quick-add-vin"
+                />
+                <Button 
+                  type="button" 
+                  variant="secondary" 
+                  onClick={handleVinLookup}
+                  disabled={vinLookupLoading || quickAddVin.length < 11}
+                  className="gap-2"
+                  data-testid="button-vin-lookup"
+                >
+                  <Search className="h-4 w-4" />
+                  {vinLookupLoading ? "Looking up..." : "Lookup"}
+                </Button>
+              </div>
+            </div>
+            
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="quickAddYear">Year</Label>
+                <Input
+                  id="quickAddYear"
+                  type="number"
+                  value={quickAddYear}
+                  onChange={(e) => setQuickAddYear(e.target.value)}
+                  placeholder="e.g. 2021"
+                  data-testid="input-quick-add-year"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quickAddMake">Make</Label>
+                <Input
+                  id="quickAddMake"
+                  value={quickAddMake}
+                  onChange={(e) => setQuickAddMake(e.target.value)}
+                  placeholder="e.g. Ford"
+                  data-testid="input-quick-add-make"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quickAddModel">Model</Label>
+                <Input
+                  id="quickAddModel"
+                  value={quickAddModel}
+                  onChange={(e) => setQuickAddModel(e.target.value)}
+                  placeholder="e.g. Mustang"
+                  data-testid="input-quick-add-model"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quickAddColor">Color</Label>
+                <Input
+                  id="quickAddColor"
+                  value={quickAddColor}
+                  onChange={(e) => setQuickAddColor(e.target.value)}
+                  placeholder="e.g. Red"
+                  data-testid="input-quick-add-color"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quickAddMileage">Mileage *</Label>
+                <Input
+                  id="quickAddMileage"
+                  type="number"
+                  value={quickAddMileage}
+                  onChange={(e) => setQuickAddMileage(e.target.value)}
+                  placeholder="e.g. 25000"
+                  data-testid="input-quick-add-mileage"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quickAddPrice">Price ($) *</Label>
+                <Input
+                  id="quickAddPrice"
+                  type="number"
+                  value={quickAddPrice}
+                  onChange={(e) => setQuickAddPrice(e.target.value)}
+                  placeholder="e.g. 45000"
+                  data-testid="input-quick-add-price"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="quickAddCondition">Condition</Label>
+              <Input
+                id="quickAddCondition"
+                value={quickAddCondition}
+                onChange={(e) => setQuickAddCondition(e.target.value)}
+                placeholder="e.g. Excellent, Good, Fair"
+                data-testid="input-quick-add-condition"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="quickAddDescription">Description (optional)</Label>
+              <Textarea
+                id="quickAddDescription"
+                value={quickAddDescription}
+                onChange={(e) => setQuickAddDescription(e.target.value)}
+                placeholder="Enter vehicle description..."
+                rows={3}
+                data-testid="input-quick-add-description"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setQuickAddDialogOpen(false); resetQuickAddForm(); }}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleQuickAdd}
+              disabled={createCarMutation.isPending}
+              data-testid="button-add-vehicle"
+            >
+              {createCarMutation.isPending ? "Adding..." : "Add Vehicle"}
             </Button>
           </DialogFooter>
         </DialogContent>
