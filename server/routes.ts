@@ -551,6 +551,7 @@ export async function registerRoutes(
   app.patch("/api/inventory/:id", requireAdmin, async (req, res) => {
     try {
       const updateSchema = z.object({
+        vin: z.string().min(11).max(17).optional(),
         year: z.number().int().min(1900).max(2100).optional(),
         make: z.string().min(1).max(100).optional(),
         model: z.string().min(1).max(100).optional(),
