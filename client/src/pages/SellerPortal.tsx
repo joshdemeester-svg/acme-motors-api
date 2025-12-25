@@ -524,7 +524,7 @@ export default function SellerPortal() {
 
   if (sessionLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
+      <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#47546d' }}>
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -552,7 +552,7 @@ export default function SellerPortal() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0a0a0a]">
+    <div className="flex min-h-screen flex-col [&_input]:border-white [&_textarea]:border-white" style={{ backgroundColor: '#47546d' }}>
       <Navbar />
       <main className="flex-1 py-12">
         <div className="container mx-auto px-4">
@@ -592,7 +592,7 @@ export default function SellerPortal() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : consignmentsError ? (
-              <Card className="border-gray-800 bg-gray-900/50">
+              <Card className="border-white bg-gray-900/50">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
                   <h3 className="text-lg font-medium text-white">Unable to Load Consignments</h3>
@@ -609,7 +609,7 @@ export default function SellerPortal() {
                 </CardContent>
               </Card>
             ) : consignments.length === 0 ? (
-              <Card className="border-gray-800 bg-gray-900/50">
+              <Card className="border-white bg-gray-900/50">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <AlertCircle className="mb-4 h-12 w-12 text-gray-500" />
                   <h3 className="text-lg font-medium text-white">No Consignments Found</h3>
@@ -636,7 +636,7 @@ export default function SellerPortal() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.1 }}
                     >
-                      <Card className="border-gray-800 bg-gray-900/50 overflow-hidden" data-testid={`card-consignment-${consignment.id}`}>
+                      <Card className="border-white bg-gray-900/50 overflow-hidden" data-testid={`card-consignment-${consignment.id}`}>
                         <CardHeader className="pb-4">
                           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                             <div>
