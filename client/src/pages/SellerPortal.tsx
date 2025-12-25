@@ -94,7 +94,7 @@ function StatusTimeline({ currentStatus, consignmentId }: { currentStatus: strin
               {index < milestones.length - 1 && (
                 <div
                   className={`absolute left-1/2 top-5 h-0.5 w-full ${
-                    index < currentIndex ? "bg-green-500" : "bg-gray-700"
+                    index < currentIndex ? "bg-emerald-700" : "bg-gray-700"
                   }`}
                 />
               )}
@@ -102,14 +102,14 @@ function StatusTimeline({ currentStatus, consignmentId }: { currentStatus: strin
                 className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 ${
                   isCompleted
                     ? isCurrent
-                      ? "border-green-500 bg-green-500 text-white"
-                      : "border-green-500 bg-green-500/20 text-green-500"
+                      ? "border-emerald-700 bg-emerald-700 text-white"
+                      : "border-emerald-600 bg-emerald-800/60 text-emerald-300"
                     : "border-gray-600 bg-gray-800 text-gray-500"
                 }`}
               >
                 <Icon className="h-5 w-5" />
               </div>
-              <span className={`mt-2 text-xs font-medium ${isCompleted ? "text-white" : "text-gray-500"}`}>
+              <span className={`mt-2 text-xs font-medium ${isCompleted ? "text-gray-200" : "text-gray-500"}`}>
                 {milestone.label}
               </span>
               {date && (
