@@ -302,6 +302,7 @@ export function ConsignmentForm() {
       toast({
         title: "Consignment Request Received",
         description: "We have received your vehicle details. An agent will contact you shortly.",
+        duration: 5000,
       });
     },
     onError: (error: Error) => {
