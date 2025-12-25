@@ -1,15 +1,17 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Car, Menu, Settings } from "lucide-react";
+import { Car, Menu, Settings, LogIn } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useQuery } from "@tanstack/react-query";
+import { LoginModal } from "@/components/auth/LoginModal";
 
 export function Navbar() {
   const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
   const { settings } = useSettings();
 
   const { data: session } = useQuery({
@@ -75,6 +77,16 @@ export function Navbar() {
               <Settings className="h-4 w-4" /> Admin
             </Link>
           )}
+          {!isAdmin && (
+            <Button 
+              variant="ghost" 
+              className="flex items-center gap-2"
+              onClick={() => setLoginOpen(true)}
+              data-testid="btn-navbar-login"
+            >
+              <LogIn className="h-4 w-4" /> Login
+            </Button>
+          )}
           <Button className="btn-contact ml-4">
             Contact Us
           </Button>
@@ -131,11 +143,23 @@ export function Navbar() {
                     <Settings className="h-5 w-5" /> Admin Dashboard
                   </Link>
                 )}
+                {!isAdmin && (
+                  <Button 
+                    variant="ghost" 
+                    className="flex items-center gap-2 text-lg font-medium justify-start p-0 h-auto"
+                    onClick={() => { setIsOpen(false); setLoginOpen(true); }}
+                    data-testid="btn-mobile-login"
+                  >
+                    <LogIn className="h-5 w-5" /> Login
+                  </Button>
+                )}
               </div>
             </div>
           </SheetContent>
         </Sheet>
       </div>
+
+      <LoginModal open={loginOpen} onOpenChange={setLoginOpen} />
     </nav>
   );
 }

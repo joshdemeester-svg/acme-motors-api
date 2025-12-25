@@ -408,6 +408,132 @@ export async function registerRoutes(
     }
   });
 
+  // Rate limiting for seller code requests (in-memory, resets on server restart)
+  const sellerCodeRateLimit = new Map<string, { count: number; resetAt: number }>();
+  const RATE_LIMIT_WINDOW = 5 * 60 * 1000; // 5 minutes
+  const RATE_LIMIT_MAX = 3; // Max 3 requests per window
+
+  // Seller Portal Authentication Routes
+  app.post("/api/seller/send-code", async (req, res) => {
+    try {
+      const { phone } = req.body;
+      if (!phone || phone.replace(/\D/g, "").length < 10) {
+        return res.status(400).json({ error: "Valid phone number required" });
+      }
+
+      const normalizedPhone = normalizePhoneNumber(phone);
+      
+      // Check rate limit
+      const now = Date.now();
+      const rateEntry = sellerCodeRateLimit.get(normalizedPhone);
+      if (rateEntry) {
+        if (now < rateEntry.resetAt) {
+          if (rateEntry.count >= RATE_LIMIT_MAX) {
+            const waitMinutes = Math.ceil((rateEntry.resetAt - now) / 60000);
+            return res.status(429).json({ 
+              error: `Too many code requests. Please wait ${waitMinutes} minute${waitMinutes > 1 ? 's' : ''} before trying again.` 
+            });
+          }
+          rateEntry.count++;
+        } else {
+          sellerCodeRateLimit.set(normalizedPhone, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+        }
+      } else {
+        sellerCodeRateLimit.set(normalizedPhone, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+      }
+      
+      // Check if this phone has any consignments - use generic error to prevent enumeration
+      const consignments = await storage.getConsignmentsByPhone(normalizedPhone);
+      if (consignments.length === 0) {
+        // Generic message to prevent phone enumeration attacks
+        return res.status(400).json({ error: "Unable to verify phone number. If you have submitted a vehicle, please ensure you're using the same phone number." });
+      }
+
+      const contactId = await createGHLContactForVerification(normalizedPhone, consignments[0].firstName);
+      if (!contactId) {
+        return res.status(500).json({ error: "Unable to send verification code. Please try again." });
+      }
+
+      const code = generateVerificationCode();
+      await storage.createPhoneVerification(normalizedPhone, code, contactId);
+
+      const smsSuccess = await sendGHLSMS(contactId, `Your seller portal login code is: ${code}. This code expires in 10 minutes.`);
+      if (!smsSuccess) {
+        return res.status(500).json({ error: "Failed to send verification SMS. Please try again." });
+      }
+
+      res.json({ success: true, message: "Verification code sent" });
+    } catch (error) {
+      console.error("Error sending seller verification code:", error);
+      res.status(500).json({ error: "Failed to send verification code" });
+    }
+  });
+
+  app.post("/api/seller/verify", async (req, res) => {
+    try {
+      const { phone, code } = req.body;
+      if (!phone || !code) {
+        return res.status(400).json({ error: "Phone and code are required" });
+      }
+
+      const normalizedPhone = normalizePhoneNumber(phone);
+      const verification = await storage.getValidPhoneVerification(normalizedPhone, code);
+      if (!verification) {
+        return res.status(400).json({ error: "Invalid or expired verification code" });
+      }
+
+      await storage.markPhoneVerified(verification.id);
+      
+      // Regenerate session to prevent session fixation attacks
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error("Session regeneration failed:", err);
+          return res.status(500).json({ error: "Authentication failed. Please try again." });
+        }
+        
+        // Set seller session after regeneration
+        req.session.sellerPhone = normalizedPhone;
+        req.session.isSeller = true;
+        
+        res.json({ success: true, verified: true });
+      });
+    } catch (error) {
+      console.error("Error verifying seller code:", error);
+      res.status(500).json({ error: "Failed to verify code" });
+    }
+  });
+
+  app.get("/api/seller/session", (req, res) => {
+    if (req.session.sellerPhone && req.session.isSeller) {
+      res.json({ authenticated: true, phone: req.session.sellerPhone });
+    } else {
+      res.json({ authenticated: false });
+    }
+  });
+
+  app.post("/api/seller/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Failed to logout" });
+      }
+      res.json({ success: true });
+    });
+  });
+
+  app.get("/api/seller/consignments", async (req, res) => {
+    try {
+      if (!req.session.sellerPhone || !req.session.isSeller) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const consignments = await storage.getConsignmentsByPhone(req.session.sellerPhone);
+      res.json(consignments);
+    } catch (error) {
+      console.error("Error fetching seller consignments:", error);
+      res.status(500).json({ error: "Failed to fetch consignments" });
+    }
+  });
+
   app.post("/api/consignments", async (req, res) => {
     try {
       const validatedData = insertConsignmentSchema.parse(req.body);

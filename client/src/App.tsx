@@ -10,6 +10,7 @@ import Inventory from "@/pages/Inventory";
 import VehicleDetails from "@/pages/VehicleDetails";
 import Consign from "@/pages/Consign";
 import Admin from "@/pages/Admin";
+import SellerPortal from "@/pages/SellerPortal";
 
 function Router() {
   return (
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/vehicle/:id">{(params) => <VehicleDetails id={params.id} />}</Route>
       <Route path="/consign" component={Consign} />
       <Route path="/admin" component={Admin} />
+      <Route path="/seller-portal" component={SellerPortal} />
       <Route component={NotFound} />
     </Switch>
   );

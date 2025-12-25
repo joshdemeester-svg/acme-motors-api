@@ -44,6 +44,8 @@ export interface IStorage {
   getValidPhoneVerification(phone: string, code: string): Promise<PhoneVerification | undefined>;
   markPhoneVerified(id: string): Promise<void>;
   isPhoneVerified(phone: string): Promise<boolean>;
+  
+  getConsignmentsByPhone(phone: string): Promise<ConsignmentSubmission[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -209,6 +211,14 @@ export class DatabaseStorage implements IStorage {
         )
       );
     return !!verification;
+  }
+
+  async getConsignmentsByPhone(phone: string): Promise<ConsignmentSubmission[]> {
+    return db
+      .select()
+      .from(consignmentSubmissions)
+      .where(eq(consignmentSubmissions.phone, phone))
+      .orderBy(desc(consignmentSubmissions.createdAt));
   }
 }
 
