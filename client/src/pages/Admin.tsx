@@ -145,7 +145,7 @@ function LogoUploadCard({ logoUrl, setLogoUrl, siteName }: { logoUrl: string; se
   );
 }
 
-function SettingsPanel() {
+function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: () => void; isPending: boolean } | null) => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [siteName, setSiteName] = useState("");
@@ -220,6 +220,11 @@ function SettingsPanel() {
       toast({ title: "Error", description: "Failed to save settings.", variant: "destructive" });
     },
   });
+
+  useEffect(() => {
+    onRegisterSave({ save: () => updateMutation.mutate(), isPending: updateMutation.isPending });
+    return () => onRegisterSave(null);
+  }, [updateMutation.isPending]);
 
   if (isLoading) {
     return <p>Loading settings...</p>;
@@ -470,27 +475,6 @@ function SettingsPanel() {
         </CardContent>
       </Card>
 
-      <div className="md:col-span-2">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium">Save All Settings</h3>
-                <p className="text-sm text-muted-foreground">
-                  Changes will be applied immediately after saving
-                </p>
-              </div>
-              <Button
-                onClick={() => updateMutation.mutate()}
-                disabled={updateMutation.isPending}
-                data-testid="button-save-settings"
-              >
-                {updateMutation.isPending ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }
@@ -585,6 +569,8 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
 function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("submissions");
+  const [saveHandler, setSaveHandler] = useState<{ save: () => void; isPending: boolean } | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<ConsignmentSubmission | null>(null);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [price, setPrice] = useState("");
@@ -896,12 +882,23 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             <h1 className="mb-2 font-serif text-4xl font-bold">Admin Dashboard</h1>
             <p className="text-muted-foreground">Manage consignment submissions and inventory.</p>
           </div>
-          <Button variant="outline" onClick={() => logoutMutation.mutate()} className="gap-2" data-testid="button-logout">
-            <LogOut className="h-4 w-4" /> Logout
-          </Button>
+          <div className="flex items-center gap-2">
+            {activeTab === "settings" && saveHandler && (
+              <Button 
+                onClick={() => saveHandler.save()} 
+                disabled={saveHandler.isPending}
+                data-testid="button-save-settings"
+              >
+                {saveHandler.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => logoutMutation.mutate()} className="gap-2" data-testid="button-logout">
+              <LogOut className="h-4 w-4" /> Logout
+            </Button>
+          </div>
         </div>
 
-        <Tabs defaultValue="submissions" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="submissions" className="gap-2">
               Submissions
@@ -1091,7 +1088,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </TabsContent>
 
           <TabsContent value="settings">
-            <SettingsPanel />
+            <SettingsPanel onRegisterSave={setSaveHandler} />
           </TabsContent>
         </Tabs>
       </div>
