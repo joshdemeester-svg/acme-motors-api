@@ -548,6 +548,41 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/vehicle-makes", async (req, res) => {
+    try {
+      const nhtsaUrl = `https://vpic.nhtsa.dot.gov/api/vehicles/GetMakesForVehicleType/passenger%20car?format=json`;
+      const response = await fetch(nhtsaUrl);
+      
+      if (!response.ok) {
+        throw new Error("NHTSA API request failed");
+      }
+      
+      const data = await response.json();
+      res.json(data.Results || []);
+    } catch (error) {
+      console.error("Error fetching vehicle makes:", error);
+      res.status(500).json({ error: "Failed to fetch vehicle makes" });
+    }
+  });
+
+  app.get("/api/vehicle-models/:make/:year", async (req, res) => {
+    try {
+      const { make, year } = req.params;
+      const nhtsaUrl = `https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMakeYear/make/${encodeURIComponent(make)}/modelyear/${year}?format=json`;
+      const response = await fetch(nhtsaUrl);
+      
+      if (!response.ok) {
+        throw new Error("NHTSA API request failed");
+      }
+      
+      const data = await response.json();
+      res.json(data.Results || []);
+    } catch (error) {
+      console.error("Error fetching vehicle models:", error);
+      res.status(500).json({ error: "Failed to fetch vehicle models" });
+    }
+  });
+
   app.post("/api/vehicle-inquiry", async (req, res) => {
     try {
       const inquirySchema = z.object({
