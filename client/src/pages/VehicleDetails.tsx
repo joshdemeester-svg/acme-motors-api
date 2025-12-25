@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Car, Fuel, Gauge, Calendar, Palette, FileText, Settings, MapPin, Shield, Zap, Users, Factory, Cog, DollarSign, Weight, CircleDot, Lightbulb, Battery, Loader2, CheckCircle, MessageSquare } from "lucide-react";
+import { ArrowLeft, Car, Fuel, Gauge, Calendar, Palette, FileText, Settings, MapPin, Shield, Zap, Users, Factory, Cog, DollarSign, Weight, CircleDot, Lightbulb, Battery, Loader2, CheckCircle, MessageSquare, Search } from "lucide-react";
 import { Link } from "wouter";
 import type { InventoryCar } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
@@ -150,6 +150,8 @@ export default function VehicleDetails({ id }: { id: string }) {
   const [, setLocation] = useLocation();
   const [contactOpen, setContactOpen] = useState(false);
   const [contactSuccess, setContactSuccess] = useState(false);
+  const [search, setSearch] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
   const [formData, setFormData] = useState({
     buyerName: "",
     buyerPhone: "",
@@ -169,6 +171,24 @@ export default function VehicleDetails({ id }: { id: string }) {
       return res.json();
     },
   });
+
+  const { data: allInventory = [] } = useQuery<InventoryCar[]>({
+    queryKey: ["/api/inventory"],
+    queryFn: async () => {
+      const res = await fetch("/api/inventory");
+      if (!res.ok) throw new Error("Failed to fetch inventory");
+      return res.json();
+    },
+  });
+
+  const searchResults = search.trim() 
+    ? allInventory.filter(v => 
+        v.id !== id && (
+          v.make.toLowerCase().includes(search.toLowerCase()) || 
+          v.model.toLowerCase().includes(search.toLowerCase())
+        )
+      ).slice(0, 5)
+    : [];
 
   const { data: vinData, isLoading: vinLoading } = useQuery<VinData>({
     queryKey: ["vin-decode", car?.vin],
@@ -262,12 +282,54 @@ export default function VehicleDetails({ id }: { id: string }) {
       <Navbar />
 
       <div className="container px-4 py-8 md:px-6">
-        <Link href="/inventory">
-          <Button variant="ghost" className="mb-6 gap-2" data-testid="button-back">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Inventory
-          </Button>
-        </Link>
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <Link href="/inventory">
+            <Button variant="ghost" className="gap-2" data-testid="button-back">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Inventory
+            </Button>
+          </Link>
+          
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input 
+              placeholder="Search make or model..." 
+              className="pl-9"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+              data-testid="input-search-details"
+            />
+            {searchFocused && searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-md border bg-popover shadow-lg">
+                {searchResults.map((v) => (
+                  <Link key={v.id} href={`/vehicle/${v.id}`}>
+                    <div 
+                      className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-accent"
+                      onClick={() => {
+                        setSearch("");
+                        setSearchFocused(false);
+                      }}
+                    >
+                      <div className="h-10 w-14 overflow-hidden rounded bg-muted">
+                        <img 
+                          src={v.photos?.[0] || placeholderCar} 
+                          alt={`${v.make} ${v.model}`}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{v.year} {v.make} {v.model}</p>
+                        <p className="text-xs text-muted-foreground">${v.price.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
         <div className="grid gap-8 lg:grid-cols-2">
           <div className="space-y-4">
