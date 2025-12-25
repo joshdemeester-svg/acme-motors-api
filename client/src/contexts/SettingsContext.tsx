@@ -28,6 +28,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       const hsl = hexToHSL(settings.primaryColor);
       if (hsl) {
         document.documentElement.style.setProperty("--primary", `${hsl.h} ${hsl.s}% ${hsl.l}%`);
+        // Set white text on primary buttons if the color is dark (luminance < 50%)
+        const foregroundL = hsl.l < 50 ? 100 : 0;
+        document.documentElement.style.setProperty("--primary-foreground", `0 0% ${foregroundL}%`);
       }
     }
     if (settings?.backgroundColor) {

@@ -708,6 +708,7 @@ export async function registerRoutes(
       const settings = await storage.getSiteSettings();
       res.json(settings || { 
         primaryColor: "#D4AF37", 
+        backgroundColor: "#000000",
         siteName: "PRESTIGE", 
         logoUrl: null,
         contactAddress1: null,
@@ -729,7 +730,8 @@ export async function registerRoutes(
   app.patch("/api/settings", requireAdmin, async (req, res) => {
     try {
       const { 
-        primaryColor, 
+        primaryColor,
+        backgroundColor,
         siteName, 
         logoUrl,
         contactAddress1,
@@ -744,6 +746,7 @@ export async function registerRoutes(
       } = req.body;
       const settings = await storage.updateSiteSettings({ 
         primaryColor, 
+        backgroundColor,
         siteName, 
         logoUrl,
         contactAddress1,
