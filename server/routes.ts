@@ -524,8 +524,13 @@ export async function registerRoutes(
   app.get("/api/vin-decode/:vin", async (req, res) => {
     try {
       const { vin } = req.params;
-      if (!vin || vin.length < 11) {
-        return res.status(400).json({ error: "Invalid VIN" });
+      if (!vin || vin.length !== 17) {
+        return res.status(400).json({ error: "VIN must be exactly 17 characters", valid: false });
+      }
+      
+      const vinRegex = /^[A-HJ-NPR-Z0-9]{17}$/i;
+      if (!vinRegex.test(vin)) {
+        return res.status(400).json({ error: "VIN contains invalid characters", valid: false });
       }
       
       const nhtsaUrl = `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`;
@@ -538,13 +543,47 @@ export async function registerRoutes(
       const data = await response.json();
       
       if (data.Results && data.Results.length > 0) {
-        res.json(data.Results[0]);
+        const result = data.Results[0];
+        
+        const errorCode = result.ErrorCode || "";
+        const hasSignificantErrors = errorCode.split(",").some((code: string) => {
+          const trimmed = code.trim();
+          return trimmed !== "0" && trimmed !== "6" && trimmed !== "";
+        });
+        
+        const vehicleType = (result.VehicleType || "").toLowerCase();
+        const isPassengerVehicle = vehicleType.includes("passenger") || 
+                                    vehicleType.includes("multipurpose") ||
+                                    vehicleType.includes("truck") ||
+                                    vehicleType === "";
+        
+        const hasValidMake = result.Make && result.Make.trim() !== "";
+        const hasValidModel = result.Model && result.Model.trim() !== "";
+        const hasValidYear = result.ModelYear && !isNaN(parseInt(result.ModelYear));
+        
+        if (hasSignificantErrors || !hasValidMake || !hasValidYear) {
+          return res.status(400).json({ 
+            error: "VIN not recognized as a valid vehicle", 
+            valid: false,
+            errorText: result.ErrorText || "Unable to decode VIN"
+          });
+        }
+        
+        if (!isPassengerVehicle) {
+          return res.status(400).json({ 
+            error: "VIN is not for a passenger vehicle", 
+            valid: false,
+            vehicleType: result.VehicleType
+          });
+        }
+        
+        res.json({ ...result, valid: true });
       } else {
-        res.json({ ErrorCode: "1", ErrorText: "No results found" });
+        res.status(400).json({ error: "No results found for this VIN", valid: false });
       }
     } catch (error) {
       console.error("Error decoding VIN:", error);
-      res.status(500).json({ error: "Failed to decode VIN" });
+      res.status(500).json({ error: "Failed to decode VIN", valid: false });
     }
   });
 

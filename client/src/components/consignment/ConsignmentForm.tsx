@@ -49,19 +49,36 @@ interface VINDecodeResult {
   model: string;
 }
 
-async function decodeVIN(vin: string): Promise<VINDecodeResult | null> {
+interface VINDecodeResponse {
+  valid: boolean;
+  error?: string;
+  ModelYear?: string;
+  Make?: string;
+  Model?: string;
+}
+
+async function decodeVIN(vin: string): Promise<{ success: boolean; data?: VINDecodeResult; error?: string }> {
   const res = await fetch(`/api/vin-decode/${vin}`);
-  if (!res.ok) return null;
-  const data = await res.json();
+  const data: VINDecodeResponse = await res.json();
+  
+  if (!res.ok || !data.valid) {
+    return { 
+      success: false, 
+      error: data.error || "Invalid VIN" 
+    };
+  }
   
   if (data.ModelYear || data.Make || data.Model) {
     return { 
-      year: data.ModelYear || "", 
-      make: data.Make || "", 
-      model: data.Model || "" 
+      success: true,
+      data: {
+        year: data.ModelYear || "", 
+        make: data.Make || "", 
+        model: data.Model || "" 
+      }
     };
   }
-  return null;
+  return { success: false, error: "Could not decode VIN" };
 }
 
 const formSchema = z.object({
@@ -154,18 +171,28 @@ export function ConsignmentForm() {
     
     setIsDecodingVin(true);
     try {
-      const decoded = await decodeVIN(vin);
-      if (decoded) {
-        if (decoded.year) {
-          setSelectedYear(decoded.year);
-          form.setValue("year", decoded.year);
+      const result = await decodeVIN(vin);
+      
+      if (!result.success) {
+        toast({
+          title: "Invalid VIN",
+          description: result.error || "Please check the VIN and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (result.data) {
+        if (result.data.year) {
+          setSelectedYear(result.data.year);
+          form.setValue("year", result.data.year);
         }
-        if (decoded.make) {
-          setSelectedMake(decoded.make);
-          form.setValue("make", decoded.make);
+        if (result.data.make) {
+          setSelectedMake(result.data.make);
+          form.setValue("make", result.data.make);
         }
-        if (decoded.model) {
-          form.setValue("model", decoded.model);
+        if (result.data.model) {
+          form.setValue("model", result.data.model);
         }
         toast({
           title: "VIN Decoded",
@@ -174,6 +201,11 @@ export function ConsignmentForm() {
       }
     } catch (error) {
       console.error("VIN decode error:", error);
+      toast({
+        title: "VIN Decode Failed",
+        description: "Unable to decode VIN. Please enter vehicle details manually.",
+        variant: "destructive",
+      });
     } finally {
       setIsDecodingVin(false);
     }
