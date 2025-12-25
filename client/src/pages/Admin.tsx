@@ -40,22 +40,13 @@ function StatusBadge({ status }: { status: string }) {
 function LogoUploadCard({ logoUrl, setLogoUrl, siteName, saveMutation }: { logoUrl: string; setLogoUrl: (url: string) => void; siteName: string; saveMutation: { mutate: () => void; isPending: boolean } }) {
   const { getUploadParameters } = useUpload();
   
-  const handleUploadComplete = async (result: any) => {
+  const handleUploadComplete = (result: any) => {
     if (result.successful && result.successful.length > 0) {
       const uploadedFile = result.successful[0];
-      const response = await fetch("/api/uploads/request-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: uploadedFile.name,
-          size: uploadedFile.size,
-          contentType: uploadedFile.type || "image/png",
-        }),
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setLogoUrl(data.objectPath);
-      }
+      const urlParts = uploadedFile.uploadURL?.split("/") || [];
+      const objectId = urlParts[urlParts.length - 1]?.split("?")[0] || "";
+      const objectPath = `/objects/uploads/${objectId}`;
+      setLogoUrl(objectPath);
     }
   };
 
@@ -1599,13 +1590,15 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     return { method: "PUT", url: uploadUrl };
                   }}
                   onComplete={(result) => {
-                    const newPhotos = result.successful.map((file) => {
+                    const newPhotos = (result.successful || []).map((file) => {
                       const urlParts = file.uploadURL?.split("/") || [];
                       const objectId = urlParts[urlParts.length - 1]?.split("?")[0] || "";
                       return `/objects/uploads/${objectId}`;
                     });
-                    setEditPhotos([...editPhotos, ...newPhotos]);
-                    toast({ title: "Photos Uploaded", description: `${newPhotos.length} photo(s) added.` });
+                    if (newPhotos.length > 0) {
+                      setEditPhotos([...editPhotos, ...newPhotos]);
+                      toast({ title: "Photos Uploaded", description: `${newPhotos.length} photo(s) added.` });
+                    }
                   }}
                   buttonClassName="h-8"
                 >
