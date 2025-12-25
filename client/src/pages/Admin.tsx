@@ -298,7 +298,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   return (
     <div className="space-y-6">
       {/* Logo Section - First */}
-      <Card>
+      <Card className="border-white border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Image className="h-5 w-5" /> Logo & Site Name
@@ -429,7 +429,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       </Card>
 
       {/* Branding Section */}
-      <Card>
+      <Card className="border-white border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Palette className="h-5 w-5" /> Branding & Colors
@@ -650,7 +650,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       </Card>
 
       {/* Vehicle Details Section */}
-      <Card>
+      <Card className="border-white border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Car className="h-5 w-5" /> Vehicle Details
@@ -714,7 +714,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       </Card>
 
       {/* Home Page Section */}
-      <Card>
+      <Card className="border-white border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Palette className="h-5 w-5" /> Home Page
@@ -777,7 +777,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
         </CardFooter>
       </Card>
 
-      <Card>
+      <Card className="border-white border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5" /> Contact Information
@@ -860,7 +860,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       </Card>
 
       {/* Social Icon Colors */}
-      <Card>
+      <Card className="border-white border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Instagram className="h-5 w-5" /> Social Icon Colors
@@ -923,7 +923,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
         </CardFooter>
       </Card>
 
-      <Card>
+      <Card className="border-white border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Instagram className="h-5 w-5" /> Social Media Links
@@ -1012,7 +1012,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
         </CardFooter>
       </Card>
 
-      <Card>
+      <Card className="border-white border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5" /> Consignment Settings
@@ -1554,7 +1554,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const pendingSubmissions = submissions.filter(s => s.status === "pending");
 
   return (
-    <div className="min-h-screen bg-muted/50">
+    <div className="min-h-screen" style={{ backgroundColor: '#3f3e3e' }}>
       <div className="container px-4 py-12 md:px-6">
         <div className="mb-8 flex items-center justify-between">
           <div>
@@ -1584,7 +1584,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             {loadingSubmissions ? (
               <p>Loading...</p>
             ) : submissions.length === 0 ? (
-              <Card>
+              <Card className="border-white border">
                 <CardContent className="py-12 text-center">
                   <p className="text-muted-foreground">No submissions yet.</p>
                 </CardContent>
@@ -1592,7 +1592,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             ) : (
               <div className="grid gap-4">
                 {submissions.map((sub) => (
-                  <Card key={sub.id} className="overflow-hidden">
+                  <Card key={sub.id} className="overflow-hidden border-white border">
                     <CardHeader className="flex flex-row items-start justify-between gap-4">
                       <div>
                         <CardTitle className="font-serif text-xl">
@@ -1708,7 +1708,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             {loadingInventory ? (
               <p>Loading...</p>
             ) : inventory.length === 0 ? (
-              <Card>
+              <Card className="border-white border">
                 <CardContent className="py-12 text-center">
                   <p className="text-muted-foreground">No vehicles in inventory yet. Use Quick Add to add your first vehicle!</p>
                 </CardContent>
@@ -1716,7 +1716,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {inventory.map((car) => (
-                  <Card key={car.id} className="overflow-hidden">
+                  <Card key={car.id} className="overflow-hidden border-white border">
                     <div className="aspect-[16/9] overflow-hidden relative">
                       <img
                         src={car.photos && car.photos.length > 0 ? car.photos[0] : placeholderCar}
