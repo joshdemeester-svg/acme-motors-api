@@ -592,8 +592,37 @@ export function ConsignmentForm() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="color">Exterior Color</Label>
-                    <Input id="color" placeholder="e.g. GT Silver" {...form.register("color")} data-testid="input-color" className="border-white/30" />
+                    <Label>Exterior Color</Label>
+                    <Select 
+                      onValueChange={(value) => form.setValue("color", value)}
+                      value={form.watch("color") || ""}
+                    >
+                      <SelectTrigger data-testid="select-color" className="border-white/30">
+                        <SelectValue placeholder="Select color" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="White">White</SelectItem>
+                        <SelectItem value="Black">Black</SelectItem>
+                        <SelectItem value="Silver">Silver</SelectItem>
+                        <SelectItem value="Gray">Gray</SelectItem>
+                        <SelectItem value="Red">Red</SelectItem>
+                        <SelectItem value="Blue">Blue</SelectItem>
+                        <SelectItem value="Navy Blue">Navy Blue</SelectItem>
+                        <SelectItem value="Brown">Brown</SelectItem>
+                        <SelectItem value="Beige">Beige</SelectItem>
+                        <SelectItem value="Green">Green</SelectItem>
+                        <SelectItem value="Orange">Orange</SelectItem>
+                        <SelectItem value="Yellow">Yellow</SelectItem>
+                        <SelectItem value="Gold">Gold</SelectItem>
+                        <SelectItem value="Burgundy">Burgundy</SelectItem>
+                        <SelectItem value="Champagne">Champagne</SelectItem>
+                        <SelectItem value="Pearl White">Pearl White</SelectItem>
+                        <SelectItem value="Midnight Blue">Midnight Blue</SelectItem>
+                        <SelectItem value="Charcoal">Charcoal</SelectItem>
+                        <SelectItem value="Bronze">Bronze</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
                     {form.formState.errors.color && <p className="text-sm font-semibold text-red-400">{form.formState.errors.color.message}</p>}
                   </div>
                 </motion.div>
