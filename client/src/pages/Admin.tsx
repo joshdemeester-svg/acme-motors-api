@@ -150,6 +150,7 @@ function SettingsPanel() {
   const queryClient = useQueryClient();
   const [siteName, setSiteName] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#D4AF37");
+  const [backgroundColor, setBackgroundColor] = useState("#000000");
   const [logoUrl, setLogoUrl] = useState("");
   const [contactAddress1, setContactAddress1] = useState("");
   const [contactAddress2, setContactAddress2] = useState("");
@@ -173,6 +174,7 @@ function SettingsPanel() {
     if (settings) {
       setSiteName(settings.siteName || "PRESTIGE");
       setPrimaryColor(settings.primaryColor || "#D4AF37");
+      setBackgroundColor(settings.backgroundColor || "#000000");
       setLogoUrl(settings.logoUrl || "");
       setContactAddress1(settings.contactAddress1 || "");
       setContactAddress2(settings.contactAddress2 || "");
@@ -193,7 +195,8 @@ function SettingsPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           siteName, 
-          primaryColor, 
+          primaryColor,
+          backgroundColor, 
           logoUrl: logoUrl || null,
           contactAddress1: contactAddress1 || null,
           contactAddress2: contactAddress2 || null,
@@ -282,6 +285,47 @@ function SettingsPanel() {
                 placeholder="#D4AF37"
                 className="flex-1"
                 data-testid="input-color-hex"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Background Color</Label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { name: "Black", value: "#000000" },
+                { name: "Dark Gray", value: "#1a1a1a" },
+                { name: "Charcoal", value: "#333333" },
+                { name: "Navy", value: "#0f172a" },
+                { name: "Dark Blue", value: "#1e293b" },
+                { name: "White", value: "#ffffff" },
+              ].map((preset) => (
+                <button
+                  key={preset.value}
+                  onClick={() => setBackgroundColor(preset.value)}
+                  className={`h-10 w-10 rounded-full border-2 transition-all ${
+                    backgroundColor === preset.value ? "border-primary scale-110" : "border-muted"
+                  }`}
+                  style={{ backgroundColor: preset.value }}
+                  title={preset.name}
+                  data-testid={`bg-color-${preset.name.toLowerCase().replace(' ', '-')}`}
+                />
+              ))}
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <Input
+                type="color"
+                value={backgroundColor}
+                onChange={(e) => setBackgroundColor(e.target.value)}
+                className="h-10 w-14 p-1 cursor-pointer"
+                data-testid="input-bg-color-picker"
+              />
+              <Input
+                value={backgroundColor}
+                onChange={(e) => setBackgroundColor(e.target.value)}
+                placeholder="#000000"
+                className="flex-1"
+                data-testid="input-bg-color-hex"
               />
             </div>
           </div>
