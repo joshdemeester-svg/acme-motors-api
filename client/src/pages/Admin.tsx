@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star } from "lucide-react";
+import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import type { ConsignmentSubmission, InventoryCar, SiteSettings } from "@shared/schema";
@@ -178,6 +178,9 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [twitterUrl, setTwitterUrl] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [tiktokUrl, setTiktokUrl] = useState("");
+  const [commissionRate, setCommissionRate] = useState("10");
+  const [avgDaysToFirstInquiry, setAvgDaysToFirstInquiry] = useState("5");
+  const [avgDaysToSell, setAvgDaysToSell] = useState("45");
 
   const { data: settings, isLoading } = useQuery<SiteSettings>({
     queryKey: ["/api/settings"],
@@ -217,6 +220,9 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setTwitterUrl(settings.twitterUrl || "");
       setYoutubeUrl(settings.youtubeUrl || "");
       setTiktokUrl(settings.tiktokUrl || "");
+      setCommissionRate(String(settings.commissionRate || 10));
+      setAvgDaysToFirstInquiry(String(settings.avgDaysToFirstInquiry || 5));
+      setAvgDaysToSell(String(settings.avgDaysToSell || 45));
     }
   }, [settings]);
 
@@ -254,6 +260,9 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           twitterUrl: twitterUrl || null,
           youtubeUrl: youtubeUrl || null,
           tiktokUrl: tiktokUrl || null,
+          commissionRate: parseInt(commissionRate) || 10,
+          avgDaysToFirstInquiry: parseInt(avgDaysToFirstInquiry) || 5,
+          avgDaysToSell: parseInt(avgDaysToSell) || 45,
         }),
       });
       if (!res.ok) throw new Error("Failed to update settings");
@@ -1003,6 +1012,68 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
         </CardFooter>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" /> Consignment Settings
+          </CardTitle>
+          <CardDescription>Configure commission rates and timeline estimates for the seller portal</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="commissionRate">Commission Rate (%)</Label>
+              <Input
+                id="commissionRate"
+                type="number"
+                min="0"
+                max="100"
+                value={commissionRate}
+                onChange={(e) => setCommissionRate(e.target.value)}
+                placeholder="10"
+                data-testid="input-commission-rate"
+              />
+              <p className="text-xs text-muted-foreground">Default commission percentage on vehicle sales</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="avgDaysToFirstInquiry">Avg. Days to First Inquiry</Label>
+              <Input
+                id="avgDaysToFirstInquiry"
+                type="number"
+                min="1"
+                value={avgDaysToFirstInquiry}
+                onChange={(e) => setAvgDaysToFirstInquiry(e.target.value)}
+                placeholder="5"
+                data-testid="input-avg-days-inquiry"
+              />
+              <p className="text-xs text-muted-foreground">Shown in seller portal "What's Next" section</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="avgDaysToSell">Avg. Days to Sell</Label>
+              <Input
+                id="avgDaysToSell"
+                type="number"
+                min="1"
+                value={avgDaysToSell}
+                onChange={(e) => setAvgDaysToSell(e.target.value)}
+                placeholder="45"
+                data-testid="input-avg-days-sell"
+              />
+              <p className="text-xs text-muted-foreground">Average time to sell similar vehicles</p>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button 
+            onClick={() => updateMutation.mutate()} 
+            disabled={updateMutation.isPending}
+            data-testid="button-save-consignment"
+          >
+            {updateMutation.isPending ? "Saving..." : "Save Consignment Settings"}
+          </Button>
+        </CardFooter>
+      </Card>
+
     </div>
   );
 }
@@ -1102,6 +1173,10 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [selectedSubmission, setSelectedSubmission] = useState<ConsignmentSubmission | null>(null);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [price, setPrice] = useState("");
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const [noteContent, setNoteContent] = useState("");
+  const [payoutDialogOpen, setPayoutDialogOpen] = useState(false);
+  const [customPayout, setCustomPayout] = useState("");
   
   const [selectedCar, setSelectedCar] = useState<InventoryCar | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -1182,6 +1257,42 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/consignments"] });
       toast({ title: "Submission Rejected" });
+    },
+  });
+
+  const addNoteMutation = useMutation({
+    mutationFn: async ({ consignmentId, content }: { consignmentId: string; content: string }) => {
+      const res = await fetch(`/api/consignments/${consignmentId}/notes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!res.ok) throw new Error("Failed to add note");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/consignments"] });
+      setNoteDialogOpen(false);
+      setNoteContent("");
+      toast({ title: "Note added", description: "The seller will see this note in their portal." });
+    },
+  });
+
+  const updatePayoutMutation = useMutation({
+    mutationFn: async ({ consignmentId, customPayoutAmount }: { consignmentId: string; customPayoutAmount: number | null }) => {
+      const res = await fetch(`/api/consignments/${consignmentId}/payout`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customPayoutAmount }),
+      });
+      if (!res.ok) throw new Error("Failed to update payout");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/consignments"] });
+      setPayoutDialogOpen(false);
+      setCustomPayout("");
+      toast({ title: "Custom payout set", description: "The seller will see the updated payout in their portal." });
     },
   });
 
@@ -1518,27 +1629,52 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         </div>
                       )}
 
-                      {sub.status === "pending" && (
-                        <div className="flex gap-2 pt-4">
-                          <Button
-                            onClick={() => {
-                              setSelectedSubmission(sub);
-                              setApproveDialogOpen(true);
-                            }}
-                            className="gap-2"
-                          >
-                            <Check className="h-4 w-4" /> Approve & Set Price
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            onClick={() => rejectMutation.mutate(sub.id)}
-                            disabled={rejectMutation.isPending}
-                            className="gap-2"
-                          >
-                            <X className="h-4 w-4" /> Reject
-                          </Button>
-                        </div>
-                      )}
+                      <div className="flex flex-wrap gap-2 pt-4 border-t">
+                        {sub.status === "pending" && (
+                          <>
+                            <Button
+                              onClick={() => {
+                                setSelectedSubmission(sub);
+                                setApproveDialogOpen(true);
+                              }}
+                              className="gap-2"
+                            >
+                              <Check className="h-4 w-4" /> Approve & Set Price
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={() => rejectMutation.mutate(sub.id)}
+                              disabled={rejectMutation.isPending}
+                              className="gap-2"
+                            >
+                              <X className="h-4 w-4" /> Reject
+                            </Button>
+                          </>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedSubmission(sub);
+                            setNoteDialogOpen(true);
+                          }}
+                          className="gap-1"
+                        >
+                          <MessageSquare className="h-4 w-4" /> Add Note
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedSubmission(sub);
+                            setCustomPayout(sub.customPayoutAmount?.toString() || "");
+                            setPayoutDialogOpen(true);
+                          }}
+                          className="gap-1"
+                        >
+                          <DollarSign className="h-4 w-4" /> Set Payout
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -1677,6 +1813,86 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               disabled={!price || approveMutation.isPending}
             >
               {approveMutation.isPending ? "Approving..." : "Approve"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={noteDialogOpen} onOpenChange={setNoteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Note for Seller</DialogTitle>
+            <DialogDescription>
+              This note will be visible to the vehicle owner in their seller portal for {selectedSubmission?.year} {selectedSubmission?.make} {selectedSubmission?.model}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="noteContent">Note</Label>
+              <Textarea
+                id="noteContent"
+                placeholder="e.g. We've scheduled your vehicle for professional photography..."
+                value={noteContent}
+                onChange={(e) => setNoteContent(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNoteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedSubmission && noteContent.trim()) {
+                  addNoteMutation.mutate({ consignmentId: selectedSubmission.id, content: noteContent.trim() });
+                }
+              }}
+              disabled={!noteContent.trim() || addNoteMutation.isPending}
+            >
+              {addNoteMutation.isPending ? "Adding..." : "Add Note"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={payoutDialogOpen} onOpenChange={setPayoutDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Set Custom Payout</DialogTitle>
+            <DialogDescription>
+              Override the standard commission-based payout for {selectedSubmission?.year} {selectedSubmission?.make} {selectedSubmission?.model}. Leave blank to use the default commission rate.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="customPayout">Custom Payout Amount ($)</Label>
+              <Input
+                id="customPayout"
+                type="number"
+                placeholder="e.g. 40000"
+                value={customPayout}
+                onChange={(e) => setCustomPayout(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                This is the amount the seller will receive. Leave empty to calculate based on listing price minus commission.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPayoutDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedSubmission) {
+                  const amount = customPayout ? parseInt(customPayout) : null;
+                  updatePayoutMutation.mutate({ consignmentId: selectedSubmission.id, customPayoutAmount: amount });
+                }
+              }}
+              disabled={updatePayoutMutation.isPending}
+            >
+              {updatePayoutMutation.isPending ? "Saving..." : customPayout ? "Set Custom Payout" : "Clear Override"}
             </Button>
           </DialogFooter>
         </DialogContent>

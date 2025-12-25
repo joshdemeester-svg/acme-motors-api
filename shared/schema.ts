@@ -50,6 +50,8 @@ export const consignmentSubmissions = pgTable("consignment_submissions", {
   
   status: text("status").notNull().default("pending"),
   
+  customPayoutAmount: integer("custom_payout_amount"),
+  
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -57,6 +59,7 @@ export const insertConsignmentSchema = createInsertSchema(consignmentSubmissions
   id: true,
   createdAt: true,
   status: true,
+  customPayoutAmount: true,
 });
 
 export type InsertConsignment = z.infer<typeof insertConsignmentSchema>;
@@ -124,6 +127,9 @@ export const siteSettings = pgTable("site_settings", {
   twitterUrl: text("twitter_url"),
   youtubeUrl: text("youtube_url"),
   tiktokUrl: text("tiktok_url"),
+  commissionRate: integer("commission_rate").default(10),
+  avgDaysToFirstInquiry: integer("avg_days_to_first_inquiry").default(5),
+  avgDaysToSell: integer("avg_days_to_sell").default(45),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
@@ -156,3 +162,38 @@ export const statusHistory = pgTable("status_history", {
 });
 
 export type StatusHistory = typeof statusHistory.$inferSelect;
+
+export const sellerNotes = pgTable("seller_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  consignmentId: varchar("consignment_id").notNull().references(() => consignmentSubmissions.id),
+  content: text("content").notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertSellerNoteSchema = createInsertSchema(sellerNotes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertSellerNote = z.infer<typeof insertSellerNoteSchema>;
+export type SellerNote = typeof sellerNotes.$inferSelect;
+
+export const sellerDocuments = pgTable("seller_documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  consignmentId: varchar("consignment_id").notNull().references(() => consignmentSubmissions.id),
+  documentType: text("document_type").notNull(),
+  fileName: text("file_name").notNull(),
+  fileUrl: text("file_url").notNull(),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertSellerDocumentSchema = createInsertSchema(sellerDocuments).omit({
+  id: true,
+  createdAt: true,
+  status: true,
+});
+
+export type InsertSellerDocument = z.infer<typeof insertSellerDocumentSchema>;
+export type SellerDocument = typeof sellerDocuments.$inferSelect;

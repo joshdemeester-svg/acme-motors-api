@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Car, Clock, CheckCircle, XCircle, AlertCircle, LogOut, Loader2, DollarSign, Tag, FileCheck } from "lucide-react";
+import { Car, Clock, CheckCircle, XCircle, AlertCircle, LogOut, Loader2, DollarSign, Tag, FileCheck, TrendingUp, MessageSquare, FileText, Upload, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import { useUpload } from "@/hooks/use-upload";
 
 interface ConsignmentSubmission {
   id: string;
@@ -118,6 +120,326 @@ function StatusTimeline({ currentStatus, consignmentId }: { currentStatus: strin
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+interface PayoutInfo {
+  status: string;
+  hasListing: boolean;
+  listingPrice?: number;
+  commissionRate?: number;
+  estimatedPayout?: number;
+  isCustomPayout?: boolean;
+  message?: string;
+}
+
+function PayoutCard({ consignmentId }: { consignmentId: string }) {
+  const { data: payout } = useQuery({
+    queryKey: ["/api/seller/consignments", consignmentId, "payout"],
+    queryFn: async () => {
+      const res = await fetch(`/api/seller/consignments/${consignmentId}/payout`);
+      if (!res.ok) return null;
+      return res.json() as Promise<PayoutInfo>;
+    },
+  });
+
+  if (!payout?.hasListing) {
+    return (
+      <div className="mt-4 rounded-lg border border-gray-700 bg-gray-800/50 p-4">
+        <div className="flex items-center gap-2 text-gray-400">
+          <DollarSign className="h-5 w-5" />
+          <span className="text-sm">Payout information will be available once your vehicle is listed</span>
+        </div>
+      </div>
+    );
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  return (
+    <div className="mt-4 rounded-lg border border-emerald-800/50 bg-emerald-900/20 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <DollarSign className="h-5 w-5 text-emerald-400" />
+        <span className="font-medium text-white">Estimated Payout</span>
+      </div>
+      <div className="space-y-2 text-sm">
+        <div className="flex justify-between">
+          <span className="text-gray-400">Listing Price</span>
+          <span className="text-white">{formatCurrency(payout.listingPrice!)}</span>
+        </div>
+        {!payout.isCustomPayout && (
+          <div className="flex justify-between">
+            <span className="text-gray-400">Commission ({payout.commissionRate}%)</span>
+            <span className="text-red-400">-{formatCurrency(Math.round(payout.listingPrice! * (payout.commissionRate! / 100)))}</span>
+          </div>
+        )}
+        <Separator className="my-2 bg-gray-700" />
+        <div className="flex justify-between text-lg">
+          <span className="font-medium text-white">Your Payout</span>
+          <span className="font-bold text-emerald-400">{formatCurrency(payout.estimatedPayout!)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface SellerNote {
+  id: string;
+  consignmentId: string;
+  content: string;
+  createdAt: string;
+}
+
+function NotesCard({ consignmentId }: { consignmentId: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const { data: notes = [] } = useQuery({
+    queryKey: ["/api/seller/consignments", consignmentId, "notes"],
+    queryFn: async () => {
+      const res = await fetch(`/api/seller/consignments/${consignmentId}/notes`);
+      if (!res.ok) return [];
+      return res.json() as Promise<SellerNote[]>;
+    },
+  });
+
+  if (notes.length === 0) return null;
+
+  const visibleNotes = expanded ? notes : notes.slice(0, 2);
+
+  return (
+    <div className="mt-4 rounded-lg border border-blue-800/50 bg-blue-900/20 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <MessageSquare className="h-5 w-5 text-blue-400" />
+        <span className="font-medium text-white">Updates from Our Team</span>
+      </div>
+      <div className="space-y-3">
+        {visibleNotes.map((note) => (
+          <div key={note.id} className="rounded bg-gray-800/50 p-3">
+            <p className="text-sm text-gray-300">{note.content}</p>
+            <p className="mt-1 text-xs text-gray-500">
+              {new Date(note.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            </p>
+          </div>
+        ))}
+      </div>
+      {notes.length > 2 && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mt-2 w-full text-blue-400 hover:text-blue-300"
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? (
+            <>
+              <ChevronUp className="mr-1 h-4 w-4" /> Show Less
+            </>
+          ) : (
+            <>
+              <ChevronDown className="mr-1 h-4 w-4" /> Show {notes.length - 2} More Updates
+            </>
+          )}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+interface SellerDocument {
+  id: string;
+  consignmentId: string;
+  documentType: string;
+  fileName: string;
+  fileUrl: string;
+  status: string;
+  createdAt: string;
+}
+
+const documentTypes = [
+  { value: "title", label: "Vehicle Title" },
+  { value: "registration", label: "Registration" },
+  { value: "service_records", label: "Service Records" },
+  { value: "other", label: "Other Document" },
+];
+
+function DocumentsCard({ consignmentId }: { consignmentId: string }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { getUploadParameters } = useUpload();
+  const [selectedType, setSelectedType] = useState("title");
+
+  const { data: documents = [] } = useQuery({
+    queryKey: ["/api/seller/consignments", consignmentId, "documents"],
+    queryFn: async () => {
+      const res = await fetch(`/api/seller/consignments/${consignmentId}/documents`);
+      if (!res.ok) return [];
+      return res.json() as Promise<SellerDocument[]>;
+    },
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: async (data: { documentType: string; fileName: string; fileUrl: string }) => {
+      const res = await fetch(`/api/seller/consignments/${consignmentId}/documents`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to upload document");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/seller/consignments", consignmentId, "documents"] });
+      toast({ title: "Document Uploaded", description: "Your document has been submitted for review." });
+    },
+    onError: () => {
+      toast({ title: "Upload Failed", description: "Failed to upload document. Please try again.", variant: "destructive" });
+    },
+  });
+
+  const handleUploadComplete = (result: any) => {
+    if (result.successful && result.successful.length > 0) {
+      const uploadedFile = result.successful[0];
+      const urlParts = uploadedFile.uploadURL?.split("/") || [];
+      const objectId = urlParts[urlParts.length - 1]?.split("?")[0] || "";
+      const objectPath = `/objects/uploads/${objectId}`;
+      
+      uploadMutation.mutate({
+        documentType: selectedType,
+        fileName: uploadedFile.name || "document",
+        fileUrl: objectPath,
+      });
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "approved":
+        return <Badge className="bg-green-500/20 text-green-400">Approved</Badge>;
+      case "rejected":
+        return <Badge className="bg-red-500/20 text-red-400">Rejected</Badge>;
+      default:
+        return <Badge className="bg-yellow-500/20 text-yellow-400">Pending Review</Badge>;
+    }
+  };
+
+  return (
+    <div className="mt-4 rounded-lg border border-gray-700 bg-gray-800/30 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <FileText className="h-5 w-5 text-gray-400" />
+        <span className="font-medium text-white">Documents</span>
+      </div>
+
+      {documents.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {documents.map((doc) => (
+            <div key={doc.id} className="flex items-center justify-between rounded bg-gray-800/50 p-3">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-gray-400" />
+                <div>
+                  <p className="text-sm text-white">{documentTypes.find(t => t.value === doc.documentType)?.label || doc.documentType}</p>
+                  <p className="text-xs text-gray-500">{doc.fileName}</p>
+                </div>
+              </div>
+              {getStatusBadge(doc.status)}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="space-y-3">
+        <div>
+          <label className="mb-1 block text-sm text-gray-400">Document Type</label>
+          <select
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value)}
+            className="w-full rounded border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white"
+          >
+            {documentTypes.map((type) => (
+              <option key={type.value} value={type.value}>{type.label}</option>
+            ))}
+          </select>
+        </div>
+        <ObjectUploader
+          maxNumberOfFiles={1}
+          maxFileSize={10485760}
+          onGetUploadParameters={getUploadParameters}
+          onComplete={handleUploadComplete}
+          buttonClassName="w-full"
+        >
+          <Upload className="mr-2 h-4 w-4" />
+          Upload Document
+        </ObjectUploader>
+        <p className="text-xs text-gray-500">Upload title, registration, or service records (PDF, JPG, PNG - max 10MB)</p>
+      </div>
+    </div>
+  );
+}
+
+function WhatsNextCard({ consignmentId, createdAt, status }: { consignmentId: string; createdAt: string; status: string }) {
+  const { data: settings } = useQuery({
+    queryKey: ["/api/settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/settings");
+      return res.json();
+    },
+  });
+
+  const avgDaysToFirstInquiry = settings?.avgDaysToFirstInquiry || 5;
+  const avgDaysToSell = settings?.avgDaysToSell || 45;
+
+  const daysListed = Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24));
+
+  if (status === "sold") {
+    return (
+      <div className="mt-4 rounded-lg border border-purple-800/50 bg-purple-900/20 p-4">
+        <div className="flex items-center gap-2">
+          <CheckCircle className="h-5 w-5 text-purple-400" />
+          <span className="font-medium text-white">Congratulations!</span>
+        </div>
+        <p className="mt-2 text-sm text-gray-300">Your vehicle has been sold. Our team will contact you about payout details.</p>
+      </div>
+    );
+  }
+
+  if (status === "pending") {
+    return (
+      <div className="mt-4 rounded-lg border border-yellow-800/50 bg-yellow-900/20 p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <TrendingUp className="h-5 w-5 text-yellow-400" />
+          <span className="font-medium text-white">What's Next</span>
+        </div>
+        <p className="text-sm text-gray-300">Our team is reviewing your submission. This typically takes 1-2 business days.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 rounded-lg border border-blue-800/50 bg-blue-900/20 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <TrendingUp className="h-5 w-5 text-blue-400" />
+        <span className="font-medium text-white">What's Next</span>
+      </div>
+      <p className="text-sm text-gray-400 mb-3">Based on similar vehicles:</p>
+      <div className="space-y-2 text-sm">
+        <div className="flex justify-between">
+          <span className="text-gray-400">Time to first inquiry</span>
+          <span className="text-white">~{avgDaysToFirstInquiry} days</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-400">Average time to sell</span>
+          <span className="text-white">{avgDaysToSell} days</span>
+        </div>
+        <Separator className="my-2 bg-gray-700" />
+        <div className="flex justify-between">
+          <span className="text-gray-400">Your vehicle has been listed</span>
+          <span className="font-medium text-blue-400">{daysListed} days</span>
+        </div>
       </div>
     </div>
   );
@@ -352,6 +674,17 @@ export default function SellerPortal() {
                           </div>
 
                           <StatusTimeline currentStatus={consignment.status} consignmentId={consignment.id} />
+
+                          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                            <div>
+                              <PayoutCard consignmentId={consignment.id} />
+                              <WhatsNextCard consignmentId={consignment.id} createdAt={consignment.createdAt} status={consignment.status} />
+                            </div>
+                            <div>
+                              <NotesCard consignmentId={consignment.id} />
+                              <DocumentsCard consignmentId={consignment.id} />
+                            </div>
+                          </div>
 
                           {consignment.photos && consignment.photos.length > 0 && (
                             <div className="mt-6">

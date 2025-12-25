@@ -553,6 +553,197 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/seller/consignments/:id/notes", async (req, res) => {
+    try {
+      if (!req.session.sellerPhone || !req.session.isSeller) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const consignment = await storage.getConsignment(req.params.id);
+      if (!consignment || consignment.phone !== req.session.sellerPhone) {
+        return res.status(404).json({ error: "Consignment not found" });
+      }
+
+      const notes = await storage.getSellerNotes(req.params.id);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching seller notes:", error);
+      res.status(500).json({ error: "Failed to fetch notes" });
+    }
+  });
+
+  app.get("/api/seller/consignments/:id/documents", async (req, res) => {
+    try {
+      if (!req.session.sellerPhone || !req.session.isSeller) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const consignment = await storage.getConsignment(req.params.id);
+      if (!consignment || consignment.phone !== req.session.sellerPhone) {
+        return res.status(404).json({ error: "Consignment not found" });
+      }
+
+      const documents = await storage.getSellerDocuments(req.params.id);
+      res.json(documents);
+    } catch (error) {
+      console.error("Error fetching seller documents:", error);
+      res.status(500).json({ error: "Failed to fetch documents" });
+    }
+  });
+
+  app.post("/api/seller/consignments/:id/documents", async (req, res) => {
+    try {
+      if (!req.session.sellerPhone || !req.session.isSeller) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const consignment = await storage.getConsignment(req.params.id);
+      if (!consignment || consignment.phone !== req.session.sellerPhone) {
+        return res.status(404).json({ error: "Consignment not found" });
+      }
+
+      const { documentType, fileName, fileUrl } = req.body;
+      if (!documentType || !fileName || !fileUrl) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const document = await storage.createSellerDocument({
+        consignmentId: req.params.id,
+        documentType,
+        fileName,
+        fileUrl,
+      });
+      res.status(201).json(document);
+    } catch (error) {
+      console.error("Error creating seller document:", error);
+      res.status(500).json({ error: "Failed to create document" });
+    }
+  });
+
+  app.get("/api/seller/consignments/:id/payout", async (req, res) => {
+    try {
+      if (!req.session.sellerPhone || !req.session.isSeller) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const consignment = await storage.getConsignment(req.params.id);
+      if (!consignment || consignment.phone !== req.session.sellerPhone) {
+        return res.status(404).json({ error: "Consignment not found" });
+      }
+
+      const settings = await storage.getSiteSettings();
+      const commissionRate = settings?.commissionRate || 10;
+
+      const cars = await storage.getAllInventoryCars();
+      const car = cars.find(c => c.consignmentId === req.params.id);
+      
+      if (!car) {
+        return res.json({ 
+          status: consignment.status,
+          hasListing: false,
+          message: "Vehicle not yet listed" 
+        });
+      }
+
+      const listingPrice = car.price;
+      let payout: number;
+      
+      if (consignment.customPayoutAmount !== null && consignment.customPayoutAmount !== undefined) {
+        payout = consignment.customPayoutAmount;
+      } else {
+        const commission = Math.round(listingPrice * (commissionRate / 100));
+        payout = listingPrice - commission;
+      }
+
+      res.json({
+        status: consignment.status,
+        hasListing: true,
+        listingPrice,
+        commissionRate,
+        estimatedPayout: payout,
+        isCustomPayout: consignment.customPayoutAmount !== null && consignment.customPayoutAmount !== undefined,
+      });
+    } catch (error) {
+      console.error("Error fetching payout info:", error);
+      res.status(500).json({ error: "Failed to fetch payout info" });
+    }
+  });
+
+  app.post("/api/consignments/:id/notes", requireAdmin, async (req, res) => {
+    try {
+      const { content } = req.body;
+      if (!content) {
+        return res.status(400).json({ error: "Content is required" });
+      }
+
+      const note = await storage.createSellerNote({
+        consignmentId: req.params.id,
+        content,
+        createdBy: req.session.userId || null,
+      });
+      res.status(201).json(note);
+    } catch (error) {
+      console.error("Error creating seller note:", error);
+      res.status(500).json({ error: "Failed to create note" });
+    }
+  });
+
+  app.get("/api/consignments/:id/notes", requireAdmin, async (req, res) => {
+    try {
+      const notes = await storage.getSellerNotes(req.params.id);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching seller notes:", error);
+      res.status(500).json({ error: "Failed to fetch notes" });
+    }
+  });
+
+  app.get("/api/consignments/:id/documents", requireAdmin, async (req, res) => {
+    try {
+      const documents = await storage.getSellerDocuments(req.params.id);
+      res.json(documents);
+    } catch (error) {
+      console.error("Error fetching seller documents:", error);
+      res.status(500).json({ error: "Failed to fetch documents" });
+    }
+  });
+
+  app.patch("/api/documents/:id/status", requireAdmin, async (req, res) => {
+    try {
+      const { status } = req.body;
+      if (!status || !["pending", "approved", "rejected"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+
+      const updated = await storage.updateDocumentStatus(req.params.id, status);
+      if (!updated) {
+        return res.status(404).json({ error: "Document not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating document status:", error);
+      res.status(500).json({ error: "Failed to update document status" });
+    }
+  });
+
+  app.patch("/api/consignments/:id/payout", requireAdmin, async (req, res) => {
+    try {
+      const { customPayoutAmount } = req.body;
+      
+      const updated = await storage.updateConsignmentPayout(
+        req.params.id, 
+        customPayoutAmount === null ? null : parseInt(customPayoutAmount)
+      );
+      if (!updated) {
+        return res.status(404).json({ error: "Consignment not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating payout:", error);
+      res.status(500).json({ error: "Failed to update payout" });
+    }
+  });
+
   app.post("/api/consignments", async (req, res) => {
     try {
       const validatedData = insertConsignmentSchema.parse(req.body);
