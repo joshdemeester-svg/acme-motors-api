@@ -163,6 +163,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [vehiclePriceColor, setVehiclePriceColor] = useState("#FFFFFF");
   const [footerTagline, setFooterTagline] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [logoWidth, setLogoWidth] = useState("120");
   const [contactAddress1, setContactAddress1] = useState("");
   const [contactAddress2, setContactAddress2] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -197,6 +198,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setVehiclePriceColor(settings.vehiclePriceColor || "#FFFFFF");
       setFooterTagline(settings.footerTagline || "");
       setLogoUrl(settings.logoUrl || "");
+      setLogoWidth(settings.logoWidth || "120");
       setContactAddress1(settings.contactAddress1 || "");
       setContactAddress2(settings.contactAddress2 || "");
       setContactPhone(settings.contactPhone || "");
@@ -229,6 +231,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           vehiclePriceColor,
           footerTagline: footerTagline || null,
           logoUrl: logoUrl || null,
+          logoWidth: logoWidth || "120",
           contactAddress1: contactAddress1 || null,
           contactAddress2: contactAddress2 || null,
           contactPhone: contactPhone || null,
@@ -367,6 +370,28 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
               <p className="text-xs text-muted-foreground">
                 Upload a logo (PNG, JPG, SVG, max 5MB) or enter a URL. Leave empty to use the default car icon.
               </p>
+              {logoUrl && (
+                <div className="space-y-2 pt-2 border-t">
+                  <div className="flex items-center justify-between">
+                    <Label>Logo Width</Label>
+                    <span className="text-sm text-muted-foreground">{logoWidth}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="60"
+                    max="300"
+                    step="10"
+                    value={logoWidth}
+                    onChange={(e) => setLogoWidth(e.target.value)}
+                    className="w-full accent-primary"
+                    data-testid="slider-logo-width"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>60px</span>
+                    <span>300px</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
