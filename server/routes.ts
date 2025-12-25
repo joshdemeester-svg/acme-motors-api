@@ -878,7 +878,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/inventory/:id/status", async (req, res) => {
+  app.patch("/api/inventory/:id/status", requireAdmin, async (req, res) => {
     try {
       const { status } = req.body;
       if (!status || !["available", "pending", "sold"].includes(status)) {
@@ -888,6 +888,15 @@ export async function registerRoutes(
       if (!updated) {
         return res.status(404).json({ error: "Car not found" });
       }
+      
+      // Update consignment status when inventory is marked as sold
+      if (status === "sold" && updated.consignmentId) {
+        await storage.updateConsignmentStatus(updated.consignmentId, "sold");
+        await storage.createStatusHistory(updated.consignmentId, "sold", "Vehicle sold");
+      } else if (status === "available" && updated.consignmentId) {
+        await storage.updateConsignmentStatus(updated.consignmentId, "listed");
+      }
+      
       res.json(updated);
     } catch (error) {
       console.error("Error updating car status:", error);
@@ -931,7 +940,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/consignments/:id/approve", async (req, res) => {
+  app.post("/api/consignments/:id/approve", requireAdmin, async (req, res) => {
     try {
       const { price } = req.body;
       if (!price || typeof price !== "number") {
@@ -958,11 +967,11 @@ export async function registerRoutes(
         consignmentId: consignment.id,
       });
 
-      await storage.updateConsignmentStatus(req.params.id, "approved");
+      await storage.updateConsignmentStatus(req.params.id, "listed");
       await storage.createStatusHistory(req.params.id, "approved", "Vehicle approved and added to inventory");
       await storage.createStatusHistory(req.params.id, "listed", "Vehicle listed for sale");
 
-      res.json({ consignment: { ...consignment, status: "approved" }, car });
+      res.json({ consignment: { ...consignment, status: "listed" }, car });
     } catch (error) {
       console.error("Error approving consignment:", error);
       res.status(500).json({ error: "Failed to approve consignment" });

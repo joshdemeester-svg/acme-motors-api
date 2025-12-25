@@ -23,6 +23,7 @@ function StatusBadge({ status }: { status: string }) {
   const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode }> = {
     pending: { variant: "secondary", icon: <Clock className="h-3 w-3" /> },
     approved: { variant: "default", icon: <Check className="h-3 w-3" /> },
+    listed: { variant: "default", icon: <Car className="h-3 w-3" /> },
     rejected: { variant: "destructive", icon: <X className="h-3 w-3" /> },
     available: { variant: "default", icon: <Check className="h-3 w-3" /> },
     sold: { variant: "secondary", icon: <DollarSign className="h-3 w-3" /> },
