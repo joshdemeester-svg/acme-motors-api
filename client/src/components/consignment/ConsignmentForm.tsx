@@ -30,7 +30,7 @@ interface NHTSAModel {
 }
 
 async function fetchMakesForYear(year: string): Promise<NHTSAMake[]> {
-  const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetMakesForVehicleType/car?format=json`);
+  const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetMakesForVehicleType/passenger%20car?format=json`);
   const data = await res.json();
   return data.Results || [];
 }
@@ -444,18 +444,21 @@ export function ConsignmentForm() {
                   <div className="space-y-2">
                     <Label>Make</Label>
                     <Select 
-                      value={selectedMake}
+                      value={selectedMake || ""}
                       onValueChange={(value) => {
                         setSelectedMake(value);
                         form.setValue("make", value);
                         form.setValue("model", "");
                       }}
-                      disabled={!selectedYear}
+                      disabled={!selectedYear || isLoadingMakes}
                     >
                       <SelectTrigger data-testid="select-make" className="border-white/30">
-                        <SelectValue placeholder={!selectedYear ? "Select year first" : isLoadingMakes ? "Loading..." : "Select make"} />
+                        <SelectValue placeholder={!selectedYear ? "Select year first" : isLoadingMakes ? "Loading makes..." : "Select make"} />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
+                        {makes.length === 0 && !isLoadingMakes && selectedYear && (
+                          <SelectItem value="_empty" disabled>No makes found</SelectItem>
+                        )}
                         {makes
                           .filter((make) => make.Make_Name)
                           .sort((a, b) => (a.Make_Name || "").localeCompare(b.Make_Name || ""))
@@ -470,14 +473,17 @@ export function ConsignmentForm() {
                   <div className="space-y-2">
                     <Label>Model</Label>
                     <Select 
-                      value={form.watch("model")}
+                      value={form.watch("model") || ""}
                       onValueChange={(value) => form.setValue("model", value)}
-                      disabled={!selectedMake || !selectedYear}
+                      disabled={!selectedMake || !selectedYear || isLoadingModels}
                     >
                       <SelectTrigger data-testid="select-model" className="border-white/30">
-                        <SelectValue placeholder={!selectedMake ? "Select make first" : isLoadingModels ? "Loading..." : "Select model"} />
+                        <SelectValue placeholder={!selectedMake ? "Select make first" : isLoadingModels ? "Loading models..." : "Select model"} />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
+                        {models.length === 0 && !isLoadingModels && selectedMake && (
+                          <SelectItem value="_empty" disabled>No models found</SelectItem>
+                        )}
                         {models
                           .filter((model) => model.Model_Name)
                           .sort((a, b) => (a.Model_Name || "").localeCompare(b.Model_Name || ""))
