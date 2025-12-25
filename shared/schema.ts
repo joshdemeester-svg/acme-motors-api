@@ -43,10 +43,10 @@ export const consignmentSubmissions = pgTable("consignment_submissions", {
   salvageTitle: boolean("salvage_title").default(false),
   mechanicalIssues: text("mechanical_issues"),
   lienStatus: boolean("lien_status").default(false),
-  ownershipConfirmed: boolean("ownership_confirmed").default(false),
-  agreementAccepted: boolean("agreement_accepted").default(false),
+  ownershipConfirmed: boolean("ownership_confirmed").notNull(),
+  agreementAccepted: boolean("agreement_accepted").notNull(),
   agreementTimestamp: timestamp("agreement_timestamp"),
-  termsAccepted: boolean("terms_accepted").default(false),
+  termsAccepted: boolean("terms_accepted").notNull(),
   
   status: text("status").notNull().default("pending"),
   

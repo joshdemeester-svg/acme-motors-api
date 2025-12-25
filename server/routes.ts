@@ -418,9 +418,20 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Phone number must be verified before submitting" });
       }
       
+      if (!validatedData.ownershipConfirmed) {
+        return res.status(400).json({ error: "You must confirm vehicle ownership" });
+      }
+      if (!validatedData.agreementAccepted) {
+        return res.status(400).json({ error: "You must accept the consignment agreement" });
+      }
+      if (!validatedData.termsAccepted) {
+        return res.status(400).json({ error: "You must accept the terms and privacy policy" });
+      }
+      
       const submission = await storage.createConsignment({
         ...validatedData,
         phone: normalizedPhone,
+        agreementTimestamp: new Date(),
       });
       
       createGHLContact({ ...validatedData, id: submission.id }).catch((err) => {
