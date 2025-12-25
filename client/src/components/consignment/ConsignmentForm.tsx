@@ -3,13 +3,15 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Check, ChevronRight, ChevronLeft, Car, FileText, User, X, Phone, CheckCircle, Shield, Loader2 } from "lucide-react";
+import { Upload, Check, ChevronRight, ChevronLeft, Car, FileText, User, X, Phone, CheckCircle, Shield, Loader2, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -108,6 +110,8 @@ export function ConsignmentForm() {
   const [selectedYear, setSelectedYear] = useState("");
   const [selectedMake, setSelectedMake] = useState("");
   const [isDecodingVin, setIsDecodingVin] = useState(false);
+  const [makeOpen, setMakeOpen] = useState(false);
+  const [modelOpen, setModelOpen] = useState(false);
 
   const { uploadFile, isUploading } = useUpload({
     onSuccess: (response) => {
@@ -443,55 +447,105 @@ export function ConsignmentForm() {
                   
                   <div className="space-y-2">
                     <Label>Make</Label>
-                    <Select 
-                      value={selectedMake || ""}
-                      onValueChange={(value) => {
-                        setSelectedMake(value);
-                        form.setValue("make", value);
-                        form.setValue("model", "");
-                      }}
-                      disabled={isLoadingMakes}
-                    >
-                      <SelectTrigger data-testid="select-make" className="border-white/30">
-                        <SelectValue placeholder={isLoadingMakes ? "Loading makes..." : "Select make"} />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[300px]">
-                        {makes.length === 0 && !isLoadingMakes && (
-                          <SelectItem value="_empty" disabled>No makes found</SelectItem>
-                        )}
-                        {makes
-                          .filter((make) => make.MakeName)
-                          .sort((a, b) => (a.MakeName || "").localeCompare(b.MakeName || ""))
-                          .map((make) => (
-                            <SelectItem key={make.MakeId} value={make.MakeName}>{make.MakeName}</SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={makeOpen} onOpenChange={setMakeOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={makeOpen}
+                          className="w-full justify-between border-white/30 bg-transparent font-normal"
+                          data-testid="select-make"
+                          disabled={isLoadingMakes}
+                        >
+                          {selectedMake || (isLoadingMakes ? "Loading makes..." : "Type to search make...")}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search make..." />
+                          <CommandList>
+                            <CommandEmpty>No make found.</CommandEmpty>
+                            <CommandGroup>
+                              {makes
+                                .filter((make) => make.MakeName)
+                                .sort((a, b) => (a.MakeName || "").localeCompare(b.MakeName || ""))
+                                .map((make) => (
+                                  <CommandItem
+                                    key={make.MakeId}
+                                    value={make.MakeName}
+                                    onSelect={(currentValue) => {
+                                      setSelectedMake(currentValue);
+                                      form.setValue("make", currentValue);
+                                      form.setValue("model", "");
+                                      setMakeOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        selectedMake === make.MakeName ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {make.MakeName}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     {form.formState.errors.make && <p className="text-xs text-destructive">{form.formState.errors.make.message}</p>}
                   </div>
                   
                   <div className="space-y-2">
                     <Label>Model</Label>
-                    <Select 
-                      value={form.watch("model") || ""}
-                      onValueChange={(value) => form.setValue("model", value)}
-                      disabled={!selectedMake || !selectedYear || isLoadingModels}
-                    >
-                      <SelectTrigger data-testid="select-model" className="border-white/30">
-                        <SelectValue placeholder={!selectedMake ? "Select make first" : isLoadingModels ? "Loading models..." : "Select model"} />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[300px]">
-                        {models.length === 0 && !isLoadingModels && selectedMake && (
-                          <SelectItem value="_empty" disabled>No models found</SelectItem>
-                        )}
-                        {models
-                          .filter((model) => model.Model_Name)
-                          .sort((a, b) => (a.Model_Name || "").localeCompare(b.Model_Name || ""))
-                          .map((model) => (
-                            <SelectItem key={model.Model_ID} value={model.Model_Name}>{model.Model_Name}</SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={modelOpen} onOpenChange={setModelOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={modelOpen}
+                          className="w-full justify-between border-white/30 bg-transparent font-normal"
+                          data-testid="select-model"
+                          disabled={!selectedMake || !selectedYear || isLoadingModels}
+                        >
+                          {form.watch("model") || (!selectedMake ? "Select make first" : !selectedYear ? "Select year first" : isLoadingModels ? "Loading models..." : "Type to search model...")}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search model..." />
+                          <CommandList>
+                            <CommandEmpty>No model found.</CommandEmpty>
+                            <CommandGroup>
+                              {models
+                                .filter((model) => model.Model_Name)
+                                .sort((a, b) => (a.Model_Name || "").localeCompare(b.Model_Name || ""))
+                                .map((model) => (
+                                  <CommandItem
+                                    key={model.Model_ID}
+                                    value={model.Model_Name}
+                                    onSelect={(currentValue) => {
+                                      form.setValue("model", currentValue);
+                                      setModelOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        form.watch("model") === model.Model_Name ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {model.Model_Name}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     {form.formState.errors.model && <p className="text-xs text-destructive">{form.formState.errors.model.message}</p>}
                   </div>
                   
