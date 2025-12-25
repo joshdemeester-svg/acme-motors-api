@@ -9,10 +9,10 @@ interface SEOProps {
   schema?: object;
 }
 
-export function useSEO({ title, description, image, url, type = "website", schema }: SEOProps) {
+export function useSEO({ title, description, image, url, type = "website", schema, siteName = "Navarre Motors" }: SEOProps & { siteName?: string }) {
   useEffect(() => {
-    const siteName = "Navarre Motors, Inc";
-    const fullTitle = title ? `${title} | ${siteName}` : siteName;
+    const displayName = siteName || "Navarre Motors";
+    const fullTitle = title ? `${title} | ${displayName}` : displayName;
     
     document.title = fullTitle;
 
@@ -56,9 +56,9 @@ export function useSEO({ title, description, image, url, type = "website", schem
     }
 
     return () => {
-      document.title = siteName;
+      document.title = siteName || "Navarre Motors";
     };
-  }, [title, description, image, url, type]);
+  }, [title, description, image, url, type, siteName]);
 
   useEffect(() => {
     if (schema) {
@@ -89,7 +89,19 @@ export function generateVehicleSchema(car: {
   condition: string;
   photos: string[];
   description?: string;
-}, siteSettings?: { siteName?: string; contactAddress1?: string; contactAddress2?: string; contactPhone?: string; contactEmail?: string }) {
+}, siteSettings?: { siteName?: string | null; contactAddress1?: string | null; contactAddress2?: string | null; contactPhone?: string | null; contactEmail?: string | null }) {
+  const buildSellerAddress = () => {
+    if (!siteSettings?.contactAddress1) return undefined;
+    const address: Record<string, string> = {
+      "@type": "PostalAddress",
+      "streetAddress": siteSettings.contactAddress1,
+    };
+    if (siteSettings.contactAddress2) {
+      address["addressLocality"] = siteSettings.contactAddress2;
+    }
+    return address;
+  };
+
   return {
     "@context": "https://schema.org",
     "@type": "Vehicle",
@@ -115,34 +127,28 @@ export function generateVehicleSchema(car: {
       "availability": "https://schema.org/InStock",
       "seller": {
         "@type": "AutoDealer",
-        "name": siteSettings?.siteName || "Navarre Motors, Inc",
-        "address": siteSettings?.contactAddress1 ? {
-          "@type": "PostalAddress",
-          "streetAddress": siteSettings.contactAddress1,
-          "addressLocality": siteSettings.contactAddress2?.split(",")[0]?.trim(),
-          "addressRegion": siteSettings.contactAddress2?.split(",")[1]?.trim()?.split(" ")[0],
-          "postalCode": siteSettings.contactAddress2?.split(",")[1]?.trim()?.split(" ")[1]
-        } : undefined,
-        "telephone": siteSettings?.contactPhone,
-        "email": siteSettings?.contactEmail
+        "name": siteSettings?.siteName || "Navarre Motors",
+        "address": buildSellerAddress(),
+        "telephone": siteSettings?.contactPhone || undefined,
+        "email": siteSettings?.contactEmail || undefined
       }
     },
-    "image": car.photos?.[0],
+    "image": car.photos?.[0] || undefined,
     "description": car.description || `${car.year} ${car.make} ${car.model} with ${car.mileage.toLocaleString()} miles in ${car.color}. ${car.condition} condition.`
   };
 }
 
 export function generateOrganizationSchema(settings: {
-  siteName?: string;
-  logoUrl?: string;
-  contactAddress1?: string;
-  contactAddress2?: string;
-  contactPhone?: string;
-  contactEmail?: string;
-  facebookUrl?: string;
-  instagramUrl?: string;
-  twitterUrl?: string;
-  youtubeUrl?: string;
+  siteName?: string | null;
+  logoUrl?: string | null;
+  contactAddress1?: string | null;
+  contactAddress2?: string | null;
+  contactPhone?: string | null;
+  contactEmail?: string | null;
+  facebookUrl?: string | null;
+  instagramUrl?: string | null;
+  twitterUrl?: string | null;
+  youtubeUrl?: string | null;
 }) {
   const sameAs = [
     settings.facebookUrl,
@@ -151,20 +157,26 @@ export function generateOrganizationSchema(settings: {
     settings.youtubeUrl
   ].filter(Boolean);
 
+  const buildAddress = () => {
+    if (!settings.contactAddress1) return undefined;
+    const address: Record<string, string> = {
+      "@type": "PostalAddress",
+      "streetAddress": settings.contactAddress1,
+    };
+    if (settings.contactAddress2) {
+      address["addressLocality"] = settings.contactAddress2;
+    }
+    return address;
+  };
+
   return {
     "@context": "https://schema.org",
     "@type": "AutoDealer",
-    "name": settings.siteName || "Navarre Motors, Inc",
-    "logo": settings.logoUrl,
-    "address": settings.contactAddress1 ? {
-      "@type": "PostalAddress",
-      "streetAddress": settings.contactAddress1,
-      "addressLocality": settings.contactAddress2?.split(",")[0]?.trim(),
-      "addressRegion": settings.contactAddress2?.split(",")[1]?.trim()?.split(" ")[0],
-      "postalCode": settings.contactAddress2?.split(",")[1]?.trim()?.split(" ")[1]
-    } : undefined,
-    "telephone": settings.contactPhone,
-    "email": settings.contactEmail,
+    "name": settings.siteName || "Navarre Motors",
+    "logo": settings.logoUrl || undefined,
+    "address": buildAddress(),
+    "telephone": settings.contactPhone || undefined,
+    "email": settings.contactEmail || undefined,
     "sameAs": sameAs.length > 0 ? sameAs : undefined
   };
 }

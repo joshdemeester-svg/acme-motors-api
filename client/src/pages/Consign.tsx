@@ -1,8 +1,13 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ConsignmentForm } from "@/components/consignment/ConsignmentForm";
+import { useSEO } from "@/hooks/use-seo";
 
 export default function Consign() {
+  useSEO({
+    title: "Consign Your Vehicle",
+    description: "Submit your luxury or exotic vehicle for professional consignment. Get a complimentary market valuation and expert marketing to qualified buyers worldwide.",
+  });
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />

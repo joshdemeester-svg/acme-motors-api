@@ -1206,6 +1206,61 @@ export async function registerRoutes(
     }
   });
 
+  // SEO: Robots.txt
+  app.get("/robots.txt", (req, res) => {
+    const protocol = req.protocol || "https";
+    const baseUrl = `${protocol}://${req.get("host")}`;
+    const robotsTxt = `User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /seller-portal
+Disallow: /api/
+
+Sitemap: ${baseUrl}/sitemap.xml
+`;
+    res.type("text/plain").send(robotsTxt);
+  });
+
+  // SEO: Dynamic XML Sitemap
+  app.get("/sitemap.xml", async (req, res) => {
+    try {
+      const protocol = req.protocol || "https";
+      const baseUrl = `${protocol}://${req.get("host")}`;
+      const inventory = await storage.getAllInventoryCars();
+      const availableCars = inventory.filter(car => car.status === "available");
+
+      const staticPages: Array<{ loc: string; priority: string; changefreq: string; lastmod?: string }> = [
+        { loc: "/", priority: "1.0", changefreq: "daily" },
+        { loc: "/inventory", priority: "0.9", changefreq: "daily" },
+        { loc: "/consign", priority: "0.8", changefreq: "weekly" },
+      ];
+
+      const vehiclePages: Array<{ loc: string; priority: string; changefreq: string; lastmod?: string }> = availableCars.map(car => ({
+        loc: `/vehicle/${car.id}`,
+        priority: "0.7",
+        changefreq: "weekly",
+        lastmod: car.createdAt ? new Date(car.createdAt).toISOString().split("T")[0] : undefined,
+      }));
+
+      const allPages = [...staticPages, ...vehiclePages];
+
+      const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${allPages.map(page => `  <url>
+    <loc>${baseUrl}${page.loc}</loc>
+    <priority>${page.priority}</priority>
+    <changefreq>${page.changefreq}</changefreq>${page.lastmod ? `
+    <lastmod>${page.lastmod}</lastmod>` : ""}
+  </url>`).join("\n")}
+</urlset>`;
+
+      res.type("application/xml").send(sitemap);
+    } catch (error) {
+      console.error("Error generating sitemap:", error);
+      res.status(500).send("Error generating sitemap");
+    }
+  });
+
   app.get("/api/settings", async (req, res) => {
     try {
       const settings = await storage.getSiteSettings();
