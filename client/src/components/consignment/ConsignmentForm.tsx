@@ -20,8 +20,8 @@ const currentYear = new Date().getFullYear();
 const years = Array.from({ length: currentYear + 1 - 1981 + 1 }, (_, i) => (currentYear + 1 - i).toString());
 
 interface NHTSAMake {
-  Make_ID: number;
-  Make_Name: string;
+  MakeId: number;
+  MakeName: string;
 }
 
 interface NHTSAModel {
@@ -29,16 +29,16 @@ interface NHTSAModel {
   Model_Name: string;
 }
 
-async function fetchMakesForYear(year: string): Promise<NHTSAMake[]> {
-  const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetMakesForVehicleType/passenger%20car?format=json`);
-  const data = await res.json();
-  return data.Results || [];
+async function fetchMakesForYear(): Promise<NHTSAMake[]> {
+  const res = await fetch(`/api/vehicle-makes`);
+  if (!res.ok) throw new Error("Failed to fetch makes");
+  return res.json();
 }
 
 async function fetchModelsForMakeYear(make: string, year: string): Promise<NHTSAModel[]> {
-  const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMakeYear/make/${encodeURIComponent(make)}/modelyear/${year}?format=json`);
-  const data = await res.json();
-  return data.Results || [];
+  const res = await fetch(`/api/vehicle-models/${encodeURIComponent(make)}/${year}`);
+  if (!res.ok) throw new Error("Failed to fetch models");
+  return res.json();
 }
 
 interface VINDecodeResult {
@@ -48,21 +48,16 @@ interface VINDecodeResult {
 }
 
 async function decodeVIN(vin: string): Promise<VINDecodeResult | null> {
-  const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`);
+  const res = await fetch(`/api/vin-decode/${vin}`);
+  if (!res.ok) return null;
   const data = await res.json();
-  const results = data.Results || [];
   
-  const getValue = (variableId: number) => {
-    const item = results.find((r: any) => r.VariableId === variableId);
-    return item?.Value || "";
-  };
-  
-  const year = getValue(29);
-  const make = getValue(26);
-  const model = getValue(28);
-  
-  if (year || make || model) {
-    return { year, make, model };
+  if (data.ModelYear || data.Make || data.Model) {
+    return { 
+      year: data.ModelYear || "", 
+      make: data.Make || "", 
+      model: data.Model || "" 
+    };
   }
   return null;
 }
@@ -138,9 +133,8 @@ export function ConsignmentForm() {
   });
 
   const { data: makes = [], isLoading: isLoadingMakes } = useQuery({
-    queryKey: ["vehicleMakes", selectedYear],
-    queryFn: () => fetchMakesForYear(selectedYear),
-    enabled: !!selectedYear,
+    queryKey: ["vehicleMakes"],
+    queryFn: fetchMakesForYear,
     staleTime: 1000 * 60 * 60,
   });
 
@@ -456,20 +450,20 @@ export function ConsignmentForm() {
                         form.setValue("make", value);
                         form.setValue("model", "");
                       }}
-                      disabled={!selectedYear || isLoadingMakes}
+                      disabled={isLoadingMakes}
                     >
                       <SelectTrigger data-testid="select-make" className="border-white/30">
-                        <SelectValue placeholder={!selectedYear ? "Select year first" : isLoadingMakes ? "Loading makes..." : "Select make"} />
+                        <SelectValue placeholder={isLoadingMakes ? "Loading makes..." : "Select make"} />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
-                        {makes.length === 0 && !isLoadingMakes && selectedYear && (
+                        {makes.length === 0 && !isLoadingMakes && (
                           <SelectItem value="_empty" disabled>No makes found</SelectItem>
                         )}
                         {makes
-                          .filter((make) => make.Make_Name)
-                          .sort((a, b) => (a.Make_Name || "").localeCompare(b.Make_Name || ""))
+                          .filter((make) => make.MakeName)
+                          .sort((a, b) => (a.MakeName || "").localeCompare(b.MakeName || ""))
                           .map((make) => (
-                            <SelectItem key={make.Make_ID} value={make.Make_Name}>{make.Make_Name}</SelectItem>
+                            <SelectItem key={make.MakeId} value={make.MakeName}>{make.MakeName}</SelectItem>
                           ))}
                       </SelectContent>
                     </Select>
