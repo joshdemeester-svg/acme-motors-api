@@ -17,7 +17,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useUpload } from "@/hooks/use-upload";
 
 const currentYear = new Date().getFullYear();
-const years = Array.from({ length: currentYear - 1980 }, (_, i) => (currentYear + 1 - i).toString());
+const years = Array.from({ length: currentYear + 1 - 1981 + 1 }, (_, i) => (currentYear + 1 - i).toString());
 
 interface NHTSAMake {
   Make_ID: number;
@@ -138,8 +138,9 @@ export function ConsignmentForm() {
   });
 
   const { data: makes = [], isLoading: isLoadingMakes } = useQuery({
-    queryKey: ["vehicleMakes"],
+    queryKey: ["vehicleMakes", selectedYear],
     queryFn: () => fetchMakesForYear(selectedYear),
+    enabled: !!selectedYear,
     staleTime: 1000 * 60 * 60,
   });
 
