@@ -5,6 +5,8 @@ import {
   siteSettings,
   phoneVerifications,
   statusHistory,
+  sellerNotes,
+  sellerDocuments,
   type User, 
   type InsertUser,
   type ConsignmentSubmission,
@@ -14,7 +16,11 @@ import {
   type SiteSettings,
   type InsertSiteSettings,
   type PhoneVerification,
-  type StatusHistory
+  type StatusHistory,
+  type SellerNote,
+  type InsertSellerNote,
+  type SellerDocument,
+  type InsertSellerDocument
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt } from "drizzle-orm";
@@ -51,6 +57,15 @@ export interface IStorage {
   
   createStatusHistory(consignmentId: string, status: string, note?: string): Promise<StatusHistory>;
   getStatusHistory(consignmentId: string): Promise<StatusHistory[]>;
+  
+  updateConsignmentPayout(id: string, customPayoutAmount: number | null): Promise<ConsignmentSubmission | undefined>;
+  
+  createSellerNote(data: InsertSellerNote): Promise<SellerNote>;
+  getSellerNotes(consignmentId: string): Promise<SellerNote[]>;
+  
+  createSellerDocument(data: InsertSellerDocument): Promise<SellerDocument>;
+  getSellerDocuments(consignmentId: string): Promise<SellerDocument[]>;
+  updateDocumentStatus(id: string, status: string): Promise<SellerDocument | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -240,6 +255,50 @@ export class DatabaseStorage implements IStorage {
       .from(statusHistory)
       .where(eq(statusHistory.consignmentId, consignmentId))
       .orderBy(desc(statusHistory.createdAt));
+  }
+
+  async updateConsignmentPayout(id: string, customPayoutAmount: number | null): Promise<ConsignmentSubmission | undefined> {
+    const [updated] = await db
+      .update(consignmentSubmissions)
+      .set({ customPayoutAmount })
+      .where(eq(consignmentSubmissions.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async createSellerNote(data: InsertSellerNote): Promise<SellerNote> {
+    const [note] = await db.insert(sellerNotes).values(data).returning();
+    return note;
+  }
+
+  async getSellerNotes(consignmentId: string): Promise<SellerNote[]> {
+    return db
+      .select()
+      .from(sellerNotes)
+      .where(eq(sellerNotes.consignmentId, consignmentId))
+      .orderBy(desc(sellerNotes.createdAt));
+  }
+
+  async createSellerDocument(data: InsertSellerDocument): Promise<SellerDocument> {
+    const [doc] = await db.insert(sellerDocuments).values(data).returning();
+    return doc;
+  }
+
+  async getSellerDocuments(consignmentId: string): Promise<SellerDocument[]> {
+    return db
+      .select()
+      .from(sellerDocuments)
+      .where(eq(sellerDocuments.consignmentId, consignmentId))
+      .orderBy(desc(sellerDocuments.createdAt));
+  }
+
+  async updateDocumentStatus(id: string, status: string): Promise<SellerDocument | undefined> {
+    const [updated] = await db
+      .update(sellerDocuments)
+      .set({ status })
+      .where(eq(sellerDocuments.id, id))
+      .returning();
+    return updated || undefined;
   }
 }
 
