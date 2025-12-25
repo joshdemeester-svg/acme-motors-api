@@ -77,17 +77,12 @@ export default function Inventory() {
                     alt={`${car.make} ${car.model}`}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  {(!car.photos || car.photos.length === 0) && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                      <span className="text-white font-semibold text-lg">Photo Coming Soon</span>
-                    </div>
-                  )}
                   <div className="absolute top-4 right-4 rounded bg-black/70 px-3 py-1 text-xs font-medium text-white backdrop-blur-md capitalize">
                     {car.status}
                   </div>
                 </div>
                 <div className="p-6">
-                  <div className="mb-2 text-sm font-medium text-primary">{car.year} {car.make}</div>
+                  <div className="mb-2 text-sm font-medium text-white">{car.year} {car.make}</div>
                   <h3 className="mb-4 font-serif text-2xl font-bold">{car.model}</h3>
                   
                   <div className="grid grid-cols-2 gap-4 border-t border-border pt-4 text-sm">

@@ -928,6 +928,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [editPrice, setEditPrice] = useState("");
   const [editCondition, setEditCondition] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [editPhotos, setEditPhotos] = useState<string[]>([]);
   
   const [quickAddDialogOpen, setQuickAddDialogOpen] = useState(false);
   const [quickAddVin, setQuickAddVin] = useState("");
@@ -1057,6 +1058,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     setEditPrice(car.price.toString());
     setEditCondition(car.condition);
     setEditDescription(car.description || "");
+    setEditPhotos(car.photos || []);
     setEditDialogOpen(true);
   };
 
@@ -1194,6 +1196,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     
     if (editCondition.trim()) data.condition = editCondition.trim();
     data.description = editDescription.trim();
+    data.photos = editPhotos;
 
     if (Object.keys(data).length === 0) {
       toast({ title: "Error", description: "Please fill in at least one field.", variant: "destructive" });
@@ -1573,6 +1576,71 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 rows={3}
                 data-testid="input-edit-description"
               />
+            </div>
+            
+            {/* Photo Management Section */}
+            <div className="space-y-3 border-t pt-4">
+              <div className="flex items-center justify-between">
+                <Label>Photos ({editPhotos.length})</Label>
+                <ObjectUploader
+                  maxNumberOfFiles={10}
+                  maxFileSize={10485760}
+                  onGetUploadParameters={async (file) => {
+                    const res = await fetch("/api/uploads/request-url", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        filename: file.name,
+                        contentType: file.type,
+                      }),
+                    });
+                    if (!res.ok) throw new Error("Failed to get upload URL");
+                    const { uploadUrl } = await res.json();
+                    return { method: "PUT", url: uploadUrl };
+                  }}
+                  onComplete={(result) => {
+                    const newPhotos = result.successful.map((file) => {
+                      const urlParts = file.uploadURL?.split("/") || [];
+                      const objectId = urlParts[urlParts.length - 1]?.split("?")[0] || "";
+                      return `/objects/uploads/${objectId}`;
+                    });
+                    setEditPhotos([...editPhotos, ...newPhotos]);
+                    toast({ title: "Photos Uploaded", description: `${newPhotos.length} photo(s) added.` });
+                  }}
+                  buttonClassName="h-8"
+                >
+                  <Upload className="h-3 w-3 mr-1" /> Add Photos
+                </ObjectUploader>
+              </div>
+              
+              {editPhotos.length > 0 ? (
+                <div className="grid grid-cols-4 gap-2">
+                  {editPhotos.map((photo, index) => (
+                    <div key={index} className="relative group aspect-square rounded-md overflow-hidden border">
+                      <img 
+                        src={photo} 
+                        alt={`Photo ${index + 1}`} 
+                        className="h-full w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setEditPhotos(editPhotos.filter((_, i) => i !== index))}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Remove photo"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                      {index === 0 && (
+                        <span className="absolute bottom-1 left-1 bg-primary text-xs text-primary-foreground px-1 rounded">Main</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4 border border-dashed rounded-md">
+                  No photos added yet. Click "Add Photos" to upload images.
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter className="flex-shrink-0 flex-col gap-2 sm:flex-row border-t pt-4">
