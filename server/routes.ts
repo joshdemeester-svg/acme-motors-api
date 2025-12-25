@@ -532,9 +532,9 @@ export async function registerRoutes(
       if (vin === "12345678901234567") {
         return res.json({
           valid: true,
-          ModelYear: "2024",
-          Make: "Test Vehicle",
-          Model: "Demo Model",
+          ModelYear: "2025",
+          Make: "Toyota",
+          Model: "Camry",
           VehicleType: "PASSENGER CAR"
         });
       }
