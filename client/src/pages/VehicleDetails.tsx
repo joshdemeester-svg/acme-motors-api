@@ -277,11 +277,6 @@ export default function VehicleDetails({ id }: { id: string }) {
                 alt={`${car.year} ${car.make} ${car.model}`}
                 className="h-full w-full object-cover"
               />
-              {(!car.photos || car.photos.length === 0) && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                  <span className="text-white font-semibold text-xl">Photo Coming Soon</span>
-                </div>
-              )}
               <Badge className="absolute top-4 right-4 capitalize" data-testid="badge-status">
                 {car.status}
               </Badge>
@@ -376,11 +371,24 @@ export default function VehicleDetails({ id }: { id: string }) {
               </Card>
             )}
 
-            <div className="mt-8">
-              <h3 className="mb-6 flex items-center gap-2 text-xl font-semibold">
-                <Car className="h-5 w-5" />
-                Vehicle Specifications
-              </h3>
+            <Button 
+              className="btn-contact w-full gap-2" 
+              size="lg" 
+              data-testid="button-contact"
+              onClick={() => setContactOpen(true)}
+            >
+              <MessageSquare className="h-5 w-5" />
+              Contact Us About This Vehicle
+            </Button>
+          </div>
+        </div>
+
+        {/* Vehicle Specifications - Full width section */}
+        <div className="mt-12">
+          <h3 className="mb-6 flex items-center gap-2 text-xl font-semibold">
+            <Car className="h-5 w-5" />
+            Vehicle Specifications
+          </h3>
               {vinLoading ? (
                 <p className="text-sm text-muted-foreground">Loading specifications...</p>
               ) : !vinData || (vinData.ErrorCode && vinData.ErrorCode !== "0") ? (
@@ -801,18 +809,6 @@ export default function VehicleDetails({ id }: { id: string }) {
                       )}
                     </div>
                   )}
-            </div>
-
-            <Button 
-              className="btn-contact w-full gap-2" 
-              size="lg" 
-              data-testid="button-contact"
-              onClick={() => setContactOpen(true)}
-            >
-              <MessageSquare className="h-5 w-5" />
-              Contact Us About This Vehicle
-            </Button>
-          </div>
         </div>
       </div>
 
