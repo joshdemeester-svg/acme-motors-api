@@ -15,11 +15,17 @@ export function Footer() {
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2 font-serif text-xl font-bold">
               {settings?.logoUrl ? (
-                <img src={settings.logoUrl} alt={siteName} className="h-6 w-auto" />
+                <img 
+                  src={settings.logoUrl} 
+                  alt={siteName} 
+                  style={{ width: `${Math.min(parseInt(settings.logoWidth || '120'), 150)}px`, height: 'auto' }}
+                />
               ) : (
-                <Car className="h-6 w-6 text-primary" />
+                <>
+                  <Car className="h-6 w-6 text-primary" />
+                  <span>{siteName}</span>
+                </>
               )}
-              <span>{siteName}</span>
             </Link>
             <p className="text-sm text-muted-foreground">
               {settings?.footerTagline || "Luxury automotive consignment services for discerning collectors and enthusiasts."}
@@ -28,11 +34,11 @@ export function Footer() {
           
           <div>
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-foreground">Navigation</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="/" className="hover:text-primary">Home</Link></li>
-              <li><Link href="/inventory" className="hover:text-primary">Inventory</Link></li>
-              <li><Link href="/consign" className="hover:text-primary">Consign Your Car</Link></li>
-              <li><a href="#" className="hover:text-primary">About Us</a></li>
+            <ul className="space-y-2 text-sm">
+              <li><Link href="/" className="nav-link-inactive hover:nav-link">Home</Link></li>
+              <li><Link href="/inventory" className="nav-link-inactive hover:nav-link">Inventory</Link></li>
+              <li><Link href="/consign" className="nav-link-inactive hover:nav-link">Consign Your Car</Link></li>
+              <li><a href="#" className="nav-link-inactive hover:nav-link">About Us</a></li>
             </ul>
           </div>
 

@@ -41,7 +41,13 @@ export default function Home() {
               { title: "Global Exposure", desc: "Your vehicle is marketed to our exclusive network of qualified buyers worldwide." }
             ].map((step, i) => (
               <div key={i} className="flex flex-col items-center text-center">
-                <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-2xl font-bold text-primary">
+                <div 
+                  className="mb-6 flex h-16 w-16 items-center justify-center rounded-full text-2xl font-bold"
+                  style={{ 
+                    backgroundColor: 'var(--step-bg-color, #DC2626)', 
+                    color: 'var(--step-number-color, #FFFFFF)' 
+                  }}
+                >
                   {i + 1}
                 </div>
                 <h3 className="mb-3 font-serif text-xl font-semibold">{step.title}</h3>
@@ -81,7 +87,7 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="p-6">
-                    <div className="mb-2 text-sm font-medium text-primary">{car.year} {car.make}</div>
+                    <div className="mb-2 text-sm font-medium text-white">{car.year} {car.make}</div>
                     <h3 className="mb-4 font-serif text-2xl font-bold">{car.model}</h3>
                     <div className="flex items-center justify-between border-t border-border pt-4">
                       <span className="text-muted-foreground">{car.mileage.toLocaleString()} miles</span>

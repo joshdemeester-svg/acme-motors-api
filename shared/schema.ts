@@ -98,6 +98,8 @@ export const siteSettings = pgTable("site_settings", {
   menuAllCaps: boolean("menu_all_caps").default(true),
   vehicleTitleColor: text("vehicle_title_color").default("#FFFFFF"),
   vehiclePriceColor: text("vehicle_price_color").default("#FFFFFF"),
+  stepBgColor: text("step_bg_color").default("#DC2626"),
+  stepNumberColor: text("step_number_color").default("#FFFFFF"),
   footerTagline: text("footer_tagline").default("Luxury automotive consignment services for discerning collectors and enthusiasts."),
   logoUrl: text("logo_url"),
   logoWidth: text("logo_width").default("120"),

@@ -72,7 +72,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     if (settings?.vehiclePriceColor) {
       document.documentElement.style.setProperty("--vehicle-price-color", settings.vehiclePriceColor);
     }
-  }, [settings?.primaryColor, settings?.backgroundColor, settings?.mainMenuColor, settings?.mainMenuHoverColor, settings?.contactButtonColor, settings?.contactButtonHoverColor, settings?.menuFontSize, settings?.bodyFontSize, settings?.menuAllCaps, settings?.vehicleTitleColor, settings?.vehiclePriceColor]);
+    if (settings?.stepBgColor) {
+      document.documentElement.style.setProperty("--step-bg-color", settings.stepBgColor);
+    }
+    if (settings?.stepNumberColor) {
+      document.documentElement.style.setProperty("--step-number-color", settings.stepNumberColor);
+    }
+  }, [settings?.primaryColor, settings?.backgroundColor, settings?.mainMenuColor, settings?.mainMenuHoverColor, settings?.contactButtonColor, settings?.contactButtonHoverColor, settings?.menuFontSize, settings?.bodyFontSize, settings?.menuAllCaps, settings?.vehicleTitleColor, settings?.vehiclePriceColor, settings?.stepBgColor, settings?.stepNumberColor]);
 
   return (
     <SettingsContext.Provider value={{ settings: settings || null, isLoading }}>
