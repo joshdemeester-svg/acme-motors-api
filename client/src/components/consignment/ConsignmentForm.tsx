@@ -442,6 +442,12 @@ export function ConsignmentForm() {
                   </div>
                   
                   <div className="space-y-2">
+                    <Label htmlFor="mileage">Mileage</Label>
+                    <Input id="mileage" placeholder="e.g. 12,000" {...form.register("mileage")} data-testid="input-mileage" className="border-white/30" />
+                    {form.formState.errors.mileage && <p className="text-xs text-destructive">{form.formState.errors.mileage.message}</p>}
+                  </div>
+                  
+                  <div className="space-y-2">
                     <Label>Make</Label>
                     <Select 
                       value={selectedMake || ""}
@@ -495,12 +501,7 @@ export function ConsignmentForm() {
                     {form.formState.errors.model && <p className="text-xs text-destructive">{form.formState.errors.model.message}</p>}
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="mileage">Mileage</Label>
-                    <Input id="mileage" placeholder="e.g. 12,000" {...form.register("mileage")} data-testid="input-mileage" className="border-white/30" />
-                    {form.formState.errors.mileage && <p className="text-xs text-destructive">{form.formState.errors.mileage.message}</p>}
-                  </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="color">Exterior Color</Label>
                     <Input id="color" placeholder="e.g. GT Silver" {...form.register("color")} data-testid="input-color" className="border-white/30" />
                     {form.formState.errors.color && <p className="text-xs text-destructive">{form.formState.errors.color.message}</p>}
