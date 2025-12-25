@@ -71,6 +71,7 @@ export const inventoryCars = pgTable("inventory_cars", {
   photos: text("photos").array().default(sql`'{}'::text[]`),
   
   status: text("status").notNull().default("available"),
+  featured: boolean("featured").default(false),
   
   consignmentId: varchar("consignment_id").references(() => consignmentSubmissions.id),
   

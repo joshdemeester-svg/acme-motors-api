@@ -496,8 +496,14 @@ export async function registerRoutes(
 
   app.get("/api/inventory", async (req, res) => {
     try {
-      const cars = await storage.getAvailableInventoryCars();
-      res.json(cars);
+      const { featured } = req.query;
+      if (featured === "true") {
+        const cars = await storage.getFeaturedInventoryCars();
+        res.json(cars);
+      } else {
+        const cars = await storage.getAvailableInventoryCars();
+        res.json(cars);
+      }
     } catch (error) {
       console.error("Error fetching inventory:", error);
       res.status(500).json({ error: "Failed to fetch inventory" });
@@ -642,6 +648,7 @@ export async function registerRoutes(
         mileage: z.number().int().min(0).optional(),
         color: z.string().min(1).max(50).optional(),
         price: z.number().int().min(0).optional(),
+        featured: z.boolean().optional(),
         condition: z.string().min(1).max(100).optional(),
         description: z.string().max(2000).optional(),
         photos: z.array(z.string()).optional(),

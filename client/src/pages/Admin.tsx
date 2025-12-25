@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car } from "lucide-react";
+import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import type { ConsignmentSubmission, InventoryCar, SiteSettings } from "@shared/schema";
@@ -1232,6 +1232,29 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     },
   });
 
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: async ({ id, featured }: { id: string; featured: boolean }) => {
+      const res = await fetch(`/api/inventory/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ featured }),
+      });
+      if (!res.ok) throw new Error("Failed to update featured status");
+      return res.json();
+    },
+    onSuccess: (_, { featured }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      toast({ 
+        title: featured ? "Added to Featured" : "Removed from Featured",
+        description: featured ? "Vehicle will now appear on the homepage." : "Vehicle removed from homepage featured section."
+      });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update featured status.", variant: "destructive" });
+    },
+  });
+
   const openEditDialog = (car: InventoryCar) => {
     setSelectedCar(car);
     setEditVin(car.vin);
@@ -1561,7 +1584,20 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                           {car.mileage.toLocaleString()} miles
                         </CardDescription>
                       </div>
-                      <StatusBadge status={car.status} />
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => toggleFeaturedMutation.mutate({ id: car.id, featured: !car.featured })}
+                          disabled={toggleFeaturedMutation.isPending}
+                          className={car.featured ? "text-yellow-500 hover:text-yellow-600" : "text-muted-foreground hover:text-yellow-500"}
+                          title={car.featured ? "Remove from Featured" : "Add to Featured"}
+                          data-testid={`button-toggle-featured-${car.id}`}
+                        >
+                          <Star className={`h-5 w-5 ${car.featured ? "fill-current" : ""}`} />
+                        </Button>
+                        <StatusBadge status={car.status} />
+                      </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="text-2xl font-bold text-primary">
