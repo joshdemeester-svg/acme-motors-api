@@ -3,13 +3,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Check, ChevronRight, ChevronLeft, Car, FileText, User, X, Phone, CheckCircle } from "lucide-react";
+import { Upload, Check, ChevronRight, ChevronLeft, Car, FileText, User, X, Phone, CheckCircle, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
@@ -31,6 +32,13 @@ const formSchema = z.object({
   lastName: z.string().min(2, "Last name is required"),
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Cell phone number is required"),
+  
+  salvageTitle: z.boolean().default(false),
+  mechanicalIssues: z.string().optional(),
+  lienStatus: z.boolean().default(false),
+  ownershipConfirmed: z.boolean().refine(val => val === true, "You must confirm ownership"),
+  agreementAccepted: z.boolean().refine(val => val === true, "You must accept the consignment agreement"),
+  termsAccepted: z.boolean().refine(val => val === true, "You must accept the terms and privacy policy"),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -39,6 +47,7 @@ const steps = [
   { id: 1, title: "Vehicle Details", icon: Car },
   { id: 2, title: "Condition & Photos", icon: FileText },
   { id: 3, title: "Contact Info", icon: User },
+  { id: 4, title: "Disclosures & Agreement", icon: Shield },
 ];
 
 export function ConsignmentForm() {
@@ -66,6 +75,11 @@ export function ConsignmentForm() {
     defaultValues: {
       condition: "excellent",
       accidentHistory: "clean",
+      salvageTitle: false,
+      lienStatus: false,
+      ownershipConfirmed: false,
+      agreementAccepted: false,
+      termsAccepted: false,
     }
   });
 
@@ -129,7 +143,7 @@ export function ConsignmentForm() {
   });
 
   const submitMutation = useMutation({
-    mutationFn: async (data: FormData & { photos: string[] }) => {
+    mutationFn: async (data: FormData & { photos: string[]; agreementTimestamp: string }) => {
       const res = await fetch("/api/consignments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -172,6 +186,12 @@ export function ConsignmentForm() {
       fieldsToValidate = ["vin", "year", "make", "model", "mileage", "color"];
     } else if (step === 2) {
       fieldsToValidate = ["condition", "accidentHistory"];
+    } else if (step === 3) {
+      fieldsToValidate = ["firstName", "lastName", "email", "phone"];
+      if (!phoneVerified) {
+        toast({ title: "Phone Verification Required", description: "Please verify your phone number before continuing.", variant: "destructive" });
+        return;
+      }
     }
 
     const isValid = await form.trigger(fieldsToValidate);
@@ -181,7 +201,11 @@ export function ConsignmentForm() {
   const prevStep = () => setStep((s) => s - 1);
 
   const onSubmit = async (data: FormData) => {
-    submitMutation.mutate({ ...data, photos: uploadedPhotos });
+    submitMutation.mutate({ 
+      ...data, 
+      photos: uploadedPhotos,
+      agreementTimestamp: new Date().toISOString(),
+    });
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -249,11 +273,13 @@ export function ConsignmentForm() {
             {step === 1 && "Vehicle Information"}
             {step === 2 && "Condition & Photos"}
             {step === 3 && "Your Contact Details"}
+            {step === 4 && "Disclosures & Agreement"}
           </CardTitle>
           <CardDescription>
             {step === 1 && "Please provide the basic details of your vehicle."}
             {step === 2 && "Tell us about the condition and upload photos."}
             {step === 3 && "How can we reach you with our valuation?"}
+            {step === 4 && "Review disclosures and accept the consignment agreement."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -269,32 +295,32 @@ export function ConsignmentForm() {
                 >
                   <div className="space-y-2">
                     <Label htmlFor="vin">VIN Number</Label>
-                    <Input id="vin" placeholder="17-character VIN" {...form.register("vin")} data-testid="input-vin" />
+                    <Input id="vin" placeholder="17-character VIN" {...form.register("vin")} data-testid="input-vin" className="border-white/30" />
                     {form.formState.errors.vin && <p className="text-xs text-destructive">{form.formState.errors.vin.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="year">Year</Label>
-                    <Input id="year" placeholder="YYYY" {...form.register("year")} data-testid="input-year" />
+                    <Input id="year" placeholder="YYYY" {...form.register("year")} data-testid="input-year" className="border-white/30" />
                     {form.formState.errors.year && <p className="text-xs text-destructive">{form.formState.errors.year.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="make">Make</Label>
-                    <Input id="make" placeholder="e.g. Porsche" {...form.register("make")} data-testid="input-make" />
+                    <Input id="make" placeholder="e.g. Porsche" {...form.register("make")} data-testid="input-make" className="border-white/30" />
                     {form.formState.errors.make && <p className="text-xs text-destructive">{form.formState.errors.make.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="model">Model</Label>
-                    <Input id="model" placeholder="e.g. 911 GT3" {...form.register("model")} data-testid="input-model" />
+                    <Input id="model" placeholder="e.g. 911 GT3" {...form.register("model")} data-testid="input-model" className="border-white/30" />
                     {form.formState.errors.model && <p className="text-xs text-destructive">{form.formState.errors.model.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="mileage">Mileage</Label>
-                    <Input id="mileage" placeholder="e.g. 12,000" {...form.register("mileage")} data-testid="input-mileage" />
+                    <Input id="mileage" placeholder="e.g. 12,000" {...form.register("mileage")} data-testid="input-mileage" className="border-white/30" />
                     {form.formState.errors.mileage && <p className="text-xs text-destructive">{form.formState.errors.mileage.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="color">Exterior Color</Label>
-                    <Input id="color" placeholder="e.g. GT Silver" {...form.register("color")} data-testid="input-color" />
+                    <Input id="color" placeholder="e.g. GT Silver" {...form.register("color")} data-testid="input-color" className="border-white/30" />
                     {form.formState.errors.color && <p className="text-xs text-destructive">{form.formState.errors.color.message}</p>}
                   </div>
                 </motion.div>
@@ -315,7 +341,7 @@ export function ConsignmentForm() {
                         onValueChange={(value) => form.setValue("condition", value as any)} 
                         defaultValue={form.getValues("condition")}
                       >
-                        <SelectTrigger data-testid="select-condition">
+                        <SelectTrigger data-testid="select-condition" className="border-white/30">
                           <SelectValue placeholder="Select condition" />
                         </SelectTrigger>
                         <SelectContent>
@@ -332,7 +358,7 @@ export function ConsignmentForm() {
                         onValueChange={(value) => form.setValue("accidentHistory", value as any)} 
                         defaultValue={form.getValues("accidentHistory")}
                       >
-                        <SelectTrigger data-testid="select-accident">
+                        <SelectTrigger data-testid="select-accident" className="border-white/30">
                           <SelectValue placeholder="Select history" />
                         </SelectTrigger>
                         <SelectContent>
@@ -348,7 +374,7 @@ export function ConsignmentForm() {
                     <Label>Description / Modifications / Options</Label>
                     <Textarea 
                       placeholder="Tell us about special features, modifications, or history..." 
-                      className="min-h-[100px]"
+                      className="min-h-[100px] border-white/30"
                       {...form.register("description")} 
                       data-testid="textarea-description"
                     />
@@ -413,17 +439,17 @@ export function ConsignmentForm() {
                 >
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" {...form.register("firstName")} data-testid="input-firstname" />
+                    <Input id="firstName" {...form.register("firstName")} data-testid="input-firstname" className="border-white/30" />
                     {form.formState.errors.firstName && <p className="text-xs text-destructive">{form.formState.errors.firstName.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" {...form.register("lastName")} data-testid="input-lastname" />
+                    <Input id="lastName" {...form.register("lastName")} data-testid="input-lastname" className="border-white/30" />
                     {form.formState.errors.lastName && <p className="text-xs text-destructive">{form.formState.errors.lastName.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
-                    <Input id="email" type="email" {...form.register("email")} data-testid="input-email" />
+                    <Input id="email" type="email" {...form.register("email")} data-testid="input-email" className="border-white/30" />
                     {form.formState.errors.email && <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>}
                   </div>
                   <div className="space-y-2 md:col-span-2">
@@ -436,7 +462,7 @@ export function ConsignmentForm() {
                         {...form.register("phone")} 
                         data-testid="input-phone"
                         disabled={phoneVerified}
-                        className={phoneVerified ? "bg-green-50 border-green-300" : ""}
+                        className={phoneVerified ? "bg-green-50 border-green-300" : "border-white/30"}
                       />
                       {phoneVerified ? (
                         <div className="flex items-center gap-1 text-green-600 px-3">
@@ -483,7 +509,7 @@ export function ConsignmentForm() {
                             onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                             maxLength={6}
                             data-testid="input-verification-code"
-                            className="font-mono text-lg tracking-widest"
+                            className="font-mono text-lg tracking-widest border-white/30"
                           />
                           <Button
                             type="button"
@@ -520,6 +546,134 @@ export function ConsignmentForm() {
                   </div>
                 </motion.div>
               )}
+
+              {step === 4 && (
+                <motion.div
+                  key="step4"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg">Vehicle Disclosures</h3>
+                    <p className="text-sm text-muted-foreground">Please disclose the following information about your vehicle:</p>
+                    
+                    <div className="space-y-4 p-4 border border-white/20 rounded-lg">
+                      <div className="flex items-start space-x-3">
+                        <Checkbox 
+                          id="salvageTitle" 
+                          checked={form.watch("salvageTitle")}
+                          onCheckedChange={(checked) => form.setValue("salvageTitle", checked as boolean)}
+                          data-testid="checkbox-salvage-title"
+                        />
+                        <div className="grid gap-1.5 leading-none">
+                          <Label htmlFor="salvageTitle" className="cursor-pointer">
+                            Salvage or Rebuilt Title
+                          </Label>
+                          <p className="text-xs text-muted-foreground">Check if the vehicle has a salvage, rebuilt, or branded title</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start space-x-3">
+                        <Checkbox 
+                          id="lienStatus" 
+                          checked={form.watch("lienStatus")}
+                          onCheckedChange={(checked) => form.setValue("lienStatus", checked as boolean)}
+                          data-testid="checkbox-lien-status"
+                        />
+                        <div className="grid gap-1.5 leading-none">
+                          <Label htmlFor="lienStatus" className="cursor-pointer">
+                            Lien Present
+                          </Label>
+                          <p className="text-xs text-muted-foreground">Check if there is an existing lien on the vehicle</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="mechanicalIssues">Known Mechanical Issues (if any)</Label>
+                        <Textarea 
+                          id="mechanicalIssues"
+                          placeholder="Describe any known mechanical issues, warning lights, or needed repairs..."
+                          className="min-h-[80px] border-white/30"
+                          {...form.register("mechanicalIssues")}
+                          data-testid="textarea-mechanical-issues"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg">Seller Verification & Agreement</h3>
+                    
+                    <div className="space-y-4 p-4 border border-white/20 rounded-lg">
+                      <div className="flex items-start space-x-3">
+                        <Checkbox 
+                          id="ownershipConfirmed" 
+                          checked={form.watch("ownershipConfirmed")}
+                          onCheckedChange={(checked) => form.setValue("ownershipConfirmed", checked as boolean)}
+                          data-testid="checkbox-ownership"
+                        />
+                        <div className="grid gap-1.5 leading-none">
+                          <Label htmlFor="ownershipConfirmed" className="cursor-pointer font-medium">
+                            I am the legal owner or authorized seller of this vehicle *
+                          </Label>
+                          <p className="text-xs text-muted-foreground">You must be the registered owner or have legal authority to sell</p>
+                        </div>
+                      </div>
+                      {form.formState.errors.ownershipConfirmed && (
+                        <p className="text-xs text-destructive">{form.formState.errors.ownershipConfirmed.message}</p>
+                      )}
+
+                      <div className="flex items-start space-x-3">
+                        <Checkbox 
+                          id="agreementAccepted" 
+                          checked={form.watch("agreementAccepted")}
+                          onCheckedChange={(checked) => form.setValue("agreementAccepted", checked as boolean)}
+                          data-testid="checkbox-agreement"
+                        />
+                        <div className="grid gap-1.5 leading-none">
+                          <Label htmlFor="agreementAccepted" className="cursor-pointer font-medium">
+                            I accept the Consignment Agreement *
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            By checking this box, I agree to consign my vehicle under the terms and conditions of the consignment agreement
+                          </p>
+                        </div>
+                      </div>
+                      {form.formState.errors.agreementAccepted && (
+                        <p className="text-xs text-destructive">{form.formState.errors.agreementAccepted.message}</p>
+                      )}
+
+                      <div className="flex items-start space-x-3">
+                        <Checkbox 
+                          id="termsAccepted" 
+                          checked={form.watch("termsAccepted")}
+                          onCheckedChange={(checked) => form.setValue("termsAccepted", checked as boolean)}
+                          data-testid="checkbox-terms"
+                        />
+                        <div className="grid gap-1.5 leading-none">
+                          <Label htmlFor="termsAccepted" className="cursor-pointer font-medium">
+                            I accept the Terms of Service and Privacy Policy *
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            I have read and agree to the terms of service and privacy policy
+                          </p>
+                        </div>
+                      </div>
+                      {form.formState.errors.termsAccepted && (
+                        <p className="text-xs text-destructive">{form.formState.errors.termsAccepted.message}</p>
+                      )}
+                    </div>
+
+                    <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+                      <p className="text-sm text-muted-foreground">
+                        <strong className="text-foreground">Digital Signature:</strong> By submitting this form, I certify that all information provided is accurate and complete to the best of my knowledge. This electronic submission serves as my digital signature and acknowledgment.
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </AnimatePresence>
           </form>
         </CardContent>
@@ -533,18 +687,18 @@ export function ConsignmentForm() {
             <ChevronLeft className="h-4 w-4" /> Back
           </Button>
           
-          {step < 3 ? (
+          {step < 4 ? (
             <Button onClick={nextStep} className="gap-2" data-testid="button-next">
               Next Step <ChevronRight className="h-4 w-4" />
             </Button>
           ) : (
             <Button 
               onClick={form.handleSubmit(onSubmit)} 
-              disabled={submitMutation.isPending || !phoneVerified}
+              disabled={submitMutation.isPending}
               className="min-w-[140px]"
               data-testid="button-submit"
             >
-              {submitMutation.isPending ? "Submitting..." : !phoneVerified ? "Verify Phone First" : "Submit Consignment"}
+              {submitMutation.isPending ? "Submitting..." : "Submit Consignment"}
             </Button>
           )}
         </CardFooter>
