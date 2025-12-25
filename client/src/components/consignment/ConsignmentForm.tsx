@@ -132,6 +132,14 @@ export function ConsignmentForm() {
   const [isDecodingVin, setIsDecodingVin] = useState(false);
   const [makeOpen, setMakeOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
+  const [colorOpen, setColorOpen] = useState(false);
+  const [customColor, setCustomColor] = useState("");
+  
+  const commonColors = [
+    "White", "Black", "Silver", "Gray", "Red", "Blue", "Navy Blue",
+    "Brown", "Beige", "Green", "Orange", "Yellow", "Gold", "Burgundy",
+    "Champagne", "Pearl White", "Midnight Blue", "Charcoal", "Bronze"
+  ];
 
   const { uploadFile, isUploading } = useUpload({
     onSuccess: (response) => {
@@ -593,36 +601,72 @@ export function ConsignmentForm() {
                   
                   <div className="space-y-2">
                     <Label>Exterior Color</Label>
-                    <Select 
-                      onValueChange={(value) => form.setValue("color", value)}
-                      value={form.watch("color") || ""}
-                    >
-                      <SelectTrigger data-testid="select-color" className="border-white/30">
-                        <SelectValue placeholder="Select color" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="White">White</SelectItem>
-                        <SelectItem value="Black">Black</SelectItem>
-                        <SelectItem value="Silver">Silver</SelectItem>
-                        <SelectItem value="Gray">Gray</SelectItem>
-                        <SelectItem value="Red">Red</SelectItem>
-                        <SelectItem value="Blue">Blue</SelectItem>
-                        <SelectItem value="Navy Blue">Navy Blue</SelectItem>
-                        <SelectItem value="Brown">Brown</SelectItem>
-                        <SelectItem value="Beige">Beige</SelectItem>
-                        <SelectItem value="Green">Green</SelectItem>
-                        <SelectItem value="Orange">Orange</SelectItem>
-                        <SelectItem value="Yellow">Yellow</SelectItem>
-                        <SelectItem value="Gold">Gold</SelectItem>
-                        <SelectItem value="Burgundy">Burgundy</SelectItem>
-                        <SelectItem value="Champagne">Champagne</SelectItem>
-                        <SelectItem value="Pearl White">Pearl White</SelectItem>
-                        <SelectItem value="Midnight Blue">Midnight Blue</SelectItem>
-                        <SelectItem value="Charcoal">Charcoal</SelectItem>
-                        <SelectItem value="Bronze">Bronze</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Popover open={colorOpen} onOpenChange={setColorOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={colorOpen}
+                          className="w-full justify-between border-white/30"
+                          data-testid="select-color"
+                        >
+                          {form.watch("color") || "Select or type color..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="start">
+                        <Command>
+                          <CommandInput 
+                            placeholder="Search or type color..." 
+                            onValueChange={(value) => {
+                              if (value && !commonColors.some(c => c.toLowerCase() === value.toLowerCase())) {
+                                setCustomColor(value);
+                              } else {
+                                setCustomColor("");
+                              }
+                            }}
+                          />
+                          <CommandList>
+                            <CommandEmpty>
+                              {customColor ? (
+                                <button
+                                  className="w-full px-2 py-1.5 text-left hover:bg-accent cursor-pointer"
+                                  onClick={() => {
+                                    form.setValue("color", customColor);
+                                    setColorOpen(false);
+                                    setCustomColor("");
+                                  }}
+                                >
+                                  Use "{customColor}"
+                                </button>
+                              ) : (
+                                "Type a custom color"
+                              )}
+                            </CommandEmpty>
+                            <CommandGroup>
+                              {commonColors.map((color) => (
+                                <CommandItem
+                                  key={color}
+                                  value={color}
+                                  onSelect={() => {
+                                    form.setValue("color", color);
+                                    setColorOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      form.watch("color") === color ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {color}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     {form.formState.errors.color && <p className="text-sm font-semibold text-red-400">{form.formState.errors.color.message}</p>}
                   </div>
                 </motion.div>
