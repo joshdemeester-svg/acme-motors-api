@@ -103,20 +103,28 @@
 }
 
 /* Custom button styles using CSS variables */
-.btn-custom {
-  background-color: var(--button-color, hsl(var(--primary)));
-  color: hsl(0 0% var(--button-foreground, 100%));
-}
-
-.btn-custom:hover {
-  background-color: var(--button-hover-color, hsl(var(--primary)));
-}
-
 .btn-contact {
-  background-color: var(--contact-button-color, hsl(var(--primary)));
-  color: hsl(0 0% var(--contact-button-foreground, 100%));
+  background-color: var(--contact-button-color, hsl(var(--primary))) !important;
+  color: hsl(0 0% var(--contact-button-foreground, 100%)) !important;
 }
 
 .btn-contact:hover {
-  opacity: 0.9;
+  background-color: var(--contact-button-hover-color, hsl(var(--primary))) !important;
+}
+
+/* Main menu link styles */
+.nav-link {
+  color: var(--main-menu-color, hsl(var(--primary)));
+}
+
+.nav-link:hover {
+  color: var(--main-menu-hover-color, hsl(var(--primary)));
+}
+
+.nav-link-inactive {
+  color: hsl(var(--muted-foreground));
+}
+
+.nav-link-inactive:hover {
+  color: var(--main-menu-hover-color, hsl(var(--primary)));
 }
