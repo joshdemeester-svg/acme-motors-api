@@ -214,7 +214,7 @@ function NotesCard({ consignmentId }: { consignmentId: string }) {
   const visibleNotes = expanded ? notes : notes.slice(0, 2);
 
   return (
-    <div className="mt-4 rounded-lg p-4 shadow-lg" style={{ backgroundColor: '#FEF9C3', transform: 'rotate(-1deg)' }}>
+    <div className="mt-4 rounded-lg p-4 shadow-lg" style={{ backgroundColor: '#FEF9C3' }}>
       <div className="flex items-center gap-2 mb-3">
         <MessageSquare className="h-5 w-5 text-amber-700" />
         <span className="font-medium text-amber-900">Updates from Our Team</span>
