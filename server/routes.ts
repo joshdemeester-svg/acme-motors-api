@@ -535,7 +535,8 @@ export async function registerRoutes(
           ModelYear: "2025",
           Make: "Toyota",
           Model: "Camry",
-          VehicleType: "PASSENGER CAR"
+          VehicleType: "PASSENGER CAR",
+          ExteriorColor: "White"
         });
       }
       

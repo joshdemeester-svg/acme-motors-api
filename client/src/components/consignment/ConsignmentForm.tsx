@@ -47,6 +47,7 @@ interface VINDecodeResult {
   year: string;
   make: string;
   model: string;
+  color?: string;
 }
 
 interface VINDecodeResponse {
@@ -55,6 +56,7 @@ interface VINDecodeResponse {
   ModelYear?: string;
   Make?: string;
   Model?: string;
+  ExteriorColor?: string;
 }
 
 async function decodeVIN(vin: string): Promise<{ success: boolean; data?: VINDecodeResult; error?: string }> {
@@ -74,7 +76,8 @@ async function decodeVIN(vin: string): Promise<{ success: boolean; data?: VINDec
       data: {
         year: data.ModelYear || "", 
         make: data.Make || "", 
-        model: data.Model || "" 
+        model: data.Model || "",
+        color: data.ExteriorColor || ""
       }
     };
   }
@@ -193,6 +196,9 @@ export function ConsignmentForm() {
         }
         if (result.data.model) {
           form.setValue("model", result.data.model);
+        }
+        if (result.data.color) {
+          form.setValue("color", result.data.color);
         }
         toast({
           title: "VIN Decoded",
