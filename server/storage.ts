@@ -4,6 +4,7 @@ import {
   inventoryCars,
   siteSettings,
   phoneVerifications,
+  statusHistory,
   type User, 
   type InsertUser,
   type ConsignmentSubmission,
@@ -12,7 +13,8 @@ import {
   type InsertInventoryCar,
   type SiteSettings,
   type InsertSiteSettings,
-  type PhoneVerification
+  type PhoneVerification,
+  type StatusHistory
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt } from "drizzle-orm";
@@ -46,6 +48,9 @@ export interface IStorage {
   isPhoneVerified(phone: string): Promise<boolean>;
   
   getConsignmentsByPhone(phone: string): Promise<ConsignmentSubmission[]>;
+  
+  createStatusHistory(consignmentId: string, status: string, note?: string): Promise<StatusHistory>;
+  getStatusHistory(consignmentId: string): Promise<StatusHistory[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -219,6 +224,22 @@ export class DatabaseStorage implements IStorage {
       .from(consignmentSubmissions)
       .where(eq(consignmentSubmissions.phone, phone))
       .orderBy(desc(consignmentSubmissions.createdAt));
+  }
+
+  async createStatusHistory(consignmentId: string, status: string, note?: string): Promise<StatusHistory> {
+    const [entry] = await db
+      .insert(statusHistory)
+      .values({ consignmentId, status, note })
+      .returning();
+    return entry;
+  }
+
+  async getStatusHistory(consignmentId: string): Promise<StatusHistory[]> {
+    return db
+      .select()
+      .from(statusHistory)
+      .where(eq(statusHistory.consignmentId, consignmentId))
+      .orderBy(desc(statusHistory.createdAt));
   }
 }
 

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Car, Clock, CheckCircle, XCircle, AlertCircle, LogOut, Loader2 } from "lucide-react";
+import { Car, Clock, CheckCircle, XCircle, AlertCircle, LogOut, Loader2, DollarSign, Tag, FileCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 
@@ -29,6 +29,98 @@ interface ConsignmentSubmission {
   photos: string[];
   status: string;
   createdAt: string;
+}
+
+interface StatusHistoryEntry {
+  id: string;
+  consignmentId: string;
+  status: string;
+  note: string | null;
+  createdAt: string;
+}
+
+const milestones = [
+  { key: "pending", label: "Submitted", icon: FileCheck },
+  { key: "approved", label: "Approved", icon: CheckCircle },
+  { key: "listed", label: "Listed", icon: Tag },
+  { key: "sold", label: "Sold", icon: DollarSign },
+];
+
+function StatusTimeline({ currentStatus, consignmentId }: { currentStatus: string; consignmentId: string }) {
+  const { data: history = [] } = useQuery({
+    queryKey: ["/api/seller/consignments", consignmentId, "history"],
+    queryFn: async () => {
+      const res = await fetch(`/api/seller/consignments/${consignmentId}/history`);
+      if (!res.ok) return [];
+      return res.json() as Promise<StatusHistoryEntry[]>;
+    },
+  });
+
+  const statusOrder = ["pending", "approved", "listed", "sold"];
+  const currentIndex = statusOrder.indexOf(currentStatus);
+  const isRejected = currentStatus === "rejected";
+
+  const getStatusDate = (status: string) => {
+    const entry = history.find(h => h.status === status);
+    if (entry) {
+      return new Date(entry.createdAt).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+    }
+    return null;
+  };
+
+  if (isRejected) {
+    return (
+      <div className="flex items-center gap-2 rounded-lg bg-red-500/10 p-3 text-red-400">
+        <XCircle className="h-5 w-5" />
+        <span className="text-sm">This vehicle was not accepted for consignment</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative mt-4">
+      <div className="flex items-center justify-between">
+        {milestones.map((milestone, index) => {
+          const isCompleted = index <= currentIndex;
+          const isCurrent = index === currentIndex;
+          const Icon = milestone.icon;
+          const date = getStatusDate(milestone.key);
+
+          return (
+            <div key={milestone.key} className="relative flex flex-1 flex-col items-center">
+              {index < milestones.length - 1 && (
+                <div
+                  className={`absolute left-1/2 top-5 h-0.5 w-full ${
+                    index < currentIndex ? "bg-green-500" : "bg-gray-700"
+                  }`}
+                />
+              )}
+              <div
+                className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 ${
+                  isCompleted
+                    ? isCurrent
+                      ? "border-green-500 bg-green-500 text-white"
+                      : "border-green-500 bg-green-500/20 text-green-500"
+                    : "border-gray-600 bg-gray-800 text-gray-500"
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+              </div>
+              <span className={`mt-2 text-xs font-medium ${isCompleted ? "text-white" : "text-gray-500"}`}>
+                {milestone.label}
+              </span>
+              {date && (
+                <span className="text-xs text-gray-500">{date}</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
@@ -258,6 +350,8 @@ export default function SellerPortal() {
                               <p className="text-white">{formatPrice(consignment.askingPrice)}</p>
                             </div>
                           </div>
+
+                          <StatusTimeline currentStatus={consignment.status} consignmentId={consignment.id} />
 
                           {consignment.photos && consignment.photos.length > 0 && (
                             <div className="mt-6">

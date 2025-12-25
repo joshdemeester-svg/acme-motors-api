@@ -146,3 +146,13 @@ export const phoneVerifications = pgTable("phone_verifications", {
 });
 
 export type PhoneVerification = typeof phoneVerifications.$inferSelect;
+
+export const statusHistory = pgTable("status_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  consignmentId: varchar("consignment_id").notNull().references(() => consignmentSubmissions.id),
+  status: text("status").notNull(),
+  note: text("note"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type StatusHistory = typeof statusHistory.$inferSelect;
