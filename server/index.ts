@@ -38,7 +38,7 @@ app.use(
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days - remember sellers for a week
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
     store: new MemoryStoreSession({
