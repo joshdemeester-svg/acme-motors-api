@@ -1554,7 +1554,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const pendingSubmissions = submissions.filter(s => s.status === "pending");
 
   return (
-    <>
+    <div className="min-h-screen bg-muted/50">
       <div className="container px-4 py-12 md:px-6">
         <div className="mb-8 flex items-center justify-between">
           <div>
@@ -2330,7 +2330,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }
 
