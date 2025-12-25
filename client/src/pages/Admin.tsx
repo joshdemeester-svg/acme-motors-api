@@ -163,6 +163,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [vehiclePriceColor, setVehiclePriceColor] = useState("#FFFFFF");
   const [stepBgColor, setStepBgColor] = useState("#DC2626");
   const [stepNumberColor, setStepNumberColor] = useState("#FFFFFF");
+  const [socialIconBgColor, setSocialIconBgColor] = useState("#D4AF37");
+  const [socialIconHoverColor, setSocialIconHoverColor] = useState("#B8960C");
   const [footerTagline, setFooterTagline] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [logoWidth, setLogoWidth] = useState("120");
@@ -200,6 +202,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setVehiclePriceColor(settings.vehiclePriceColor || "#FFFFFF");
       setStepBgColor(settings.stepBgColor || "#DC2626");
       setStepNumberColor(settings.stepNumberColor || "#FFFFFF");
+      setSocialIconBgColor(settings.socialIconBgColor || "#D4AF37");
+      setSocialIconHoverColor(settings.socialIconHoverColor || "#B8960C");
       setFooterTagline(settings.footerTagline || "");
       setLogoUrl(settings.logoUrl || "");
       setLogoWidth(settings.logoWidth || "120");
@@ -235,6 +239,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           vehiclePriceColor,
           stepBgColor,
           stepNumberColor,
+          socialIconBgColor,
+          socialIconHoverColor,
           footerTagline: footerTagline || null,
           logoUrl: logoUrl || null,
           logoWidth: logoWidth || "120",
@@ -843,10 +849,74 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
         </CardFooter>
       </Card>
 
+      {/* Social Icon Colors */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Instagram className="h-5 w-5" /> Social Media
+            <Instagram className="h-5 w-5" /> Social Icon Colors
+          </CardTitle>
+          <CardDescription>Customize the social media icon button colors</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Icon Background Color</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={socialIconBgColor}
+                  onChange={(e) => setSocialIconBgColor(e.target.value)}
+                  className="h-10 w-14 p-1 cursor-pointer"
+                  data-testid="input-social-icon-bg-color-picker"
+                />
+                <Input
+                  value={socialIconBgColor}
+                  onChange={(e) => setSocialIconBgColor(e.target.value)}
+                  placeholder="#D4AF37"
+                  className="flex-1"
+                  data-testid="input-social-icon-bg-color-hex"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Background color for social media icon buttons</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Icon Hover Color</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={socialIconHoverColor}
+                  onChange={(e) => setSocialIconHoverColor(e.target.value)}
+                  className="h-10 w-14 p-1 cursor-pointer"
+                  data-testid="input-social-icon-hover-color-picker"
+                />
+                <Input
+                  value={socialIconHoverColor}
+                  onChange={(e) => setSocialIconHoverColor(e.target.value)}
+                  placeholder="#B8960C"
+                  className="flex-1"
+                  data-testid="input-social-icon-hover-color-hex"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Color when hovering over social media icons</p>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button 
+            onClick={() => updateMutation.mutate()} 
+            disabled={updateMutation.isPending}
+            data-testid="button-save-social-icon-colors"
+          >
+            {updateMutation.isPending ? "Saving..." : "Save Icon Colors"}
+          </Button>
+        </CardFooter>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Instagram className="h-5 w-5" /> Social Media Links
           </CardTitle>
           <CardDescription>Add your social media profile links</CardDescription>
         </CardHeader>
