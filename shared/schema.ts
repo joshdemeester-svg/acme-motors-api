@@ -88,6 +88,7 @@ export type InventoryCar = typeof inventoryCars.$inferSelect;
 export const siteSettings = pgTable("site_settings", {
   id: varchar("id").primaryKey().default(sql`'default'`),
   primaryColor: text("primary_color").default("#D4AF37"),
+  backgroundColor: text("background_color").default("#000000"),
   logoUrl: text("logo_url"),
   siteName: text("site_name").default("PRESTIGE"),
   contactAddress1: text("contact_address_1"),

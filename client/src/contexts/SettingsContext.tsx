@@ -30,7 +30,17 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         document.documentElement.style.setProperty("--primary", `${hsl.h} ${hsl.s}% ${hsl.l}%`);
       }
     }
-  }, [settings?.primaryColor]);
+    if (settings?.backgroundColor) {
+      const bgHsl = hexToHSL(settings.backgroundColor);
+      if (bgHsl) {
+        document.documentElement.style.setProperty("--background", `${bgHsl.h} ${bgHsl.s}% ${bgHsl.l}%`);
+        const cardL = Math.min(bgHsl.l + 5, 100);
+        document.documentElement.style.setProperty("--card", `${bgHsl.h} ${bgHsl.s}% ${cardL}%`);
+        const mutedL = Math.min(bgHsl.l + 10, 100);
+        document.documentElement.style.setProperty("--muted", `${bgHsl.h} ${bgHsl.s}% ${mutedL}%`);
+      }
+    }
+  }, [settings?.primaryColor, settings?.backgroundColor]);
 
   return (
     <SettingsContext.Provider value={{ settings: settings || null, isLoading }}>
