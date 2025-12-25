@@ -274,219 +274,295 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   ];
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="space-y-6">
+      {/* Logo Section - First */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Palette className="h-5 w-5" /> Branding
+            <Image className="h-5 w-5" /> Logo & Site Name
+          </CardTitle>
+          <CardDescription>Upload your logo and set your site name</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex-shrink-0">
+              {logoUrl ? (
+                <div className="relative">
+                  <div className="rounded-lg border bg-card p-4">
+                    <img
+                      src={logoUrl}
+                      alt="Current logo"
+                      className="h-20 w-auto max-w-[200px] object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = placeholderCar;
+                      }}
+                    />
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-6 w-6"
+                    onClick={() => setLogoUrl("")}
+                    data-testid="button-remove-logo"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed bg-muted/50 p-8 text-center">
+                  <Image className="mx-auto h-8 w-8 text-muted-foreground" />
+                  <p className="mt-2 text-sm text-muted-foreground">No logo</p>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="siteName">Site Name</Label>
+                  <Input
+                    id="siteName"
+                    value={siteName}
+                    onChange={(e) => setSiteName(e.target.value)}
+                    placeholder="PRESTIGE"
+                    data-testid="input-site-name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="logoUrl">Logo URL</Label>
+                  <Input
+                    id="logoUrl"
+                    value={logoUrl}
+                    onChange={(e) => setLogoUrl(e.target.value)}
+                    placeholder="https://example.com/logo.png"
+                    data-testid="input-logo-url"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Enter a URL to your logo image (PNG, JPG, or SVG). Leave empty to use the default car icon.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button 
+            onClick={() => updateMutation.mutate()} 
+            disabled={updateMutation.isPending}
+            data-testid="button-save-logo"
+          >
+            {updateMutation.isPending ? "Saving..." : "Save Logo & Name"}
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {/* Branding Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-5 w-5" /> Branding & Colors
           </CardTitle>
           <CardDescription>Customize your website appearance</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="siteName">Site Name</Label>
-            <Input
-              id="siteName"
-              value={siteName}
-              onChange={(e) => setSiteName(e.target.value)}
-              placeholder="PRESTIGE"
-              data-testid="input-site-name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Primary Color</Label>
-            <div className="flex flex-wrap gap-2">
-              {colorPresets.map((preset) => (
-                <button
-                  key={preset.value}
-                  onClick={() => setPrimaryColor(preset.value)}
-                  className={`h-10 w-10 rounded-full border-2 transition-all ${
-                    primaryColor === preset.value ? "border-foreground scale-110" : "border-transparent"
-                  }`}
-                  style={{ backgroundColor: preset.value }}
-                  title={preset.name}
-                  data-testid={`color-${preset.name.toLowerCase()}`}
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Primary Color</Label>
+              <div className="flex flex-wrap gap-2">
+                {colorPresets.map((preset) => (
+                  <button
+                    key={preset.value}
+                    onClick={() => setPrimaryColor(preset.value)}
+                    className={`h-8 w-8 rounded-full border-2 transition-all ${
+                      primaryColor === preset.value ? "border-foreground scale-110" : "border-transparent"
+                    }`}
+                    style={{ backgroundColor: preset.value }}
+                    title={preset.name}
+                    data-testid={`color-${preset.name.toLowerCase()}`}
+                  />
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={primaryColor}
+                  onChange={(e) => setPrimaryColor(e.target.value)}
+                  className="h-10 w-14 p-1 cursor-pointer"
+                  data-testid="input-color-picker"
                 />
-              ))}
-            </div>
-            <div className="flex items-center gap-2 mt-2">
-              <Input
-                type="color"
-                value={primaryColor}
-                onChange={(e) => setPrimaryColor(e.target.value)}
-                className="h-10 w-14 p-1 cursor-pointer"
-                data-testid="input-color-picker"
-              />
-              <Input
-                value={primaryColor}
-                onChange={(e) => setPrimaryColor(e.target.value)}
-                placeholder="#D4AF37"
-                className="flex-1"
-                data-testid="input-color-hex"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Background Color</Label>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { name: "Black", value: "#000000" },
-                { name: "Dark Gray", value: "#1a1a1a" },
-                { name: "Charcoal", value: "#333333" },
-                { name: "Navy", value: "#0f172a" },
-                { name: "Dark Blue", value: "#1e293b" },
-                { name: "White", value: "#ffffff" },
-              ].map((preset) => (
-                <button
-                  key={preset.value}
-                  onClick={() => setBackgroundColor(preset.value)}
-                  className={`h-10 w-10 rounded-full border-2 transition-all ${
-                    backgroundColor === preset.value ? "border-primary scale-110" : "border-muted"
-                  }`}
-                  style={{ backgroundColor: preset.value }}
-                  title={preset.name}
-                  data-testid={`bg-color-${preset.name.toLowerCase().replace(' ', '-')}`}
+                <Input
+                  value={primaryColor}
+                  onChange={(e) => setPrimaryColor(e.target.value)}
+                  placeholder="#D4AF37"
+                  className="flex-1"
+                  data-testid="input-color-hex"
                 />
-              ))}
+              </div>
             </div>
-            <div className="flex items-center gap-2 mt-2">
-              <Input
-                type="color"
-                value={backgroundColor}
-                onChange={(e) => setBackgroundColor(e.target.value)}
-                className="h-10 w-14 p-1 cursor-pointer"
-                data-testid="input-bg-color-picker"
-              />
-              <Input
-                value={backgroundColor}
-                onChange={(e) => setBackgroundColor(e.target.value)}
-                placeholder="#000000"
-                className="flex-1"
-                data-testid="input-bg-color-hex"
-              />
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label>Main Menu Color</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="color"
-                value={mainMenuColor}
-                onChange={(e) => setMainMenuColor(e.target.value)}
-                className="h-10 w-14 p-1 cursor-pointer"
-                data-testid="input-main-menu-color-picker"
-              />
-              <Input
-                value={mainMenuColor}
-                onChange={(e) => setMainMenuColor(e.target.value)}
-                placeholder="#D4AF37"
-                className="flex-1"
-                data-testid="input-main-menu-color-hex"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Main Menu Hover Color</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="color"
-                value={mainMenuHoverColor}
-                onChange={(e) => setMainMenuHoverColor(e.target.value)}
-                className="h-10 w-14 p-1 cursor-pointer"
-                data-testid="input-main-menu-hover-color-picker"
-              />
-              <Input
-                value={mainMenuHoverColor}
-                onChange={(e) => setMainMenuHoverColor(e.target.value)}
-                placeholder="#B8960C"
-                className="flex-1"
-                data-testid="input-main-menu-hover-color-hex"
-              />
+            <div className="space-y-2">
+              <Label>Background Color</Label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { name: "Black", value: "#000000" },
+                  { name: "Dark Gray", value: "#1a1a1a" },
+                  { name: "Charcoal", value: "#333333" },
+                  { name: "Navy", value: "#0f172a" },
+                  { name: "Dark Blue", value: "#1e293b" },
+                  { name: "White", value: "#ffffff" },
+                ].map((preset) => (
+                  <button
+                    key={preset.value}
+                    onClick={() => setBackgroundColor(preset.value)}
+                    className={`h-8 w-8 rounded-full border-2 transition-all ${
+                      backgroundColor === preset.value ? "border-primary scale-110" : "border-muted"
+                    }`}
+                    style={{ backgroundColor: preset.value }}
+                    title={preset.name}
+                    data-testid={`bg-color-${preset.name.toLowerCase().replace(' ', '-')}`}
+                  />
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={backgroundColor}
+                  onChange={(e) => setBackgroundColor(e.target.value)}
+                  className="h-10 w-14 p-1 cursor-pointer"
+                  data-testid="input-bg-color-picker"
+                />
+                <Input
+                  value={backgroundColor}
+                  onChange={(e) => setBackgroundColor(e.target.value)}
+                  placeholder="#000000"
+                  className="flex-1"
+                  data-testid="input-bg-color-hex"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Contact Us Button Color</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="color"
-                value={contactButtonColor}
-                onChange={(e) => setContactButtonColor(e.target.value)}
-                className="h-10 w-14 p-1 cursor-pointer"
-                data-testid="input-contact-button-color-picker"
-              />
-              <Input
-                value={contactButtonColor}
-                onChange={(e) => setContactButtonColor(e.target.value)}
-                placeholder="#D4AF37"
-                className="flex-1"
-                data-testid="input-contact-button-color-hex"
-              />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-2">
+              <Label>Main Menu Color</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={mainMenuColor}
+                  onChange={(e) => setMainMenuColor(e.target.value)}
+                  className="h-10 w-14 p-1 cursor-pointer"
+                  data-testid="input-main-menu-color-picker"
+                />
+                <Input
+                  value={mainMenuColor}
+                  onChange={(e) => setMainMenuColor(e.target.value)}
+                  placeholder="#D4AF37"
+                  className="flex-1"
+                  data-testid="input-main-menu-color-hex"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Menu Hover Color</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={mainMenuHoverColor}
+                  onChange={(e) => setMainMenuHoverColor(e.target.value)}
+                  className="h-10 w-14 p-1 cursor-pointer"
+                  data-testid="input-main-menu-hover-color-picker"
+                />
+                <Input
+                  value={mainMenuHoverColor}
+                  onChange={(e) => setMainMenuHoverColor(e.target.value)}
+                  placeholder="#B8960C"
+                  className="flex-1"
+                  data-testid="input-main-menu-hover-color-hex"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Contact Button Color</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={contactButtonColor}
+                  onChange={(e) => setContactButtonColor(e.target.value)}
+                  className="h-10 w-14 p-1 cursor-pointer"
+                  data-testid="input-contact-button-color-picker"
+                />
+                <Input
+                  value={contactButtonColor}
+                  onChange={(e) => setContactButtonColor(e.target.value)}
+                  placeholder="#D4AF37"
+                  className="flex-1"
+                  data-testid="input-contact-button-color-hex"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Contact Hover Color</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={contactButtonHoverColor}
+                  onChange={(e) => setContactButtonHoverColor(e.target.value)}
+                  className="h-10 w-14 p-1 cursor-pointer"
+                  data-testid="input-contact-button-hover-color-picker"
+                />
+                <Input
+                  value={contactButtonHoverColor}
+                  onChange={(e) => setContactButtonHoverColor(e.target.value)}
+                  placeholder="#B8960C"
+                  className="flex-1"
+                  data-testid="input-contact-button-hover-color-hex"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Contact Us Button Hover Color</Label>
-            <div className="flex items-center gap-2">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label>Menu Font Size (px)</Label>
               <Input
-                type="color"
-                value={contactButtonHoverColor}
-                onChange={(e) => setContactButtonHoverColor(e.target.value)}
-                className="h-10 w-14 p-1 cursor-pointer"
-                data-testid="input-contact-button-hover-color-picker"
-              />
-              <Input
-                value={contactButtonHoverColor}
-                onChange={(e) => setContactButtonHoverColor(e.target.value)}
-                placeholder="#B8960C"
-                className="flex-1"
-                data-testid="input-contact-button-hover-color-hex"
+                type="number"
+                min="10"
+                max="24"
+                value={menuFontSize}
+                onChange={(e) => setMenuFontSize(e.target.value)}
+                placeholder="14"
+                className="w-full"
+                data-testid="input-menu-font-size"
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label>Menu Font Size (px)</Label>
-            <Input
-              type="number"
-              min="10"
-              max="24"
-              value={menuFontSize}
-              onChange={(e) => setMenuFontSize(e.target.value)}
-              placeholder="14"
-              className="w-24"
-              data-testid="input-menu-font-size"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Body Font Size (px)</Label>
-            <Input
-              type="number"
-              min="12"
-              max="24"
-              value={bodyFontSize}
-              onChange={(e) => setBodyFontSize(e.target.value)}
-              placeholder="16"
-              className="w-24"
-              data-testid="input-body-font-size"
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Menu Text All Caps</Label>
-              <p className="text-sm text-muted-foreground">Display menu items in uppercase letters</p>
+            <div className="space-y-2">
+              <Label>Body Font Size (px)</Label>
+              <Input
+                type="number"
+                min="12"
+                max="24"
+                value={bodyFontSize}
+                onChange={(e) => setBodyFontSize(e.target.value)}
+                placeholder="16"
+                className="w-full"
+                data-testid="input-body-font-size"
+              />
             </div>
-            <Switch
-              checked={menuAllCaps}
-              onCheckedChange={setMenuAllCaps}
-              data-testid="switch-menu-all-caps"
-            />
+
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <Label>Menu All Caps</Label>
+                <p className="text-xs text-muted-foreground">Uppercase menu text</p>
+              </div>
+              <Switch
+                checked={menuAllCaps}
+                onCheckedChange={setMenuAllCaps}
+                data-testid="switch-menu-all-caps"
+              />
+            </div>
           </div>
         </CardContent>
         <CardFooter>
@@ -500,8 +576,6 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
         </CardFooter>
       </Card>
 
-      <LogoUploadCard logoUrl={logoUrl} setLogoUrl={setLogoUrl} siteName={siteName} saveMutation={updateMutation} />
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -510,51 +584,53 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           <CardDescription>Update your footer contact details</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="contactAddress1">Address Line 1</Label>
-            <Input
-              id="contactAddress1"
-              value={contactAddress1}
-              onChange={(e) => setContactAddress1(e.target.value)}
-              placeholder="123 Luxury Lane"
-              data-testid="input-contact-address1"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="contactAddress2">Address Line 2</Label>
-            <Input
-              id="contactAddress2"
-              value={contactAddress2}
-              onChange={(e) => setContactAddress2(e.target.value)}
-              placeholder="Beverly Hills, CA 90210"
-              data-testid="input-contact-address2"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="contactPhone">Phone Number</Label>
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-muted-foreground" />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="contactAddress1">Address Line 1</Label>
               <Input
-                id="contactPhone"
-                value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value)}
-                placeholder="(555) 123-4567"
-                data-testid="input-contact-phone"
+                id="contactAddress1"
+                value={contactAddress1}
+                onChange={(e) => setContactAddress1(e.target.value)}
+                placeholder="123 Luxury Lane"
+                data-testid="input-contact-address1"
               />
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="contactEmail">Email Address</Label>
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-muted-foreground" />
+            <div className="space-y-2">
+              <Label htmlFor="contactAddress2">Address Line 2</Label>
               <Input
-                id="contactEmail"
-                type="email"
-                value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
-                placeholder="info@prestigeauto.com"
-                data-testid="input-contact-email"
+                id="contactAddress2"
+                value={contactAddress2}
+                onChange={(e) => setContactAddress2(e.target.value)}
+                placeholder="Beverly Hills, CA 90210"
+                data-testid="input-contact-address2"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contactPhone">Phone Number</Label>
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <Input
+                  id="contactPhone"
+                  value={contactPhone}
+                  onChange={(e) => setContactPhone(e.target.value)}
+                  placeholder="(555) 123-4567"
+                  data-testid="input-contact-phone"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contactEmail">Email Address</Label>
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <Input
+                  id="contactEmail"
+                  type="email"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  placeholder="info@prestigeauto.com"
+                  data-testid="input-contact-email"
+                />
+              </div>
             </div>
           </div>
 
@@ -565,7 +641,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
               value={footerTagline}
               onChange={(e) => setFooterTagline(e.target.value)}
               placeholder="Luxury automotive consignment services for discerning collectors and enthusiasts."
-              rows={3}
+              rows={2}
               data-testid="input-footer-tagline"
             />
             <p className="text-xs text-muted-foreground">This text appears below the logo in the footer.</p>
@@ -589,72 +665,74 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           </CardTitle>
           <CardDescription>Add your social media profile links</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="facebookUrl">Facebook</Label>
-            <div className="flex items-center gap-2">
-              <Facebook className="h-4 w-4 text-muted-foreground" />
-              <Input
-                id="facebookUrl"
-                value={facebookUrl}
-                onChange={(e) => setFacebookUrl(e.target.value)}
-                placeholder="https://facebook.com/yourpage"
-                data-testid="input-facebook-url"
-              />
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="facebookUrl">Facebook</Label>
+              <div className="flex items-center gap-2">
+                <Facebook className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <Input
+                  id="facebookUrl"
+                  value={facebookUrl}
+                  onChange={(e) => setFacebookUrl(e.target.value)}
+                  placeholder="https://facebook.com/yourpage"
+                  data-testid="input-facebook-url"
+                />
+              </div>
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="instagramUrl">Instagram</Label>
-            <div className="flex items-center gap-2">
-              <Instagram className="h-4 w-4 text-muted-foreground" />
-              <Input
-                id="instagramUrl"
-                value={instagramUrl}
-                onChange={(e) => setInstagramUrl(e.target.value)}
-                placeholder="https://instagram.com/yourprofile"
-                data-testid="input-instagram-url"
-              />
+            <div className="space-y-2">
+              <Label htmlFor="instagramUrl">Instagram</Label>
+              <div className="flex items-center gap-2">
+                <Instagram className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <Input
+                  id="instagramUrl"
+                  value={instagramUrl}
+                  onChange={(e) => setInstagramUrl(e.target.value)}
+                  placeholder="https://instagram.com/yourprofile"
+                  data-testid="input-instagram-url"
+                />
+              </div>
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="twitterUrl">Twitter / X</Label>
-            <div className="flex items-center gap-2">
-              <Twitter className="h-4 w-4 text-muted-foreground" />
-              <Input
-                id="twitterUrl"
-                value={twitterUrl}
-                onChange={(e) => setTwitterUrl(e.target.value)}
-                placeholder="https://twitter.com/yourhandle"
-                data-testid="input-twitter-url"
-              />
+            <div className="space-y-2">
+              <Label htmlFor="twitterUrl">Twitter / X</Label>
+              <div className="flex items-center gap-2">
+                <Twitter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <Input
+                  id="twitterUrl"
+                  value={twitterUrl}
+                  onChange={(e) => setTwitterUrl(e.target.value)}
+                  placeholder="https://twitter.com/yourhandle"
+                  data-testid="input-twitter-url"
+                />
+              </div>
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="youtubeUrl">YouTube</Label>
-            <div className="flex items-center gap-2">
-              <Youtube className="h-4 w-4 text-muted-foreground" />
-              <Input
-                id="youtubeUrl"
-                value={youtubeUrl}
-                onChange={(e) => setYoutubeUrl(e.target.value)}
-                placeholder="https://youtube.com/@yourchannel"
-                data-testid="input-youtube-url"
-              />
+            <div className="space-y-2">
+              <Label htmlFor="youtubeUrl">YouTube</Label>
+              <div className="flex items-center gap-2">
+                <Youtube className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <Input
+                  id="youtubeUrl"
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  placeholder="https://youtube.com/@yourchannel"
+                  data-testid="input-youtube-url"
+                />
+              </div>
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="tiktokUrl">TikTok</Label>
-            <div className="flex items-center gap-2">
-              <svg className="h-4 w-4 text-muted-foreground" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
-              </svg>
-              <Input
-                id="tiktokUrl"
-                value={tiktokUrl}
-                onChange={(e) => setTiktokUrl(e.target.value)}
-                placeholder="https://tiktok.com/@yourhandle"
-                data-testid="input-tiktok-url"
-              />
+            <div className="space-y-2">
+              <Label htmlFor="tiktokUrl">TikTok</Label>
+              <div className="flex items-center gap-2">
+                <svg className="h-4 w-4 text-muted-foreground flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+                </svg>
+                <Input
+                  id="tiktokUrl"
+                  value={tiktokUrl}
+                  onChange={(e) => setTiktokUrl(e.target.value)}
+                  placeholder="https://tiktok.com/@yourhandle"
+                  data-testid="input-tiktok-url"
+                />
+              </div>
             </div>
           </div>
         </CardContent>
