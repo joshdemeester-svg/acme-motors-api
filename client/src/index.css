@@ -147,3 +147,19 @@
 .body-text {
   font-size: var(--body-font-size, 16px);
 }
+
+/* Social icon button styles */
+.social-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: 9999px;
+  background-color: var(--social-icon-bg-color, #D4AF37);
+  color: white;
+  transition: background-color 0.2s ease;
+}
+
+.social-icon-btn:hover {
+  background-color: var(--social-icon-hover-color, #B8960C);
+}
