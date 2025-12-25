@@ -1569,11 +1569,6 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         alt={`${car.make} ${car.model}`}
                         className="h-full w-full object-cover"
                       />
-                      {(!car.photos || car.photos.length === 0) && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                          <span className="text-white font-semibold text-lg">Photo Coming Soon</span>
-                        </div>
-                      )}
                     </div>
                     <CardHeader className="flex flex-row items-start justify-between">
                       <div>
