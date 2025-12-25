@@ -95,6 +95,8 @@ export const siteSettings = pgTable("site_settings", {
   contactButtonHoverColor: text("contact_button_hover_color").default("#B8960C"),
   menuFontSize: text("menu_font_size").default("14"),
   bodyFontSize: text("body_font_size").default("16"),
+  menuAllCaps: boolean("menu_all_caps").default(true),
+  footerTagline: text("footer_tagline").default("Luxury automotive consignment services for discerning collectors and enthusiasts."),
   logoUrl: text("logo_url"),
   siteName: text("site_name").default("PRESTIGE"),
   contactAddress1: text("contact_address_1"),

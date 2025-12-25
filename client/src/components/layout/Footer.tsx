@@ -22,8 +22,7 @@ export function Footer() {
               <span>{siteName}</span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              The premier destination for buying and selling exceptional automobiles. 
-              We handle every detail of the consignment process.
+              {settings?.footerTagline || "Luxury automotive consignment services for discerning collectors and enthusiasts."}
             </p>
           </div>
           

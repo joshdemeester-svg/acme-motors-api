@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import type { ConsignmentSubmission, InventoryCar, SiteSettings } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
 import { ObjectUploader } from "@/components/ObjectUploader";
@@ -36,7 +37,7 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function LogoUploadCard({ logoUrl, setLogoUrl, siteName }: { logoUrl: string; setLogoUrl: (url: string) => void; siteName: string }) {
+function LogoUploadCard({ logoUrl, setLogoUrl, siteName, saveMutation }: { logoUrl: string; setLogoUrl: (url: string) => void; siteName: string; saveMutation: { mutate: () => void; isPending: boolean } }) {
   const { getUploadParameters } = useUpload();
   
   const handleUploadComplete = async (result: any) => {
@@ -141,6 +142,15 @@ function LogoUploadCard({ logoUrl, setLogoUrl, siteName }: { logoUrl: string; se
           </div>
         )}
       </CardContent>
+      <CardFooter>
+        <Button 
+          onClick={() => saveMutation.mutate()} 
+          disabled={saveMutation.isPending}
+          data-testid="button-save-logo"
+        >
+          {saveMutation.isPending ? "Saving..." : "Save Logo"}
+        </Button>
+      </CardFooter>
     </Card>
   );
 }
@@ -157,6 +167,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [contactButtonHoverColor, setContactButtonHoverColor] = useState("#B8960C");
   const [menuFontSize, setMenuFontSize] = useState("14");
   const [bodyFontSize, setBodyFontSize] = useState("16");
+  const [menuAllCaps, setMenuAllCaps] = useState(true);
+  const [footerTagline, setFooterTagline] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [contactAddress1, setContactAddress1] = useState("");
   const [contactAddress2, setContactAddress2] = useState("");
@@ -187,6 +199,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setContactButtonHoverColor(settings.contactButtonHoverColor || "#B8960C");
       setMenuFontSize(settings.menuFontSize || "14");
       setBodyFontSize(settings.bodyFontSize || "16");
+      setMenuAllCaps(settings.menuAllCaps !== false);
+      setFooterTagline(settings.footerTagline || "");
       setLogoUrl(settings.logoUrl || "");
       setContactAddress1(settings.contactAddress1 || "");
       setContactAddress2(settings.contactAddress2 || "");
@@ -215,6 +229,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           contactButtonHoverColor,
           menuFontSize,
           bodyFontSize,
+          menuAllCaps,
+          footerTagline: footerTagline || null,
           logoUrl: logoUrl || null,
           contactAddress1: contactAddress1 || null,
           contactAddress2: contactAddress2 || null,
@@ -460,10 +476,31 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
               data-testid="input-body-font-size"
             />
           </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Menu Text All Caps</Label>
+              <p className="text-sm text-muted-foreground">Display menu items in uppercase letters</p>
+            </div>
+            <Switch
+              checked={menuAllCaps}
+              onCheckedChange={setMenuAllCaps}
+              data-testid="switch-menu-all-caps"
+            />
+          </div>
         </CardContent>
+        <CardFooter>
+          <Button 
+            onClick={() => updateMutation.mutate()} 
+            disabled={updateMutation.isPending}
+            data-testid="button-save-branding"
+          >
+            {updateMutation.isPending ? "Saving..." : "Save Branding"}
+          </Button>
+        </CardFooter>
       </Card>
 
-      <LogoUploadCard logoUrl={logoUrl} setLogoUrl={setLogoUrl} siteName={siteName} />
+      <LogoUploadCard logoUrl={logoUrl} setLogoUrl={setLogoUrl} siteName={siteName} saveMutation={updateMutation} />
 
       <Card>
         <CardHeader>
@@ -520,7 +557,29 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
               />
             </div>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="footerTagline">Footer Tagline</Label>
+            <Textarea
+              id="footerTagline"
+              value={footerTagline}
+              onChange={(e) => setFooterTagline(e.target.value)}
+              placeholder="Luxury automotive consignment services for discerning collectors and enthusiasts."
+              rows={3}
+              data-testid="input-footer-tagline"
+            />
+            <p className="text-xs text-muted-foreground">This text appears below the logo in the footer.</p>
+          </div>
         </CardContent>
+        <CardFooter>
+          <Button 
+            onClick={() => updateMutation.mutate()} 
+            disabled={updateMutation.isPending}
+            data-testid="button-save-contact"
+          >
+            {updateMutation.isPending ? "Saving..." : "Save Contact Info"}
+          </Button>
+        </CardFooter>
       </Card>
 
       <Card>
@@ -599,6 +658,15 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
             </div>
           </div>
         </CardContent>
+        <CardFooter>
+          <Button 
+            onClick={() => updateMutation.mutate()} 
+            disabled={updateMutation.isPending}
+            data-testid="button-save-social"
+          >
+            {updateMutation.isPending ? "Saving..." : "Save Social Media"}
+          </Button>
+        </CardFooter>
       </Card>
 
     </div>
@@ -1008,20 +1076,9 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             <h1 className="mb-2 font-serif text-4xl font-bold">Admin Dashboard</h1>
             <p className="text-muted-foreground">Manage consignment submissions and inventory.</p>
           </div>
-          <div className="flex items-center gap-2">
-            {activeTab === "settings" && saveHandler && (
-              <Button 
-                onClick={() => saveHandler.save()} 
-                disabled={saveHandler.isPending}
-                data-testid="button-save-settings"
-              >
-                {saveHandler.isPending ? "Saving..." : "Save Changes"}
-              </Button>
-            )}
-            <Button variant="outline" onClick={() => logoutMutation.mutate()} className="gap-2" data-testid="button-logout">
-              <LogOut className="h-4 w-4" /> Logout
-            </Button>
-          </div>
+          <Button variant="outline" onClick={() => logoutMutation.mutate()} className="gap-2" data-testid="button-logout">
+            <LogOut className="h-4 w-4" /> Logout
+          </Button>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
