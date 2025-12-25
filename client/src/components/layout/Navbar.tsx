@@ -37,9 +37,11 @@ export function Navbar() {
           {settings?.logoUrl ? (
             <img src={settings.logoUrl} alt={siteName} className="h-8 w-auto" />
           ) : (
-            <Car className="h-8 w-8 text-primary" />
+            <>
+              <Car className="h-8 w-8 text-primary" />
+              <span>{siteName}</span>
+            </>
           )}
-          <span>{siteName}</span>
         </Link>
 
         {/* Desktop Nav */}
@@ -87,9 +89,11 @@ export function Navbar() {
                 {settings?.logoUrl ? (
                   <img src={settings.logoUrl} alt={siteName} className="h-6 w-auto" />
                 ) : (
-                  <Car className="h-6 w-6 text-primary" />
+                  <>
+                    <Car className="h-6 w-6 text-primary" />
+                    <span>{siteName}</span>
+                  </>
                 )}
-                <span>{siteName}</span>
               </Link>
               <div className="flex flex-col gap-4">
                 {links.map((link) => (
