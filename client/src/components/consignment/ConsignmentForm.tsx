@@ -368,8 +368,11 @@ export function ConsignmentForm() {
       <div className="mx-auto w-full max-w-2xl px-4 py-8">
         <Card className="border-primary/20 bg-card/50 backdrop-blur-sm">
           <CardContent className="py-16 text-center">
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-              <Check className="h-8 w-8 text-primary" />
+            <div 
+              className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full"
+              style={{ backgroundColor: 'var(--step-bg-color, hsl(var(--primary) / 0.1))' }}
+            >
+              <Check className="h-8 w-8" style={{ color: 'var(--step-bg-color, hsl(var(--primary)))' }} />
             </div>
             <h2 className="mb-4 font-serif text-3xl font-bold">Thank You!</h2>
             <p className="mx-auto max-w-md text-muted-foreground">
