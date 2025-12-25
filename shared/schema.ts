@@ -96,6 +96,8 @@ export const siteSettings = pgTable("site_settings", {
   menuFontSize: text("menu_font_size").default("14"),
   bodyFontSize: text("body_font_size").default("16"),
   menuAllCaps: boolean("menu_all_caps").default(true),
+  vehicleTitleColor: text("vehicle_title_color").default("#FFFFFF"),
+  vehiclePriceColor: text("vehicle_price_color").default("#FFFFFF"),
   footerTagline: text("footer_tagline").default("Luxury automotive consignment services for discerning collectors and enthusiasts."),
   logoUrl: text("logo_url"),
   siteName: text("site_name").default("PRESTIGE"),

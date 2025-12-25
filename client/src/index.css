@@ -124,6 +124,15 @@
   color: var(--main-menu-hover-color, hsl(var(--primary)));
 }
 
+/* Vehicle details page styles */
+.vehicle-title {
+  color: var(--vehicle-title-color, #FFFFFF);
+}
+
+.vehicle-price {
+  color: var(--vehicle-price-color, #FFFFFF);
+}
+
 .nav-link-inactive {
   color: hsl(var(--muted-foreground));
   font-size: var(--menu-font-size, 14px);

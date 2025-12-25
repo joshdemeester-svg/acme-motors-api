@@ -66,7 +66,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       document.documentElement.style.setProperty("--body-font-size", `${settings.bodyFontSize}px`);
     }
     document.documentElement.style.setProperty("--menu-text-transform", settings?.menuAllCaps !== false ? "uppercase" : "none");
-  }, [settings?.primaryColor, settings?.backgroundColor, settings?.mainMenuColor, settings?.mainMenuHoverColor, settings?.contactButtonColor, settings?.contactButtonHoverColor, settings?.menuFontSize, settings?.bodyFontSize, settings?.menuAllCaps]);
+    if (settings?.vehicleTitleColor) {
+      document.documentElement.style.setProperty("--vehicle-title-color", settings.vehicleTitleColor);
+    }
+    if (settings?.vehiclePriceColor) {
+      document.documentElement.style.setProperty("--vehicle-price-color", settings.vehiclePriceColor);
+    }
+  }, [settings?.primaryColor, settings?.backgroundColor, settings?.mainMenuColor, settings?.mainMenuHoverColor, settings?.contactButtonColor, settings?.contactButtonHoverColor, settings?.menuFontSize, settings?.bodyFontSize, settings?.menuAllCaps, settings?.vehicleTitleColor, settings?.vehiclePriceColor]);
 
   return (
     <SettingsContext.Provider value={{ settings: settings || null, isLoading }}>
