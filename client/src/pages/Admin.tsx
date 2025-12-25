@@ -313,18 +313,18 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
               )}
             </div>
             <div className="flex-1 space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="siteName">Site Name</Label>
-                  <Input
-                    id="siteName"
-                    value={siteName}
-                    onChange={(e) => setSiteName(e.target.value)}
-                    placeholder="PRESTIGE"
-                    data-testid="input-site-name"
-                  />
-                </div>
-                <div className="space-y-2">
+              <div className="space-y-2">
+                <Label htmlFor="siteName">Site Name</Label>
+                <Input
+                  id="siteName"
+                  value={siteName}
+                  onChange={(e) => setSiteName(e.target.value)}
+                  placeholder="PRESTIGE"
+                  data-testid="input-site-name"
+                />
+              </div>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1 space-y-2">
                   <Label htmlFor="logoUrl">Logo URL</Label>
                   <Input
                     id="logoUrl"
@@ -334,9 +334,37 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
                     data-testid="input-logo-url"
                   />
                 </div>
+                <ObjectUploader
+                  maxNumberOfFiles={1}
+                  maxFileSize={5242880}
+                  onGetUploadParameters={async (file) => {
+                    const res = await fetch("/api/uploads/request-url", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        filename: file.name,
+                        contentType: file.type,
+                      }),
+                    });
+                    if (!res.ok) throw new Error("Failed to get upload URL");
+                    const { uploadUrl } = await res.json();
+                    return { method: "PUT", url: uploadUrl };
+                  }}
+                  onComplete={(result) => {
+                    if (result.successful && result.successful.length > 0) {
+                      const uploadedFile = result.successful[0];
+                      const urlParts = uploadedFile.uploadURL?.split("/") || [];
+                      const objectId = urlParts[urlParts.length - 1]?.split("?")[0] || "";
+                      setLogoUrl(`/objects/uploads/${objectId}`);
+                    }
+                  }}
+                  buttonClassName="shrink-0"
+                >
+                  <Upload className="h-4 w-4 mr-2" /> Upload Logo
+                </ObjectUploader>
               </div>
               <p className="text-xs text-muted-foreground">
-                Enter a URL to your logo image (PNG, JPG, or SVG). Leave empty to use the default car icon.
+                Upload a logo (PNG, JPG, SVG, max 5MB) or enter a URL. Leave empty to use the default car icon.
               </p>
             </div>
           </div>
