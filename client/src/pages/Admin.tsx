@@ -151,6 +151,9 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [siteName, setSiteName] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#D4AF37");
   const [backgroundColor, setBackgroundColor] = useState("#000000");
+  const [buttonColor, setButtonColor] = useState("#D4AF37");
+  const [buttonHoverColor, setButtonHoverColor] = useState("#B8960C");
+  const [contactButtonColor, setContactButtonColor] = useState("#D4AF37");
   const [logoUrl, setLogoUrl] = useState("");
   const [contactAddress1, setContactAddress1] = useState("");
   const [contactAddress2, setContactAddress2] = useState("");
@@ -175,6 +178,9 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setSiteName(settings.siteName || "PRESTIGE");
       setPrimaryColor(settings.primaryColor || "#D4AF37");
       setBackgroundColor(settings.backgroundColor || "#000000");
+      setButtonColor(settings.buttonColor || "#D4AF37");
+      setButtonHoverColor(settings.buttonHoverColor || "#B8960C");
+      setContactButtonColor(settings.contactButtonColor || "#D4AF37");
       setLogoUrl(settings.logoUrl || "");
       setContactAddress1(settings.contactAddress1 || "");
       setContactAddress2(settings.contactAddress2 || "");
@@ -196,7 +202,10 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
         body: JSON.stringify({ 
           siteName, 
           primaryColor,
-          backgroundColor, 
+          backgroundColor,
+          buttonColor,
+          buttonHoverColor,
+          contactButtonColor,
           logoUrl: logoUrl || null,
           contactAddress1: contactAddress1 || null,
           contactAddress2: contactAddress2 || null,
@@ -331,6 +340,66 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
                 placeholder="#000000"
                 className="flex-1"
                 data-testid="input-bg-color-hex"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Button Color</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="color"
+                value={buttonColor}
+                onChange={(e) => setButtonColor(e.target.value)}
+                className="h-10 w-14 p-1 cursor-pointer"
+                data-testid="input-button-color-picker"
+              />
+              <Input
+                value={buttonColor}
+                onChange={(e) => setButtonColor(e.target.value)}
+                placeholder="#D4AF37"
+                className="flex-1"
+                data-testid="input-button-color-hex"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Button Hover Color</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="color"
+                value={buttonHoverColor}
+                onChange={(e) => setButtonHoverColor(e.target.value)}
+                className="h-10 w-14 p-1 cursor-pointer"
+                data-testid="input-button-hover-color-picker"
+              />
+              <Input
+                value={buttonHoverColor}
+                onChange={(e) => setButtonHoverColor(e.target.value)}
+                placeholder="#B8960C"
+                className="flex-1"
+                data-testid="input-button-hover-color-hex"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Contact Us Button Color</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="color"
+                value={contactButtonColor}
+                onChange={(e) => setContactButtonColor(e.target.value)}
+                className="h-10 w-14 p-1 cursor-pointer"
+                data-testid="input-contact-button-color-picker"
+              />
+              <Input
+                value={contactButtonColor}
+                onChange={(e) => setContactButtonColor(e.target.value)}
+                placeholder="#D4AF37"
+                className="flex-1"
+                data-testid="input-contact-button-color-hex"
               />
             </div>
           </div>

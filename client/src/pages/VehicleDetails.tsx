@@ -310,7 +310,7 @@ export default function VehicleDetails({ id }: { id: string }) {
                 ${car.price.toLocaleString()}
               </p>
               <Button 
-                className="mt-4 w-full gap-2" 
+                className="btn-contact mt-4 w-full gap-2" 
                 size="lg"
                 onClick={() => setContactOpen(true)}
                 data-testid="button-contact-top"
@@ -805,7 +805,7 @@ export default function VehicleDetails({ id }: { id: string }) {
               </Card>
 
             <Button 
-              className="w-full gap-2" 
+              className="btn-contact w-full gap-2" 
               size="lg" 
               data-testid="button-contact"
               onClick={() => setContactOpen(true)}

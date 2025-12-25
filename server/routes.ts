@@ -709,6 +709,9 @@ export async function registerRoutes(
       res.json(settings || { 
         primaryColor: "#D4AF37", 
         backgroundColor: "#000000",
+        buttonColor: "#D4AF37",
+        buttonHoverColor: "#B8960C",
+        contactButtonColor: "#D4AF37",
         siteName: "PRESTIGE", 
         logoUrl: null,
         contactAddress1: null,
@@ -732,6 +735,9 @@ export async function registerRoutes(
       const { 
         primaryColor,
         backgroundColor,
+        buttonColor,
+        buttonHoverColor,
+        contactButtonColor,
         siteName, 
         logoUrl,
         contactAddress1,
@@ -747,6 +753,9 @@ export async function registerRoutes(
       const settings = await storage.updateSiteSettings({ 
         primaryColor, 
         backgroundColor,
+        buttonColor,
+        buttonHoverColor,
+        contactButtonColor,
         siteName, 
         logoUrl,
         contactAddress1,
