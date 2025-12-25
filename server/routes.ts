@@ -632,7 +632,13 @@ export async function registerRoutes(
       }
 
       const settings = await storage.getSiteSettings();
-      const commissionRate = settings?.commissionRate || 10;
+      const globalCommissionRate = settings?.commissionRate || 10;
+      const globalAvgDaysToFirstInquiry = settings?.avgDaysToFirstInquiry || 5;
+      const globalAvgDaysToSell = settings?.avgDaysToSell || 45;
+
+      const effectiveCommissionRate = consignment.overrideCommissionRate ?? globalCommissionRate;
+      const effectiveAvgDaysToFirstInquiry = consignment.overrideAvgDaysToFirstInquiry ?? globalAvgDaysToFirstInquiry;
+      const effectiveAvgDaysToSell = consignment.overrideAvgDaysToSell ?? globalAvgDaysToSell;
 
       const cars = await storage.getAllInventoryCars();
       const car = cars.find(c => c.consignmentId === req.params.id);
@@ -641,17 +647,21 @@ export async function registerRoutes(
         return res.json({ 
           status: consignment.status,
           hasListing: false,
-          message: "Vehicle not yet listed" 
+          message: "Vehicle not yet listed",
+          avgDaysToFirstInquiry: effectiveAvgDaysToFirstInquiry,
+          avgDaysToSell: effectiveAvgDaysToSell,
         });
       }
 
       const listingPrice = car.price;
       let payout: number;
+      let isCustomPayout = false;
       
       if (consignment.customPayoutAmount !== null && consignment.customPayoutAmount !== undefined) {
         payout = consignment.customPayoutAmount;
+        isCustomPayout = true;
       } else {
-        const commission = Math.round(listingPrice * (commissionRate / 100));
+        const commission = Math.round(listingPrice * (effectiveCommissionRate / 100));
         payout = listingPrice - commission;
       }
 
@@ -659,9 +669,14 @@ export async function registerRoutes(
         status: consignment.status,
         hasListing: true,
         listingPrice,
-        commissionRate,
+        commissionRate: effectiveCommissionRate,
         estimatedPayout: payout,
-        isCustomPayout: consignment.customPayoutAmount !== null && consignment.customPayoutAmount !== undefined,
+        isCustomPayout,
+        avgDaysToFirstInquiry: effectiveAvgDaysToFirstInquiry,
+        avgDaysToSell: effectiveAvgDaysToSell,
+        hasOverrides: consignment.overrideCommissionRate !== null || 
+                     consignment.overrideAvgDaysToFirstInquiry !== null || 
+                     consignment.overrideAvgDaysToSell !== null,
       });
     } catch (error) {
       console.error("Error fetching payout info:", error);
@@ -726,21 +741,43 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/consignments/:id/payout", requireAdmin, async (req, res) => {
+  app.patch("/api/consignments/:id/overrides", requireAdmin, async (req, res) => {
     try {
-      const { customPayoutAmount } = req.body;
+      const { 
+        customPayoutAmount, 
+        overrideCommissionRate, 
+        overrideAvgDaysToFirstInquiry, 
+        overrideAvgDaysToSell 
+      } = req.body;
       
-      const updated = await storage.updateConsignmentPayout(
-        req.params.id, 
-        customPayoutAmount === null ? null : parseInt(customPayoutAmount)
-      );
+      const overrides: {
+        customPayoutAmount?: number | null;
+        overrideCommissionRate?: number | null;
+        overrideAvgDaysToFirstInquiry?: number | null;
+        overrideAvgDaysToSell?: number | null;
+      } = {};
+      
+      if (customPayoutAmount !== undefined) {
+        overrides.customPayoutAmount = customPayoutAmount === null ? null : parseInt(customPayoutAmount);
+      }
+      if (overrideCommissionRate !== undefined) {
+        overrides.overrideCommissionRate = overrideCommissionRate === null ? null : parseInt(overrideCommissionRate);
+      }
+      if (overrideAvgDaysToFirstInquiry !== undefined) {
+        overrides.overrideAvgDaysToFirstInquiry = overrideAvgDaysToFirstInquiry === null ? null : parseInt(overrideAvgDaysToFirstInquiry);
+      }
+      if (overrideAvgDaysToSell !== undefined) {
+        overrides.overrideAvgDaysToSell = overrideAvgDaysToSell === null ? null : parseInt(overrideAvgDaysToSell);
+      }
+      
+      const updated = await storage.updateConsignmentOverrides(req.params.id, overrides);
       if (!updated) {
         return res.status(404).json({ error: "Consignment not found" });
       }
       res.json(updated);
     } catch (error) {
-      console.error("Error updating payout:", error);
-      res.status(500).json({ error: "Failed to update payout" });
+      console.error("Error updating overrides:", error);
+      res.status(500).json({ error: "Failed to update overrides" });
     }
   });
 

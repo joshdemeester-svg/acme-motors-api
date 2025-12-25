@@ -51,6 +51,9 @@ export const consignmentSubmissions = pgTable("consignment_submissions", {
   status: text("status").notNull().default("pending"),
   
   customPayoutAmount: integer("custom_payout_amount"),
+  overrideCommissionRate: integer("override_commission_rate"),
+  overrideAvgDaysToFirstInquiry: integer("override_avg_days_to_first_inquiry"),
+  overrideAvgDaysToSell: integer("override_avg_days_to_sell"),
   
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -60,6 +63,9 @@ export const insertConsignmentSchema = createInsertSchema(consignmentSubmissions
   createdAt: true,
   status: true,
   customPayoutAmount: true,
+  overrideCommissionRate: true,
+  overrideAvgDaysToFirstInquiry: true,
+  overrideAvgDaysToSell: true,
 });
 
 export type InsertConsignment = z.infer<typeof insertConsignmentSchema>;

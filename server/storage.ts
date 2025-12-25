@@ -58,7 +58,12 @@ export interface IStorage {
   createStatusHistory(consignmentId: string, status: string, note?: string): Promise<StatusHistory>;
   getStatusHistory(consignmentId: string): Promise<StatusHistory[]>;
   
-  updateConsignmentPayout(id: string, customPayoutAmount: number | null): Promise<ConsignmentSubmission | undefined>;
+  updateConsignmentOverrides(id: string, overrides: {
+    customPayoutAmount?: number | null;
+    overrideCommissionRate?: number | null;
+    overrideAvgDaysToFirstInquiry?: number | null;
+    overrideAvgDaysToSell?: number | null;
+  }): Promise<ConsignmentSubmission | undefined>;
   
   createSellerNote(data: InsertSellerNote): Promise<SellerNote>;
   getSellerNotes(consignmentId: string): Promise<SellerNote[]>;
@@ -257,10 +262,15 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(statusHistory.createdAt));
   }
 
-  async updateConsignmentPayout(id: string, customPayoutAmount: number | null): Promise<ConsignmentSubmission | undefined> {
+  async updateConsignmentOverrides(id: string, overrides: {
+    customPayoutAmount?: number | null;
+    overrideCommissionRate?: number | null;
+    overrideAvgDaysToFirstInquiry?: number | null;
+    overrideAvgDaysToSell?: number | null;
+  }): Promise<ConsignmentSubmission | undefined> {
     const [updated] = await db
       .update(consignmentSubmissions)
-      .set({ customPayoutAmount })
+      .set(overrides)
       .where(eq(consignmentSubmissions.id, id))
       .returning();
     return updated || undefined;

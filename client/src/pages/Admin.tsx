@@ -1175,8 +1175,11 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [price, setPrice] = useState("");
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [noteContent, setNoteContent] = useState("");
-  const [payoutDialogOpen, setPayoutDialogOpen] = useState(false);
+  const [overrideDialogOpen, setOverrideDialogOpen] = useState(false);
   const [customPayout, setCustomPayout] = useState("");
+  const [overrideCommission, setOverrideCommission] = useState("");
+  const [overrideDaysInquiry, setOverrideDaysInquiry] = useState("");
+  const [overrideDaysSell, setOverrideDaysSell] = useState("");
   
   const [selectedCar, setSelectedCar] = useState<InventoryCar | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -1278,21 +1281,32 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     },
   });
 
-  const updatePayoutMutation = useMutation({
-    mutationFn: async ({ consignmentId, customPayoutAmount }: { consignmentId: string; customPayoutAmount: number | null }) => {
-      const res = await fetch(`/api/consignments/${consignmentId}/payout`, {
+  const updateOverridesMutation = useMutation({
+    mutationFn: async ({ consignmentId, overrides }: { 
+      consignmentId: string; 
+      overrides: {
+        customPayoutAmount?: number | null;
+        overrideCommissionRate?: number | null;
+        overrideAvgDaysToFirstInquiry?: number | null;
+        overrideAvgDaysToSell?: number | null;
+      }
+    }) => {
+      const res = await fetch(`/api/consignments/${consignmentId}/overrides`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customPayoutAmount }),
+        body: JSON.stringify(overrides),
       });
-      if (!res.ok) throw new Error("Failed to update payout");
+      if (!res.ok) throw new Error("Failed to update overrides");
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/consignments"] });
-      setPayoutDialogOpen(false);
+      setOverrideDialogOpen(false);
       setCustomPayout("");
-      toast({ title: "Custom payout set", description: "The seller will see the updated payout in their portal." });
+      setOverrideCommission("");
+      setOverrideDaysInquiry("");
+      setOverrideDaysSell("");
+      toast({ title: "Overrides saved", description: "The seller will see the updated values in their portal." });
     },
   });
 
@@ -1668,11 +1682,14 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                           onClick={() => {
                             setSelectedSubmission(sub);
                             setCustomPayout(sub.customPayoutAmount?.toString() || "");
-                            setPayoutDialogOpen(true);
+                            setOverrideCommission(sub.overrideCommissionRate?.toString() || "");
+                            setOverrideDaysInquiry(sub.overrideAvgDaysToFirstInquiry?.toString() || "");
+                            setOverrideDaysSell(sub.overrideAvgDaysToSell?.toString() || "");
+                            setOverrideDialogOpen(true);
                           }}
                           className="gap-1"
                         >
-                          <DollarSign className="h-4 w-4" /> Set Payout
+                          <Settings className="h-4 w-4" /> Overrides
                         </Button>
                       </div>
                     </CardContent>
@@ -1856,12 +1873,12 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={payoutDialogOpen} onOpenChange={setPayoutDialogOpen}>
-        <DialogContent>
+      <Dialog open={overrideDialogOpen} onOpenChange={setOverrideDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Set Custom Payout</DialogTitle>
+            <DialogTitle>Listing Overrides</DialogTitle>
             <DialogDescription>
-              Override the standard commission-based payout for {selectedSubmission?.year} {selectedSubmission?.make} {selectedSubmission?.model}. Leave blank to use the default commission rate.
+              Set custom values for {selectedSubmission?.year} {selectedSubmission?.make} {selectedSubmission?.model}. Leave fields empty to use global defaults.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -1870,29 +1887,75 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               <Input
                 id="customPayout"
                 type="number"
-                placeholder="e.g. 40000"
+                placeholder="Leave empty for auto-calculation"
                 value={customPayout}
                 onChange={(e) => setCustomPayout(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                This is the amount the seller will receive. Leave empty to calculate based on listing price minus commission.
+                Direct payout amount (overrides commission calculation)
               </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="overrideCommission">Commission Rate Override (%)</Label>
+              <Input
+                id="overrideCommission"
+                type="number"
+                min="0"
+                max="100"
+                placeholder="Leave empty for global default"
+                value={overrideCommission}
+                onChange={(e) => setOverrideCommission(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Custom commission % for this vehicle only
+              </p>
+            </div>
+            <div className="grid gap-4 grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="overrideDaysInquiry">Days to First Inquiry</Label>
+                <Input
+                  id="overrideDaysInquiry"
+                  type="number"
+                  min="1"
+                  placeholder="Default"
+                  value={overrideDaysInquiry}
+                  onChange={(e) => setOverrideDaysInquiry(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="overrideDaysSell">Days to Sell</Label>
+                <Input
+                  id="overrideDaysSell"
+                  type="number"
+                  min="1"
+                  placeholder="Default"
+                  value={overrideDaysSell}
+                  onChange={(e) => setOverrideDaysSell(e.target.value)}
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPayoutDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setOverrideDialogOpen(false)}>
               Cancel
             </Button>
             <Button
               onClick={() => {
                 if (selectedSubmission) {
-                  const amount = customPayout ? parseInt(customPayout) : null;
-                  updatePayoutMutation.mutate({ consignmentId: selectedSubmission.id, customPayoutAmount: amount });
+                  updateOverridesMutation.mutate({ 
+                    consignmentId: selectedSubmission.id, 
+                    overrides: {
+                      customPayoutAmount: customPayout ? parseInt(customPayout) : null,
+                      overrideCommissionRate: overrideCommission ? parseInt(overrideCommission) : null,
+                      overrideAvgDaysToFirstInquiry: overrideDaysInquiry ? parseInt(overrideDaysInquiry) : null,
+                      overrideAvgDaysToSell: overrideDaysSell ? parseInt(overrideDaysSell) : null,
+                    }
+                  });
                 }
               }}
-              disabled={updatePayoutMutation.isPending}
+              disabled={updateOverridesMutation.isPending}
             >
-              {updatePayoutMutation.isPending ? "Saving..." : customPayout ? "Set Custom Payout" : "Clear Override"}
+              {updateOverridesMutation.isPending ? "Saving..." : "Save Overrides"}
             </Button>
           </DialogFooter>
         </DialogContent>
