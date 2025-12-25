@@ -342,13 +342,14 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({
-                        filename: file.name,
+                        name: file.name,
+                        size: file.size,
                         contentType: file.type,
                       }),
                     });
                     if (!res.ok) throw new Error("Failed to get upload URL");
-                    const { uploadUrl } = await res.json();
-                    return { method: "PUT", url: uploadUrl };
+                    const { uploadURL } = await res.json();
+                    return { method: "PUT", url: uploadURL };
                   }}
                   onComplete={(result) => {
                     if (result.successful && result.successful.length > 0) {
@@ -1609,13 +1610,14 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({
-                        filename: file.name,
+                        name: file.name,
+                        size: file.size,
                         contentType: file.type,
                       }),
                     });
                     if (!res.ok) throw new Error("Failed to get upload URL");
-                    const { uploadUrl } = await res.json();
-                    return { method: "PUT", url: uploadUrl };
+                    const { uploadURL } = await res.json();
+                    return { method: "PUT", url: uploadURL };
                   }}
                   onComplete={(result) => {
                     const newPhotos = (result.successful || []).map((file) => {
