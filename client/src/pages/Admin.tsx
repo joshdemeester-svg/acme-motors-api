@@ -161,6 +161,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [menuAllCaps, setMenuAllCaps] = useState(true);
   const [vehicleTitleColor, setVehicleTitleColor] = useState("#FFFFFF");
   const [vehiclePriceColor, setVehiclePriceColor] = useState("#FFFFFF");
+  const [stepBgColor, setStepBgColor] = useState("#DC2626");
+  const [stepNumberColor, setStepNumberColor] = useState("#FFFFFF");
   const [footerTagline, setFooterTagline] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [logoWidth, setLogoWidth] = useState("120");
@@ -196,6 +198,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setMenuAllCaps(settings.menuAllCaps !== false);
       setVehicleTitleColor(settings.vehicleTitleColor || "#FFFFFF");
       setVehiclePriceColor(settings.vehiclePriceColor || "#FFFFFF");
+      setStepBgColor(settings.stepBgColor || "#DC2626");
+      setStepNumberColor(settings.stepNumberColor || "#FFFFFF");
       setFooterTagline(settings.footerTagline || "");
       setLogoUrl(settings.logoUrl || "");
       setLogoWidth(settings.logoWidth || "120");
@@ -229,6 +233,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           menuAllCaps,
           vehicleTitleColor,
           vehiclePriceColor,
+          stepBgColor,
+          stepNumberColor,
           footerTagline: footerTagline || null,
           logoUrl: logoUrl || null,
           logoWidth: logoWidth || "120",
@@ -687,6 +693,70 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
             data-testid="button-save-vehicle-details"
           >
             {updateMutation.isPending ? "Saving..." : "Save Vehicle Details"}
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {/* Home Page Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-5 w-5" /> Home Page
+          </CardTitle>
+          <CardDescription>Customize home page consignment step colors</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Step Background Color</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={stepBgColor}
+                  onChange={(e) => setStepBgColor(e.target.value)}
+                  className="h-10 w-14 p-1 cursor-pointer"
+                  data-testid="input-step-bg-color-picker"
+                />
+                <Input
+                  value={stepBgColor}
+                  onChange={(e) => setStepBgColor(e.target.value)}
+                  placeholder="#DC2626"
+                  className="flex-1"
+                  data-testid="input-step-bg-color-hex"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Background color for steps 1, 2, 3</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Step Number Color</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={stepNumberColor}
+                  onChange={(e) => setStepNumberColor(e.target.value)}
+                  className="h-10 w-14 p-1 cursor-pointer"
+                  data-testid="input-step-number-color-picker"
+                />
+                <Input
+                  value={stepNumberColor}
+                  onChange={(e) => setStepNumberColor(e.target.value)}
+                  placeholder="#FFFFFF"
+                  className="flex-1"
+                  data-testid="input-step-number-color-hex"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Color for the step numbers</p>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button 
+            onClick={() => updateMutation.mutate()} 
+            disabled={updateMutation.isPending}
+            data-testid="button-save-home-page"
+          >
+            {updateMutation.isPending ? "Saving..." : "Save Home Page"}
           </Button>
         </CardFooter>
       </Card>

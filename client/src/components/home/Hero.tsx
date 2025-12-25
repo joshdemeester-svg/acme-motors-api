@@ -25,7 +25,7 @@ export function Hero() {
           transition={{ duration: 0.8 }}
           className="max-w-3xl space-y-6"
         >
-          <div className="inline-block rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary backdrop-blur-sm">
+          <div className="inline-block rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-white">
             Premium Automotive Consignment
           </div>
           <h1 className="font-serif text-5xl font-bold leading-tight tracking-tight text-white md:text-7xl lg:text-8xl">
