@@ -214,16 +214,16 @@ function NotesCard({ consignmentId }: { consignmentId: string }) {
   const visibleNotes = expanded ? notes : notes.slice(0, 2);
 
   return (
-    <div className="mt-4 rounded-lg border border-blue-800/50 bg-blue-900/20 p-4">
+    <div className="mt-4 rounded-lg p-4 shadow-lg" style={{ backgroundColor: '#FEF9C3', transform: 'rotate(-1deg)' }}>
       <div className="flex items-center gap-2 mb-3">
-        <MessageSquare className="h-5 w-5 text-blue-400" />
-        <span className="font-medium text-white">Updates from Our Team</span>
+        <MessageSquare className="h-5 w-5 text-amber-700" />
+        <span className="font-medium text-amber-900">Updates from Our Team</span>
       </div>
       <div className="space-y-3">
         {visibleNotes.map((note) => (
-          <div key={note.id} className="rounded bg-gray-800/50 p-3">
-            <p className="text-sm text-gray-300">{note.content}</p>
-            <p className="mt-1 text-xs text-gray-500">
+          <div key={note.id} className="rounded p-3" style={{ backgroundColor: '#FEF3C7' }}>
+            <p className="text-sm text-amber-900">{note.content}</p>
+            <p className="mt-1 text-xs text-amber-700">
               {new Date(note.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
             </p>
           </div>
@@ -233,7 +233,7 @@ function NotesCard({ consignmentId }: { consignmentId: string }) {
         <Button
           variant="ghost"
           size="sm"
-          className="mt-2 w-full text-blue-400 hover:text-blue-300"
+          className="mt-2 w-full text-amber-700 hover:text-amber-900 hover:bg-amber-200/50"
           onClick={() => setExpanded(!expanded)}
         >
           {expanded ? (
