@@ -1,0 +1,294 @@
+import { useEffect } from "react";
+import { useLocation } from "wouter";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Car, Clock, CheckCircle, XCircle, AlertCircle, LogOut, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
+
+interface ConsignmentSubmission {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  year: number;
+  make: string;
+  model: string;
+  vin: string;
+  mileage: number;
+  color: string;
+  condition: string;
+  modifications: string | null;
+  askingPrice: number | null;
+  photos: string[];
+  status: string;
+  createdAt: string;
+}
+
+const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+  pending: {
+    label: "Pending Review",
+    color: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+    icon: <Clock className="h-4 w-4" />,
+  },
+  approved: {
+    label: "Approved",
+    color: "bg-green-500/10 text-green-500 border-green-500/20",
+    icon: <CheckCircle className="h-4 w-4" />,
+  },
+  listed: {
+    label: "Listed for Sale",
+    color: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+    icon: <Car className="h-4 w-4" />,
+  },
+  sold: {
+    label: "Sold",
+    color: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+    icon: <CheckCircle className="h-4 w-4" />,
+  },
+  rejected: {
+    label: "Not Accepted",
+    color: "bg-red-500/10 text-red-500 border-red-500/20",
+    icon: <XCircle className="h-4 w-4" />,
+  },
+};
+
+export default function SellerPortal() {
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: session, isLoading: sessionLoading } = useQuery({
+    queryKey: ["/api/seller/session"],
+    queryFn: async () => {
+      const res = await fetch("/api/seller/session");
+      return res.json();
+    },
+  });
+
+  const { data: consignments = [], isLoading: consignmentsLoading, error: consignmentsError, refetch: refetchConsignments } = useQuery({
+    queryKey: ["/api/seller/consignments"],
+    queryFn: async () => {
+      const res = await fetch("/api/seller/consignments");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to fetch consignments");
+      }
+      return res.json() as Promise<ConsignmentSubmission[]>;
+    },
+    enabled: session?.authenticated,
+    retry: 1,
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/seller/logout", { method: "POST" });
+      if (!res.ok) throw new Error("Failed to logout");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/seller/session"] });
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+      setLocation("/");
+    },
+  });
+
+  useEffect(() => {
+    if (!sessionLoading && !session?.authenticated) {
+      setLocation("/");
+    }
+  }, [session, sessionLoading, setLocation]);
+
+  if (sessionLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!session?.authenticated) {
+    return null;
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const formatPrice = (price: number | null) => {
+    if (!price) return "To Be Determined";
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
+  return (
+    <div className="flex min-h-screen flex-col bg-[#0a0a0a]">
+      <Navbar />
+      <main className="flex-1 py-12">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h1 className="font-serif text-3xl font-bold text-white md:text-4xl">
+                  Seller Portal
+                </h1>
+                <p className="mt-2 text-gray-400">
+                  Track your vehicle consignments and their status
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => logoutMutation.mutate()}
+                disabled={logoutMutation.isPending}
+                data-testid="btn-seller-logout"
+              >
+                {logoutMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <LogOut className="mr-2 h-4 w-4" />
+                )}
+                Log Out
+              </Button>
+            </div>
+
+            <Separator className="mb-8 bg-gray-800" />
+
+            {consignmentsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : consignmentsError ? (
+              <Card className="border-gray-800 bg-gray-900/50">
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
+                  <h3 className="text-lg font-medium text-white">Unable to Load Consignments</h3>
+                  <p className="mt-2 text-center text-gray-400">
+                    {consignmentsError instanceof Error ? consignmentsError.message : "Something went wrong. Please try again."}
+                  </p>
+                  <Button
+                    className="mt-6"
+                    onClick={() => refetchConsignments()}
+                    data-testid="btn-retry-consignments"
+                  >
+                    Try Again
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : consignments.length === 0 ? (
+              <Card className="border-gray-800 bg-gray-900/50">
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <AlertCircle className="mb-4 h-12 w-12 text-gray-500" />
+                  <h3 className="text-lg font-medium text-white">No Consignments Found</h3>
+                  <p className="mt-2 text-center text-gray-400">
+                    You haven't submitted any vehicles for consignment yet.
+                  </p>
+                  <Button
+                    className="mt-6"
+                    onClick={() => setLocation("/consign")}
+                    data-testid="btn-submit-consignment"
+                  >
+                    Submit a Vehicle
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-6">
+                {consignments.map((consignment, index) => {
+                  const status = statusConfig[consignment.status] || statusConfig.pending;
+                  return (
+                    <motion.div
+                      key={consignment.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                    >
+                      <Card className="border-gray-800 bg-gray-900/50 overflow-hidden" data-testid={`card-consignment-${consignment.id}`}>
+                        <CardHeader className="pb-4">
+                          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <CardTitle className="font-serif text-xl text-white">
+                                {consignment.year} {consignment.make} {consignment.model}
+                              </CardTitle>
+                              <CardDescription className="mt-1">
+                                Submitted on {formatDate(consignment.createdAt)}
+                              </CardDescription>
+                            </div>
+                            <Badge className={`${status.color} flex items-center gap-1.5 px-3 py-1`}>
+                              {status.icon}
+                              {status.label}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <div>
+                              <p className="text-sm text-gray-400">VIN</p>
+                              <p className="font-mono text-sm text-white">{consignment.vin}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-400">Mileage</p>
+                              <p className="text-white">{consignment.mileage.toLocaleString()} miles</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-400">Color</p>
+                              <p className="text-white">{consignment.color}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-400">Asking Price</p>
+                              <p className="text-white">{formatPrice(consignment.askingPrice)}</p>
+                            </div>
+                          </div>
+
+                          {consignment.photos && consignment.photos.length > 0 && (
+                            <div className="mt-6">
+                              <p className="mb-3 text-sm text-gray-400">Photos ({consignment.photos.length})</p>
+                              <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
+                                {consignment.photos.slice(0, 8).map((photo, photoIndex) => (
+                                  <div
+                                    key={photoIndex}
+                                    className="aspect-square overflow-hidden rounded-lg bg-gray-800"
+                                  >
+                                    <img
+                                      src={photo}
+                                      alt={`Vehicle photo ${photoIndex + 1}`}
+                                      className="h-full w-full object-cover"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </motion.div>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+}

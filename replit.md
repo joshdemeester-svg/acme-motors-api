@@ -54,6 +54,24 @@ Session-based authentication using express-session with memorystore:
 - Secure password hashing using PBKDF2 with per-password salt (100,000 iterations, SHA-512)
 - Admin-only route protection via `requireAdmin` middleware
 - First-time admin setup via `/api/auth/setup` endpoint
+- **Unified Login Modal**: Single modal with two paths - Vehicle Owner (phone verification) and Staff (username/password)
+
+### Seller Portal
+
+Vehicle owners can log in to track their consignment status:
+- **Phone-based authentication**: Sellers log in using their phone number (same as used during consignment)
+- **SMS verification**: 6-digit code sent via GoHighLevel SMS
+- **Security features**:
+  - Rate limiting (3 requests per 5 minutes per phone)
+  - Session regeneration after authentication (prevents session fixation)
+  - Generic error messages (prevents phone enumeration)
+- **Portal features**: View all submitted vehicles, track status (pending, approved, listed, sold, rejected)
+- **Routes**:
+  - `POST /api/seller/send-code` - Send verification code to phone
+  - `POST /api/seller/verify` - Verify code and create session
+  - `GET /api/seller/session` - Check seller session status
+  - `POST /api/seller/logout` - End seller session
+  - `GET /api/seller/consignments` - Get seller's vehicles
 
 ### Data Storage
 

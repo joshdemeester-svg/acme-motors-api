@@ -1,4 +1,4 @@
-import { Car, Facebook, Instagram, Twitter, Lock, Youtube } from "lucide-react";
+import { Car, Facebook, Instagram, Twitter, Youtube } from "lucide-react";
 import { Link } from "wouter";
 import { useSettings } from "@/contexts/SettingsContext";
 
@@ -124,10 +124,6 @@ export function Footer() {
           <div className="flex gap-4">
             <a href="#" className="hover:text-foreground">Privacy Policy</a>
             <a href="#" className="hover:text-foreground">Terms of Service</a>
-            <Link href="/admin" className="flex items-center gap-1 hover:text-foreground" data-testid="link-admin-login">
-              <Lock className="h-3 w-3" />
-              Admin
-            </Link>
           </div>
         </div>
       </div>
