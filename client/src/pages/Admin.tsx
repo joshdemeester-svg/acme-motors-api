@@ -151,9 +151,10 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [siteName, setSiteName] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#D4AF37");
   const [backgroundColor, setBackgroundColor] = useState("#000000");
-  const [buttonColor, setButtonColor] = useState("#D4AF37");
-  const [buttonHoverColor, setButtonHoverColor] = useState("#B8960C");
+  const [mainMenuColor, setMainMenuColor] = useState("#D4AF37");
+  const [mainMenuHoverColor, setMainMenuHoverColor] = useState("#B8960C");
   const [contactButtonColor, setContactButtonColor] = useState("#D4AF37");
+  const [contactButtonHoverColor, setContactButtonHoverColor] = useState("#B8960C");
   const [logoUrl, setLogoUrl] = useState("");
   const [contactAddress1, setContactAddress1] = useState("");
   const [contactAddress2, setContactAddress2] = useState("");
@@ -178,9 +179,10 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setSiteName(settings.siteName || "PRESTIGE");
       setPrimaryColor(settings.primaryColor || "#D4AF37");
       setBackgroundColor(settings.backgroundColor || "#000000");
-      setButtonColor(settings.buttonColor || "#D4AF37");
-      setButtonHoverColor(settings.buttonHoverColor || "#B8960C");
+      setMainMenuColor(settings.mainMenuColor || "#D4AF37");
+      setMainMenuHoverColor(settings.mainMenuHoverColor || "#B8960C");
       setContactButtonColor(settings.contactButtonColor || "#D4AF37");
+      setContactButtonHoverColor(settings.contactButtonHoverColor || "#B8960C");
       setLogoUrl(settings.logoUrl || "");
       setContactAddress1(settings.contactAddress1 || "");
       setContactAddress2(settings.contactAddress2 || "");
@@ -203,9 +205,10 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           siteName, 
           primaryColor,
           backgroundColor,
-          buttonColor,
-          buttonHoverColor,
+          mainMenuColor,
+          mainMenuHoverColor,
           contactButtonColor,
+          contactButtonHoverColor,
           logoUrl: logoUrl || null,
           contactAddress1: contactAddress1 || null,
           contactAddress2: contactAddress2 || null,
@@ -345,41 +348,41 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           </div>
 
           <div className="space-y-2">
-            <Label>Button Color</Label>
+            <Label>Main Menu Color</Label>
             <div className="flex items-center gap-2">
               <Input
                 type="color"
-                value={buttonColor}
-                onChange={(e) => setButtonColor(e.target.value)}
+                value={mainMenuColor}
+                onChange={(e) => setMainMenuColor(e.target.value)}
                 className="h-10 w-14 p-1 cursor-pointer"
-                data-testid="input-button-color-picker"
+                data-testid="input-main-menu-color-picker"
               />
               <Input
-                value={buttonColor}
-                onChange={(e) => setButtonColor(e.target.value)}
+                value={mainMenuColor}
+                onChange={(e) => setMainMenuColor(e.target.value)}
                 placeholder="#D4AF37"
                 className="flex-1"
-                data-testid="input-button-color-hex"
+                data-testid="input-main-menu-color-hex"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Button Hover Color</Label>
+            <Label>Main Menu Hover Color</Label>
             <div className="flex items-center gap-2">
               <Input
                 type="color"
-                value={buttonHoverColor}
-                onChange={(e) => setButtonHoverColor(e.target.value)}
+                value={mainMenuHoverColor}
+                onChange={(e) => setMainMenuHoverColor(e.target.value)}
                 className="h-10 w-14 p-1 cursor-pointer"
-                data-testid="input-button-hover-color-picker"
+                data-testid="input-main-menu-hover-color-picker"
               />
               <Input
-                value={buttonHoverColor}
-                onChange={(e) => setButtonHoverColor(e.target.value)}
+                value={mainMenuHoverColor}
+                onChange={(e) => setMainMenuHoverColor(e.target.value)}
                 placeholder="#B8960C"
                 className="flex-1"
-                data-testid="input-button-hover-color-hex"
+                data-testid="input-main-menu-hover-color-hex"
               />
             </div>
           </div>
@@ -400,6 +403,26 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
                 placeholder="#D4AF37"
                 className="flex-1"
                 data-testid="input-contact-button-color-hex"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Contact Us Button Hover Color</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="color"
+                value={contactButtonHoverColor}
+                onChange={(e) => setContactButtonHoverColor(e.target.value)}
+                className="h-10 w-14 p-1 cursor-pointer"
+                data-testid="input-contact-button-hover-color-picker"
+              />
+              <Input
+                value={contactButtonHoverColor}
+                onChange={(e) => setContactButtonHoverColor(e.target.value)}
+                placeholder="#B8960C"
+                className="flex-1"
+                data-testid="input-contact-button-hover-color-hex"
               />
             </div>
           </div>

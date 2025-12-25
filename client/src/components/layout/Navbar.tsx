@@ -49,10 +49,10 @@ export function Navbar() {
               key={link.href}
               href={link.href}
               className={cn(
-                "text-sm font-medium transition-colors hover:text-primary",
+                "text-sm font-medium transition-colors",
                 location === link.href
-                  ? "text-primary"
-                  : "text-muted-foreground"
+                  ? "nav-link"
+                  : "nav-link-inactive"
               )}
             >
               {link.label}
@@ -62,8 +62,8 @@ export function Navbar() {
             <Link
               href="/admin"
               className={cn(
-                "flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary",
-                location === "/admin" ? "text-primary" : "text-muted-foreground"
+                "flex items-center gap-1 text-sm font-medium transition-colors",
+                location === "/admin" ? "nav-link" : "nav-link-inactive"
               )}
             >
               <Settings className="h-4 w-4" /> Admin
@@ -97,10 +97,10 @@ export function Navbar() {
                     key={link.href}
                     href={link.href}
                     className={cn(
-                      "text-lg font-medium transition-colors hover:text-primary",
+                      "text-lg font-medium transition-colors",
                       location === link.href
-                        ? "text-primary"
-                        : "text-muted-foreground"
+                        ? "nav-link"
+                        : "nav-link-inactive"
                     )}
                     onClick={() => setIsOpen(false)}
                   >
@@ -111,8 +111,8 @@ export function Navbar() {
                   <Link
                     href="/admin"
                     className={cn(
-                      "flex items-center gap-2 text-lg font-medium transition-colors hover:text-primary",
-                      location === "/admin" ? "text-primary" : "text-muted-foreground"
+                      "flex items-center gap-2 text-lg font-medium transition-colors",
+                      location === "/admin" ? "nav-link" : "nav-link-inactive"
                     )}
                     onClick={() => setIsOpen(false)}
                   >

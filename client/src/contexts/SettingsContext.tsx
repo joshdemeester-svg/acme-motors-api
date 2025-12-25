@@ -42,16 +42,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         document.documentElement.style.setProperty("--muted", `${bgHsl.h} ${bgHsl.s}% ${mutedL}%`);
       }
     }
-    if (settings?.buttonColor) {
-      document.documentElement.style.setProperty("--button-color", settings.buttonColor);
-      const btnHsl = hexToHSL(settings.buttonColor);
-      if (btnHsl) {
-        const btnForegroundL = btnHsl.l < 50 ? 100 : 0;
-        document.documentElement.style.setProperty("--button-foreground", `${btnForegroundL}%`);
-      }
+    if (settings?.mainMenuColor) {
+      document.documentElement.style.setProperty("--main-menu-color", settings.mainMenuColor);
     }
-    if (settings?.buttonHoverColor) {
-      document.documentElement.style.setProperty("--button-hover-color", settings.buttonHoverColor);
+    if (settings?.mainMenuHoverColor) {
+      document.documentElement.style.setProperty("--main-menu-hover-color", settings.mainMenuHoverColor);
     }
     if (settings?.contactButtonColor) {
       document.documentElement.style.setProperty("--contact-button-color", settings.contactButtonColor);
@@ -61,7 +56,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         document.documentElement.style.setProperty("--contact-button-foreground", `${contactForegroundL}%`);
       }
     }
-  }, [settings?.primaryColor, settings?.backgroundColor, settings?.buttonColor, settings?.buttonHoverColor, settings?.contactButtonColor]);
+    if (settings?.contactButtonHoverColor) {
+      document.documentElement.style.setProperty("--contact-button-hover-color", settings.contactButtonHoverColor);
+    }
+  }, [settings?.primaryColor, settings?.backgroundColor, settings?.mainMenuColor, settings?.mainMenuHoverColor, settings?.contactButtonColor, settings?.contactButtonHoverColor]);
 
   return (
     <SettingsContext.Provider value={{ settings: settings || null, isLoading }}>
