@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2 } from "lucide-react";
+import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import type { ConsignmentSubmission, InventoryCar, SiteSettings } from "@shared/schema";
@@ -168,6 +168,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [menuFontSize, setMenuFontSize] = useState("14");
   const [bodyFontSize, setBodyFontSize] = useState("16");
   const [menuAllCaps, setMenuAllCaps] = useState(true);
+  const [vehicleTitleColor, setVehicleTitleColor] = useState("#FFFFFF");
+  const [vehiclePriceColor, setVehiclePriceColor] = useState("#FFFFFF");
   const [footerTagline, setFooterTagline] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [contactAddress1, setContactAddress1] = useState("");
@@ -200,6 +202,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setMenuFontSize(settings.menuFontSize || "14");
       setBodyFontSize(settings.bodyFontSize || "16");
       setMenuAllCaps(settings.menuAllCaps !== false);
+      setVehicleTitleColor(settings.vehicleTitleColor || "#FFFFFF");
+      setVehiclePriceColor(settings.vehiclePriceColor || "#FFFFFF");
       setFooterTagline(settings.footerTagline || "");
       setLogoUrl(settings.logoUrl || "");
       setContactAddress1(settings.contactAddress1 || "");
@@ -230,6 +234,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           menuFontSize,
           bodyFontSize,
           menuAllCaps,
+          vehicleTitleColor,
+          vehiclePriceColor,
           footerTagline: footerTagline || null,
           logoUrl: logoUrl || null,
           contactAddress1: contactAddress1 || null,
@@ -572,6 +578,70 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
             data-testid="button-save-branding"
           >
             {updateMutation.isPending ? "Saving..." : "Save Branding"}
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {/* Vehicle Details Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Car className="h-5 w-5" /> Vehicle Details
+          </CardTitle>
+          <CardDescription>Customize vehicle page appearance</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Vehicle Title Color</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={vehicleTitleColor}
+                  onChange={(e) => setVehicleTitleColor(e.target.value)}
+                  className="h-10 w-14 p-1 cursor-pointer"
+                  data-testid="input-vehicle-title-color-picker"
+                />
+                <Input
+                  value={vehicleTitleColor}
+                  onChange={(e) => setVehicleTitleColor(e.target.value)}
+                  placeholder="#FFFFFF"
+                  className="flex-1"
+                  data-testid="input-vehicle-title-color-hex"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Color for vehicle make, model, and year</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Vehicle Price Color</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={vehiclePriceColor}
+                  onChange={(e) => setVehiclePriceColor(e.target.value)}
+                  className="h-10 w-14 p-1 cursor-pointer"
+                  data-testid="input-vehicle-price-color-picker"
+                />
+                <Input
+                  value={vehiclePriceColor}
+                  onChange={(e) => setVehiclePriceColor(e.target.value)}
+                  placeholder="#FFFFFF"
+                  className="flex-1"
+                  data-testid="input-vehicle-price-color-hex"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Color for vehicle price display</p>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button 
+            onClick={() => updateMutation.mutate()} 
+            disabled={updateMutation.isPending}
+            data-testid="button-save-vehicle-details"
+          >
+            {updateMutation.isPending ? "Saving..." : "Save Vehicle Details"}
           </Button>
         </CardFooter>
       </Card>

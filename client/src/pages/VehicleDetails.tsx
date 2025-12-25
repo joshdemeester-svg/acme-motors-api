@@ -304,9 +304,10 @@ export default function VehicleDetails({ id }: { id: string }) {
 
           <div className="space-y-6">
             <div>
-              <p className="text-sm font-medium text-primary">{car.year} {car.make}</p>
-              <h1 className="font-serif text-4xl font-bold" data-testid="text-vehicle-title">{car.model}</h1>
-              <p className="mt-2 text-3xl font-bold text-primary" data-testid="text-price">
+              <h1 className="vehicle-title font-serif text-4xl font-bold" data-testid="text-vehicle-title">
+                {car.year} {car.make} {car.model}
+              </h1>
+              <p className="vehicle-price mt-2 text-3xl font-bold" data-testid="text-price">
                 ${car.price.toLocaleString()}
               </p>
               <Button 
