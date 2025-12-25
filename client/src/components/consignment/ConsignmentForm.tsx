@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Check, ChevronRight, ChevronLeft, Car, FileText, User, X, Phone, CheckCircle, Shield } from "lucide-react";
+import { Upload, Check, ChevronRight, ChevronLeft, Car, FileText, User, X, Phone, CheckCircle, Shield, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,8 +13,59 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useUpload } from "@/hooks/use-upload";
+
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: currentYear - 1980 }, (_, i) => (currentYear + 1 - i).toString());
+
+interface NHTSAMake {
+  Make_ID: number;
+  Make_Name: string;
+}
+
+interface NHTSAModel {
+  Model_ID: number;
+  Model_Name: string;
+}
+
+async function fetchMakesForYear(year: string): Promise<NHTSAMake[]> {
+  const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetMakesForVehicleType/car?format=json`);
+  const data = await res.json();
+  return data.Results || [];
+}
+
+async function fetchModelsForMakeYear(make: string, year: string): Promise<NHTSAModel[]> {
+  const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMakeYear/make/${encodeURIComponent(make)}/modelyear/${year}?format=json`);
+  const data = await res.json();
+  return data.Results || [];
+}
+
+interface VINDecodeResult {
+  year: string;
+  make: string;
+  model: string;
+}
+
+async function decodeVIN(vin: string): Promise<VINDecodeResult | null> {
+  const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`);
+  const data = await res.json();
+  const results = data.Results || [];
+  
+  const getValue = (variableId: number) => {
+    const item = results.find((r: any) => r.VariableId === variableId);
+    return item?.Value || "";
+  };
+  
+  const year = getValue(29);
+  const make = getValue(26);
+  const model = getValue(28);
+  
+  if (year || make || model) {
+    return { year, make, model };
+  }
+  return null;
+}
 
 const formSchema = z.object({
   vin: z.string().min(17, "VIN must be at least 17 characters").max(17, "VIN must be 17 characters"),
@@ -59,6 +110,9 @@ export function ConsignmentForm() {
   const [codeSent, setCodeSent] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [verifiedPhone, setVerifiedPhone] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
+  const [selectedMake, setSelectedMake] = useState("");
+  const [isDecodingVin, setIsDecodingVin] = useState(false);
 
   const { uploadFile, isUploading } = useUpload({
     onSuccess: (response) => {
@@ -82,6 +136,49 @@ export function ConsignmentForm() {
       termsAccepted: false,
     }
   });
+
+  const { data: makes = [], isLoading: isLoadingMakes } = useQuery({
+    queryKey: ["vehicleMakes"],
+    queryFn: () => fetchMakesForYear(selectedYear),
+    staleTime: 1000 * 60 * 60,
+  });
+
+  const { data: models = [], isLoading: isLoadingModels } = useQuery({
+    queryKey: ["vehicleModels", selectedMake, selectedYear],
+    queryFn: () => fetchModelsForMakeYear(selectedMake, selectedYear),
+    enabled: !!selectedMake && !!selectedYear,
+    staleTime: 1000 * 60 * 60,
+  });
+
+  const handleVinDecode = async (vin: string) => {
+    if (vin.length !== 17) return;
+    
+    setIsDecodingVin(true);
+    try {
+      const decoded = await decodeVIN(vin);
+      if (decoded) {
+        if (decoded.year) {
+          setSelectedYear(decoded.year);
+          form.setValue("year", decoded.year);
+        }
+        if (decoded.make) {
+          setSelectedMake(decoded.make);
+          form.setValue("make", decoded.make);
+        }
+        if (decoded.model) {
+          form.setValue("model", decoded.model);
+        }
+        toast({
+          title: "VIN Decoded",
+          description: "Vehicle information has been filled in automatically.",
+        });
+      }
+    } catch (error) {
+      console.error("VIN decode error:", error);
+    } finally {
+      setIsDecodingVin(false);
+    }
+  };
 
   const sendCodeMutation = useMutation({
     mutationFn: async ({ phone, firstName }: { phone: string; firstName: string }) => {
@@ -292,26 +389,105 @@ export function ConsignmentForm() {
                   exit={{ opacity: 0, x: -20 }}
                   className="grid gap-6 md:grid-cols-2"
                 >
-                  <div className="space-y-2">
+                  <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="vin">VIN Number</Label>
-                    <Input id="vin" placeholder="17-character VIN" {...form.register("vin")} data-testid="input-vin" className="border-white/30" />
+                    <div className="flex gap-2">
+                      <Input 
+                        id="vin" 
+                        placeholder="17-character VIN" 
+                        {...form.register("vin")} 
+                        data-testid="input-vin" 
+                        className="border-white/30"
+                        onChange={(e) => {
+                          form.setValue("vin", e.target.value.toUpperCase());
+                          if (e.target.value.length === 17) {
+                            handleVinDecode(e.target.value.toUpperCase());
+                          }
+                        }}
+                      />
+                      {isDecodingVin && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="text-sm">Decoding...</span>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Enter VIN to auto-fill vehicle details</p>
                     {form.formState.errors.vin && <p className="text-xs text-destructive">{form.formState.errors.vin.message}</p>}
                   </div>
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="year">Year</Label>
-                    <Input id="year" placeholder="YYYY" {...form.register("year")} data-testid="input-year" className="border-white/30" />
+                    <Label>Year</Label>
+                    <Select 
+                      value={selectedYear}
+                      onValueChange={(value) => {
+                        setSelectedYear(value);
+                        form.setValue("year", value);
+                        setSelectedMake("");
+                        form.setValue("make", "");
+                        form.setValue("model", "");
+                      }}
+                    >
+                      <SelectTrigger data-testid="select-year" className="border-white/30">
+                        <SelectValue placeholder="Select year" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {years.map((year) => (
+                          <SelectItem key={year} value={year}>{year}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     {form.formState.errors.year && <p className="text-xs text-destructive">{form.formState.errors.year.message}</p>}
                   </div>
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="make">Make</Label>
-                    <Input id="make" placeholder="e.g. Porsche" {...form.register("make")} data-testid="input-make" className="border-white/30" />
+                    <Label>Make</Label>
+                    <Select 
+                      value={selectedMake}
+                      onValueChange={(value) => {
+                        setSelectedMake(value);
+                        form.setValue("make", value);
+                        form.setValue("model", "");
+                      }}
+                      disabled={!selectedYear}
+                    >
+                      <SelectTrigger data-testid="select-make" className="border-white/30">
+                        <SelectValue placeholder={!selectedYear ? "Select year first" : isLoadingMakes ? "Loading..." : "Select make"} />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {makes
+                          .filter((make) => make.Make_Name)
+                          .sort((a, b) => (a.Make_Name || "").localeCompare(b.Make_Name || ""))
+                          .map((make) => (
+                            <SelectItem key={make.Make_ID} value={make.Make_Name}>{make.Make_Name}</SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
                     {form.formState.errors.make && <p className="text-xs text-destructive">{form.formState.errors.make.message}</p>}
                   </div>
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="model">Model</Label>
-                    <Input id="model" placeholder="e.g. 911 GT3" {...form.register("model")} data-testid="input-model" className="border-white/30" />
+                    <Label>Model</Label>
+                    <Select 
+                      value={form.watch("model")}
+                      onValueChange={(value) => form.setValue("model", value)}
+                      disabled={!selectedMake || !selectedYear}
+                    >
+                      <SelectTrigger data-testid="select-model" className="border-white/30">
+                        <SelectValue placeholder={!selectedMake ? "Select make first" : isLoadingModels ? "Loading..." : "Select model"} />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {models
+                          .filter((model) => model.Model_Name)
+                          .sort((a, b) => (a.Model_Name || "").localeCompare(b.Model_Name || ""))
+                          .map((model) => (
+                            <SelectItem key={model.Model_ID} value={model.Model_Name}>{model.Model_Name}</SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
                     {form.formState.errors.model && <p className="text-xs text-destructive">{form.formState.errors.model.message}</p>}
                   </div>
+                  
                   <div className="space-y-2">
                     <Label htmlFor="mileage">Mileage</Label>
                     <Input id="mileage" placeholder="e.g. 12,000" {...form.register("mileage")} data-testid="input-mileage" className="border-white/30" />
