@@ -9,7 +9,16 @@ import type { InventoryCar } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/luxury_sports_car_ex_2a1585ad.jpg';
 
 export default function Home() {
-  const { data: inventory = [] } = useQuery<InventoryCar[]>({
+  const { data: featuredInventory = [] } = useQuery<InventoryCar[]>({
+    queryKey: ["/api/inventory", "featured"],
+    queryFn: async () => {
+      const res = await fetch("/api/inventory?featured=true");
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const { data: allInventory = [] } = useQuery<InventoryCar[]>({
     queryKey: ["/api/inventory"],
     queryFn: async () => {
       const res = await fetch("/api/inventory");
@@ -18,7 +27,7 @@ export default function Home() {
     },
   });
 
-  const featuredCars = inventory.slice(0, 3);
+  const featuredCars = featuredInventory.length > 0 ? featuredInventory.slice(0, 3) : allInventory.slice(0, 3);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -75,26 +84,28 @@ export default function Home() {
 
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {featuredCars.map((car) => (
-                <div key={car.id} className="group overflow-hidden rounded-lg bg-card transition-all hover:shadow-xl hover:shadow-primary/5">
-                  <div className="relative aspect-[16/9] overflow-hidden">
-                    <img 
-                      src={car.photos && car.photos.length > 0 ? car.photos[0] : placeholderCar}
-                      alt={`${car.make} ${car.model}`}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute top-4 right-4 rounded bg-black/70 px-3 py-1 text-xs font-medium text-white backdrop-blur-md capitalize">
-                      {car.status}
+                <Link key={car.id} href={`/inventory/${car.id}`} data-testid={`link-featured-car-${car.id}`}>
+                  <div className="group overflow-hidden rounded-lg bg-card transition-all hover:shadow-xl hover:shadow-primary/5 cursor-pointer">
+                    <div className="relative aspect-[16/9] overflow-hidden">
+                      <img 
+                        src={car.photos && car.photos.length > 0 ? car.photos[0] : placeholderCar}
+                        alt={`${car.make} ${car.model}`}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute top-4 right-4 rounded bg-black/70 px-3 py-1 text-xs font-medium text-white backdrop-blur-md capitalize">
+                        {car.status}
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <div className="mb-2 text-sm font-medium text-white">{car.year} {car.make}</div>
+                      <h3 className="mb-4 font-serif text-2xl font-bold">{car.model}</h3>
+                      <div className="flex items-center justify-between border-t border-border pt-4">
+                        <span className="text-muted-foreground">{car.mileage.toLocaleString()} miles</span>
+                        <span className="font-semibold">${car.price.toLocaleString()}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="p-6">
-                    <div className="mb-2 text-sm font-medium text-white">{car.year} {car.make}</div>
-                    <h3 className="mb-4 font-serif text-2xl font-bold">{car.model}</h3>
-                    <div className="flex items-center justify-between border-t border-border pt-4">
-                      <span className="text-muted-foreground">{car.mileage.toLocaleString()} miles</span>
-                      <span className="font-semibold">${car.price.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
+                </Link>
               ))}
             </div>
             
