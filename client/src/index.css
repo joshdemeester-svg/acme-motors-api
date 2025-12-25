@@ -117,6 +117,7 @@
 .nav-link {
   color: var(--main-menu-color, hsl(var(--primary)));
   font-size: var(--menu-font-size, 14px);
+  text-transform: var(--menu-text-transform, uppercase);
 }
 
 .nav-link:hover {
@@ -126,6 +127,7 @@
 .nav-link-inactive {
   color: hsl(var(--muted-foreground));
   font-size: var(--menu-font-size, 14px);
+  text-transform: var(--menu-text-transform, uppercase);
 }
 
 .nav-link-inactive:hover {
