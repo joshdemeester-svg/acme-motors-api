@@ -69,7 +69,7 @@ export function Navbar() {
               <Settings className="h-4 w-4" /> Admin
             </Link>
           )}
-          <Button variant="outline" className="ml-4 border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground">
+          <Button className="btn-contact ml-4">
             Contact Us
           </Button>
         </div>

@@ -28,7 +28,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       const hsl = hexToHSL(settings.primaryColor);
       if (hsl) {
         document.documentElement.style.setProperty("--primary", `${hsl.h} ${hsl.s}% ${hsl.l}%`);
-        // Set white text on primary buttons if the color is dark (luminance < 50%)
         const foregroundL = hsl.l < 50 ? 100 : 0;
         document.documentElement.style.setProperty("--primary-foreground", `0 0% ${foregroundL}%`);
       }
@@ -43,7 +42,26 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         document.documentElement.style.setProperty("--muted", `${bgHsl.h} ${bgHsl.s}% ${mutedL}%`);
       }
     }
-  }, [settings?.primaryColor, settings?.backgroundColor]);
+    if (settings?.buttonColor) {
+      document.documentElement.style.setProperty("--button-color", settings.buttonColor);
+      const btnHsl = hexToHSL(settings.buttonColor);
+      if (btnHsl) {
+        const btnForegroundL = btnHsl.l < 50 ? 100 : 0;
+        document.documentElement.style.setProperty("--button-foreground", `${btnForegroundL}%`);
+      }
+    }
+    if (settings?.buttonHoverColor) {
+      document.documentElement.style.setProperty("--button-hover-color", settings.buttonHoverColor);
+    }
+    if (settings?.contactButtonColor) {
+      document.documentElement.style.setProperty("--contact-button-color", settings.contactButtonColor);
+      const contactHsl = hexToHSL(settings.contactButtonColor);
+      if (contactHsl) {
+        const contactForegroundL = contactHsl.l < 50 ? 100 : 0;
+        document.documentElement.style.setProperty("--contact-button-foreground", `${contactForegroundL}%`);
+      }
+    }
+  }, [settings?.primaryColor, settings?.backgroundColor, settings?.buttonColor, settings?.buttonHoverColor, settings?.contactButtonColor]);
 
   return (
     <SettingsContext.Provider value={{ settings: settings || null, isLoading }}>

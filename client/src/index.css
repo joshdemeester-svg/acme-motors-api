@@ -101,3 +101,22 @@
     @apply font-serif;
   }
 }
+
+/* Custom button styles using CSS variables */
+.btn-custom {
+  background-color: var(--button-color, hsl(var(--primary)));
+  color: hsl(0 0% var(--button-foreground, 100%));
+}
+
+.btn-custom:hover {
+  background-color: var(--button-hover-color, hsl(var(--primary)));
+}
+
+.btn-contact {
+  background-color: var(--contact-button-color, hsl(var(--primary)));
+  color: hsl(0 0% var(--contact-button-foreground, 100%));
+}
+
+.btn-contact:hover {
+  opacity: 0.9;
+}
