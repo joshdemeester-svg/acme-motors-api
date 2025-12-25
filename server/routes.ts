@@ -534,6 +534,25 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/seller/consignments/:id/history", async (req, res) => {
+    try {
+      if (!req.session.sellerPhone || !req.session.isSeller) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const consignment = await storage.getConsignment(req.params.id);
+      if (!consignment || consignment.phone !== req.session.sellerPhone) {
+        return res.status(404).json({ error: "Consignment not found" });
+      }
+
+      const history = await storage.getStatusHistory(req.params.id);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching seller consignment history:", error);
+      res.status(500).json({ error: "Failed to fetch history" });
+    }
+  });
+
   app.post("/api/consignments", async (req, res) => {
     try {
       const validatedData = insertConsignmentSchema.parse(req.body);
@@ -559,6 +578,8 @@ export async function registerRoutes(
         phone: normalizedPhone,
         agreementTimestamp: new Date(),
       });
+      
+      await storage.createStatusHistory(submission.id, "pending", "Vehicle submitted for consignment review");
       
       createGHLContact({ ...validatedData, id: submission.id }).catch((err) => {
         console.error("Background GHL sync failed:", err);
@@ -597,20 +618,33 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/consignments/:id/status", async (req, res) => {
+  app.patch("/api/consignments/:id/status", requireAdmin, async (req, res) => {
     try {
-      const { status } = req.body;
-      if (!status || !["pending", "approved", "rejected"].includes(status)) {
+      const { status, note } = req.body;
+      if (!status || !["pending", "approved", "rejected", "listed", "sold"].includes(status)) {
         return res.status(400).json({ error: "Invalid status" });
       }
       const updated = await storage.updateConsignmentStatus(req.params.id, status);
       if (!updated) {
         return res.status(404).json({ error: "Consignment not found" });
       }
+      
+      await storage.createStatusHistory(req.params.id, status, note);
+      
       res.json(updated);
     } catch (error) {
       console.error("Error updating consignment status:", error);
       res.status(500).json({ error: "Failed to update consignment status" });
+    }
+  });
+
+  app.get("/api/consignments/:id/history", requireAdmin, async (req, res) => {
+    try {
+      const history = await storage.getStatusHistory(req.params.id);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching status history:", error);
+      res.status(500).json({ error: "Failed to fetch status history" });
     }
   });
 
@@ -925,6 +959,8 @@ export async function registerRoutes(
       });
 
       await storage.updateConsignmentStatus(req.params.id, "approved");
+      await storage.createStatusHistory(req.params.id, "approved", "Vehicle approved and added to inventory");
+      await storage.createStatusHistory(req.params.id, "listed", "Vehicle listed for sale");
 
       res.json({ consignment: { ...consignment, status: "approved" }, car });
     } catch (error) {
