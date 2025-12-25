@@ -143,7 +143,7 @@ export function ConsignmentForm() {
   });
 
   const submitMutation = useMutation({
-    mutationFn: async (data: FormData & { photos: string[]; agreementTimestamp: string }) => {
+    mutationFn: async (data: FormData & { photos: string[] }) => {
       const res = await fetch("/api/consignments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -204,7 +204,6 @@ export function ConsignmentForm() {
     submitMutation.mutate({ 
       ...data, 
       photos: uploadedPhotos,
-      agreementTimestamp: new Date().toISOString(),
     });
   };
 
@@ -557,41 +556,73 @@ export function ConsignmentForm() {
                 >
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Vehicle Disclosures</h3>
-                    <p className="text-sm text-muted-foreground">Please disclose the following information about your vehicle:</p>
+                    <p className="text-sm text-muted-foreground">
+                      Please answer the following questions about your vehicle. These are optional but help us better understand your vehicle's history.
+                    </p>
                     
-                    <div className="space-y-4 p-4 border border-white/20 rounded-lg">
-                      <div className="flex items-start space-x-3">
-                        <Checkbox 
-                          id="salvageTitle" 
-                          checked={form.watch("salvageTitle")}
-                          onCheckedChange={(checked) => form.setValue("salvageTitle", checked as boolean)}
-                          data-testid="checkbox-salvage-title"
-                        />
-                        <div className="grid gap-1.5 leading-none">
-                          <Label htmlFor="salvageTitle" className="cursor-pointer">
-                            Salvage or Rebuilt Title
-                          </Label>
-                          <p className="text-xs text-muted-foreground">Check if the vehicle has a salvage, rebuilt, or branded title</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start space-x-3">
-                        <Checkbox 
-                          id="lienStatus" 
-                          checked={form.watch("lienStatus")}
-                          onCheckedChange={(checked) => form.setValue("lienStatus", checked as boolean)}
-                          data-testid="checkbox-lien-status"
-                        />
-                        <div className="grid gap-1.5 leading-none">
-                          <Label htmlFor="lienStatus" className="cursor-pointer">
-                            Lien Present
-                          </Label>
-                          <p className="text-xs text-muted-foreground">Check if there is an existing lien on the vehicle</p>
+                    <div className="space-y-5 p-4 border border-white/30 rounded-lg">
+                      <div className="space-y-2">
+                        <Label className="font-medium">Does your vehicle have a salvage or rebuilt title?</Label>
+                        <div className="flex items-center space-x-6">
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              id="salvageTitle-yes"
+                              name="salvageTitle"
+                              checked={form.watch("salvageTitle") === true}
+                              onChange={() => form.setValue("salvageTitle", true)}
+                              className="h-4 w-4 border-2 border-white/50 text-primary focus:ring-primary"
+                              data-testid="radio-salvage-yes"
+                            />
+                            <Label htmlFor="salvageTitle-yes" className="cursor-pointer">Yes</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              id="salvageTitle-no"
+                              name="salvageTitle"
+                              checked={form.watch("salvageTitle") === false}
+                              onChange={() => form.setValue("salvageTitle", false)}
+                              className="h-4 w-4 border-2 border-white/50 text-primary focus:ring-primary"
+                              data-testid="radio-salvage-no"
+                            />
+                            <Label htmlFor="salvageTitle-no" className="cursor-pointer">No</Label>
+                          </div>
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="mechanicalIssues">Known Mechanical Issues (if any)</Label>
+                        <Label className="font-medium">Is there an existing lien on the vehicle?</Label>
+                        <div className="flex items-center space-x-6">
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              id="lienStatus-yes"
+                              name="lienStatus"
+                              checked={form.watch("lienStatus") === true}
+                              onChange={() => form.setValue("lienStatus", true)}
+                              className="h-4 w-4 border-2 border-white/50 text-primary focus:ring-primary"
+                              data-testid="radio-lien-yes"
+                            />
+                            <Label htmlFor="lienStatus-yes" className="cursor-pointer">Yes</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              id="lienStatus-no"
+                              name="lienStatus"
+                              checked={form.watch("lienStatus") === false}
+                              onChange={() => form.setValue("lienStatus", false)}
+                              className="h-4 w-4 border-2 border-white/50 text-primary focus:ring-primary"
+                              data-testid="radio-lien-no"
+                            />
+                            <Label htmlFor="lienStatus-no" className="cursor-pointer">No</Label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="mechanicalIssues">Known Mechanical Issues (optional)</Label>
                         <Textarea 
                           id="mechanicalIssues"
                           placeholder="Describe any known mechanical issues, warning lights, or needed repairs..."
@@ -605,8 +636,11 @@ export function ConsignmentForm() {
 
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Seller Verification & Agreement</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Please check all boxes below to confirm and proceed with your consignment request.
+                    </p>
                     
-                    <div className="space-y-4 p-4 border border-white/20 rounded-lg">
+                    <div className="space-y-4 p-4 border border-white/30 rounded-lg">
                       <div className="flex items-start space-x-3">
                         <Checkbox 
                           id="ownershipConfirmed" 
