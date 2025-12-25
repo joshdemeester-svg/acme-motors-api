@@ -59,7 +59,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     if (settings?.contactButtonHoverColor) {
       document.documentElement.style.setProperty("--contact-button-hover-color", settings.contactButtonHoverColor);
     }
-  }, [settings?.primaryColor, settings?.backgroundColor, settings?.mainMenuColor, settings?.mainMenuHoverColor, settings?.contactButtonColor, settings?.contactButtonHoverColor]);
+    if (settings?.menuFontSize) {
+      document.documentElement.style.setProperty("--menu-font-size", `${settings.menuFontSize}px`);
+    }
+    if (settings?.bodyFontSize) {
+      document.documentElement.style.setProperty("--body-font-size", `${settings.bodyFontSize}px`);
+    }
+  }, [settings?.primaryColor, settings?.backgroundColor, settings?.mainMenuColor, settings?.mainMenuHoverColor, settings?.contactButtonColor, settings?.contactButtonHoverColor, settings?.menuFontSize, settings?.bodyFontSize]);
 
   return (
     <SettingsContext.Provider value={{ settings: settings || null, isLoading }}>

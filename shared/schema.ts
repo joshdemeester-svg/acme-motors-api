@@ -93,6 +93,8 @@ export const siteSettings = pgTable("site_settings", {
   mainMenuHoverColor: text("main_menu_hover_color").default("#B8960C"),
   contactButtonColor: text("contact_button_color").default("#D4AF37"),
   contactButtonHoverColor: text("contact_button_hover_color").default("#B8960C"),
+  menuFontSize: text("menu_font_size").default("14"),
+  bodyFontSize: text("body_font_size").default("16"),
   logoUrl: text("logo_url"),
   siteName: text("site_name").default("PRESTIGE"),
   contactAddress1: text("contact_address_1"),

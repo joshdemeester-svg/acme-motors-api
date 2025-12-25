@@ -155,6 +155,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [mainMenuHoverColor, setMainMenuHoverColor] = useState("#B8960C");
   const [contactButtonColor, setContactButtonColor] = useState("#D4AF37");
   const [contactButtonHoverColor, setContactButtonHoverColor] = useState("#B8960C");
+  const [menuFontSize, setMenuFontSize] = useState("14");
+  const [bodyFontSize, setBodyFontSize] = useState("16");
   const [logoUrl, setLogoUrl] = useState("");
   const [contactAddress1, setContactAddress1] = useState("");
   const [contactAddress2, setContactAddress2] = useState("");
@@ -183,6 +185,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setMainMenuHoverColor(settings.mainMenuHoverColor || "#B8960C");
       setContactButtonColor(settings.contactButtonColor || "#D4AF37");
       setContactButtonHoverColor(settings.contactButtonHoverColor || "#B8960C");
+      setMenuFontSize(settings.menuFontSize || "14");
+      setBodyFontSize(settings.bodyFontSize || "16");
       setLogoUrl(settings.logoUrl || "");
       setContactAddress1(settings.contactAddress1 || "");
       setContactAddress2(settings.contactAddress2 || "");
@@ -209,6 +213,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           mainMenuHoverColor,
           contactButtonColor,
           contactButtonHoverColor,
+          menuFontSize,
+          bodyFontSize,
           logoUrl: logoUrl || null,
           contactAddress1: contactAddress1 || null,
           contactAddress2: contactAddress2 || null,
@@ -425,6 +431,34 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
                 data-testid="input-contact-button-hover-color-hex"
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Menu Font Size (px)</Label>
+            <Input
+              type="number"
+              min="10"
+              max="24"
+              value={menuFontSize}
+              onChange={(e) => setMenuFontSize(e.target.value)}
+              placeholder="14"
+              className="w-24"
+              data-testid="input-menu-font-size"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Body Font Size (px)</Label>
+            <Input
+              type="number"
+              min="12"
+              max="24"
+              value={bodyFontSize}
+              onChange={(e) => setBodyFontSize(e.target.value)}
+              placeholder="16"
+              className="w-24"
+              data-testid="input-body-font-size"
+            />
           </div>
         </CardContent>
       </Card>
