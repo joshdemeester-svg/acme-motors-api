@@ -383,23 +383,14 @@ export default function VehicleDetails({ id }: { id: string }) {
           </div>
         </div>
 
-        {/* Vehicle Specifications - Full width section */}
+        {/* Vehicle Specifications - Full width section - Only show when specs are available */}
+        {!vinLoading && vinData && (!vinData.ErrorCode || vinData.ErrorCode === "0") && (
         <div className="mt-12">
           <h3 className="mb-6 flex items-center gap-2 text-xl font-semibold">
             <Car className="h-5 w-5" />
             Vehicle Specifications
           </h3>
-              {vinLoading ? (
-                <p className="text-sm text-muted-foreground">Loading specifications...</p>
-              ) : !vinData || (vinData.ErrorCode && vinData.ErrorCode !== "0") ? (
-                <div className="rounded-lg border border-dashed p-6 text-center">
-                  <Car className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-                  <p className="font-medium text-muted-foreground">Specifications Not Available</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {vinData?.ErrorText || "Unable to retrieve vehicle specifications."}
-                  </p>
-                </div>
-              ) : (
+              {(
                   <div className="space-y-6">
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-3 text-sm">
                         {vinData.VehicleType && (
@@ -810,6 +801,7 @@ export default function VehicleDetails({ id }: { id: string }) {
                     </div>
                   )}
         </div>
+        )}
       </div>
 
       <Dialog open={contactOpen} onOpenChange={handleContactClose}>
