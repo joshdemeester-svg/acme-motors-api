@@ -8,9 +8,15 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import type { InventoryCar } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
+import { useSEO } from "@/hooks/use-seo";
 
 export default function Inventory() {
   const [search, setSearch] = useState("");
+  
+  useSEO({
+    title: "Current Inventory",
+    description: "Browse our collection of premium luxury and exotic vehicles available for purchase. Quality consignment vehicles with full documentation and transparent history.",
+  });
 
   const { data: inventory = [], isLoading } = useQuery<InventoryCar[]>({
     queryKey: ["/api/inventory"],

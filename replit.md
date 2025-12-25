@@ -128,3 +128,33 @@ Uses Replit's Object Storage integration (Google Cloud Storage backend):
   - Prevents form submission until phone is verified
 - Requires `GHL_LOCATION_ID` and `GHL_API_TOKEN` secrets to be configured
 - Uses GoHighLevel API v2 with Private Integration Token authentication
+
+### SEO Optimization
+
+Comprehensive SEO implementation for search engine visibility:
+
+**Dynamic Meta Tags** (`client/src/hooks/use-seo.ts`):
+- Custom `useSEO` hook updates document title and meta tags per page
+- Open Graph and Twitter Card meta tags for social sharing
+- Dynamic page titles: "2022 Porsche 911 GT3 for Sale | Navarre Motors"
+
+**Schema.org Structured Data**:
+- Vehicle schema on individual vehicle pages (price, mileage, VIN, condition)
+- AutoDealer/Organization schema on homepage with contact info from site settings
+- Enables rich search results in Google
+
+**SEO Endpoints**:
+- `GET /robots.txt` - Dynamically generated robots.txt
+  - Allows crawling of public pages
+  - Blocks /admin, /seller-portal, and /api/ routes
+  - Points to sitemap
+- `GET /sitemap.xml` - Dynamic XML sitemap
+  - Lists all static pages (home, inventory, consign)
+  - Lists all available inventory vehicles
+  - Updates automatically when inventory changes
+
+**Per-Page SEO**:
+- Home: Organization schema, site description
+- Inventory: Collection listing description
+- Vehicle Details: Vehicle schema with full specs, first photo as OG image
+- Consign: Lead generation focused description

@@ -14,6 +14,8 @@ import { ArrowLeft, Car, Fuel, Gauge, Calendar, Palette, FileText, Settings, Map
 import { Link } from "wouter";
 import type { InventoryCar } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
+import { useSEO, generateVehicleSchema } from "@/hooks/use-seo";
+import { useSettings } from "@/contexts/SettingsContext";
 
 interface VinData {
   Make?: string;
@@ -158,6 +160,7 @@ export default function VehicleDetails({ id }: { id: string }) {
     buyerEmail: "",
     message: "",
   });
+  const { settings } = useSettings();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -199,6 +202,28 @@ export default function VehicleDetails({ id }: { id: string }) {
       return res.json();
     },
     enabled: !!car?.vin && car.vin.length >= 11,
+  });
+
+  useSEO({
+    title: car ? `${car.year} ${car.make} ${car.model} for Sale` : "Vehicle Details",
+    description: car 
+      ? `${car.year} ${car.make} ${car.model} with ${car.mileage?.toLocaleString()} miles in ${car.color}. ${car.condition} condition. Price: $${car.price?.toLocaleString()}. View details and contact us today.`
+      : "View vehicle details and specifications.",
+    image: car?.photos?.[0],
+    type: "product",
+    siteName: settings?.siteName || undefined,
+    schema: car ? generateVehicleSchema({
+      year: car.year,
+      make: car.make,
+      model: car.model,
+      price: car.price,
+      mileage: car.mileage,
+      color: car.color,
+      vin: car.vin,
+      condition: car.condition,
+      photos: car.photos || [],
+      description: car.description || undefined,
+    }, settings || undefined) : undefined,
   });
 
   const inquiryMutation = useMutation({

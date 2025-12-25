@@ -7,8 +7,19 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { InventoryCar } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/luxury_sports_car_ex_2a1585ad.jpg';
+import { useSEO, generateOrganizationSchema } from "@/hooks/use-seo";
+import { useSettings } from "@/contexts/SettingsContext";
 
 export default function Home() {
+  const { settings } = useSettings();
+  
+  useSEO({
+    title: "Premium Auto Consignment",
+    description: "Luxury automotive consignment services for discerning collectors and enthusiasts. Submit your vehicle for professional sale with expert marketing and global buyer reach.",
+    type: "website",
+    schema: settings ? generateOrganizationSchema(settings) : undefined,
+    siteName: settings?.siteName || undefined,
+  });
   const { data: featuredInventory = [] } = useQuery<InventoryCar[]>({
     queryKey: ["/api/inventory", "featured"],
     queryFn: async () => {
