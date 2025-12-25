@@ -528,6 +528,17 @@ export async function registerRoutes(
         return res.status(400).json({ error: "VIN must be exactly 17 characters", valid: false });
       }
       
+      // Test VIN for development/testing purposes
+      if (vin === "12345678901234567") {
+        return res.json({
+          valid: true,
+          ModelYear: "2024",
+          Make: "Test Vehicle",
+          Model: "Demo Model",
+          VehicleType: "PASSENGER CAR"
+        });
+      }
+      
       const vinRegex = /^[A-HJ-NPR-Z0-9]{17}$/i;
       if (!vinRegex.test(vin)) {
         return res.status(400).json({ error: "VIN contains invalid characters", valid: false });
