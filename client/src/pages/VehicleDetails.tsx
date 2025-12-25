@@ -375,25 +375,24 @@ export default function VehicleDetails({ id }: { id: string }) {
               </Card>
             )}
 
-            <Card>
-              <CardContent className="p-4">
-                <h3 className="mb-4 flex items-center gap-2 font-semibold">
-                  <Car className="h-5 w-5" />
-                  VIN Decoded Information
-                </h3>
-                {vinLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading VIN data...</p>
-                ) : !vinData || (vinData.ErrorCode && vinData.ErrorCode !== "0") ? (
-                  <div className="rounded-lg border border-dashed p-6 text-center">
-                    <Car className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-                    <p className="font-medium text-muted-foreground">VIN Information Not Available</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {vinData?.ErrorText || "Unable to decode VIN. The vehicle information could not be retrieved from the database."}
-                    </p>
-                  </div>
-                ) : (
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="mt-8">
+              <h3 className="mb-6 flex items-center gap-2 text-xl font-semibold">
+                <Car className="h-5 w-5" />
+                Vehicle Specifications
+              </h3>
+              {vinLoading ? (
+                <p className="text-sm text-muted-foreground">Loading specifications...</p>
+              ) : !vinData || (vinData.ErrorCode && vinData.ErrorCode !== "0") ? (
+                <div className="rounded-lg border border-dashed p-6 text-center">
+                  <Car className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                  <p className="font-medium text-muted-foreground">Specifications Not Available</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {vinData?.ErrorText || "Unable to retrieve vehicle specifications."}
+                  </p>
+                </div>
+              ) : (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-3 text-sm">
                         {vinData.VehicleType && (
                           <div>
                             <p className="text-muted-foreground">Vehicle Type</p>
@@ -455,7 +454,7 @@ export default function VehicleDetails({ id }: { id: string }) {
                           <Settings className="h-4 w-4" />
                           Engine & Powertrain
                         </h4>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-3 text-sm">
                           {vinData.EngineCylinders && (
                             <div>
                               <p className="text-muted-foreground">Engine</p>
@@ -534,7 +533,7 @@ export default function VehicleDetails({ id }: { id: string }) {
                             </div>
                           )}
                           {vinData.OtherEngineInfo && (
-                            <div className="col-span-2">
+                            <div className="col-span-2 lg:col-span-4">
                               <p className="text-muted-foreground">Additional Engine Info</p>
                               <p className="font-medium">{vinData.OtherEngineInfo}</p>
                             </div>
@@ -548,7 +547,7 @@ export default function VehicleDetails({ id }: { id: string }) {
                             <Battery className="h-4 w-4" />
                             Electric Vehicle
                           </h4>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-3 text-sm">
                             {vinData.BatteryKWH && (
                               <div>
                                 <p className="text-muted-foreground">Battery Capacity</p>
@@ -597,7 +596,7 @@ export default function VehicleDetails({ id }: { id: string }) {
                             <Cog className="h-4 w-4" />
                             Dimensions & Specs
                           </h4>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-3 text-sm">
                             {vinData.GVWR && (
                               <div className="flex items-start gap-2">
                                 <Weight className="mt-0.5 h-4 w-4 text-muted-foreground" />
@@ -668,7 +667,7 @@ export default function VehicleDetails({ id }: { id: string }) {
                             <Car className="h-4 w-4" />
                             Truck Details
                           </h4>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-3 text-sm">
                             {vinData.CabType && (
                               <div>
                                 <p className="text-muted-foreground">Cab Type</p>
@@ -759,7 +758,7 @@ export default function VehicleDetails({ id }: { id: string }) {
                             <Factory className="h-4 w-4" />
                             Manufacturing
                           </h4>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-3 text-sm">
                             {vinData.Manufacturer && (
                               <div>
                                 <p className="text-muted-foreground">Manufacturer</p>
@@ -801,8 +800,7 @@ export default function VehicleDetails({ id }: { id: string }) {
                       )}
                     </div>
                   )}
-                </CardContent>
-              </Card>
+            </div>
 
             <Button 
               className="btn-contact w-full gap-2" 
