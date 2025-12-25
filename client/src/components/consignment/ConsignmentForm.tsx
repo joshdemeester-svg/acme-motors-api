@@ -413,13 +413,13 @@ export function ConsignmentForm() {
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground">Enter VIN to auto-fill vehicle details</p>
-                      {form.formState.errors.vin && <p className="text-xs text-destructive">{form.formState.errors.vin.message}</p>}
+                      {form.formState.errors.vin && <p className="text-sm font-semibold text-red-400">{form.formState.errors.vin.message}</p>}
                     </div>
                     
                     <div className="space-y-2 md:col-span-2">
                       <Label htmlFor="mileage">Mileage</Label>
                       <Input id="mileage" placeholder="e.g. 12,000" {...form.register("mileage")} data-testid="input-mileage" className="border-white/30" />
-                      {form.formState.errors.mileage && <p className="text-xs text-destructive">{form.formState.errors.mileage.message}</p>}
+                      {form.formState.errors.mileage && <p className="text-sm font-semibold text-red-400">{form.formState.errors.mileage.message}</p>}
                     </div>
                   </div>
                   
@@ -445,7 +445,7 @@ export function ConsignmentForm() {
                           ))}
                         </SelectContent>
                       </Select>
-                      {form.formState.errors.year && <p className="text-xs text-destructive">{form.formState.errors.year.message}</p>}
+                      {form.formState.errors.year && <p className="text-sm font-semibold text-red-400">{form.formState.errors.year.message}</p>}
                     </div>
                     
                     <div className="space-y-2">
@@ -498,7 +498,7 @@ export function ConsignmentForm() {
                           </Command>
                         </PopoverContent>
                       </Popover>
-                      {form.formState.errors.make && <p className="text-xs text-destructive">{form.formState.errors.make.message}</p>}
+                      {form.formState.errors.make && <p className="text-sm font-semibold text-red-400">{form.formState.errors.make.message}</p>}
                     </div>
                     
                     <div className="space-y-2">
@@ -549,14 +549,14 @@ export function ConsignmentForm() {
                           </Command>
                         </PopoverContent>
                       </Popover>
-                      {form.formState.errors.model && <p className="text-xs text-destructive">{form.formState.errors.model.message}</p>}
+                      {form.formState.errors.model && <p className="text-sm font-semibold text-red-400">{form.formState.errors.model.message}</p>}
                     </div>
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="color">Exterior Color</Label>
                     <Input id="color" placeholder="e.g. GT Silver" {...form.register("color")} data-testid="input-color" className="border-white/30" />
-                    {form.formState.errors.color && <p className="text-xs text-destructive">{form.formState.errors.color.message}</p>}
+                    {form.formState.errors.color && <p className="text-sm font-semibold text-red-400">{form.formState.errors.color.message}</p>}
                   </div>
                 </motion.div>
               )}
@@ -675,17 +675,17 @@ export function ConsignmentForm() {
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name</Label>
                     <Input id="firstName" {...form.register("firstName")} data-testid="input-firstname" className="border-white/30" />
-                    {form.formState.errors.firstName && <p className="text-xs text-destructive">{form.formState.errors.firstName.message}</p>}
+                    {form.formState.errors.firstName && <p className="text-sm font-semibold text-red-400">{form.formState.errors.firstName.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
                     <Input id="lastName" {...form.register("lastName")} data-testid="input-lastname" className="border-white/30" />
-                    {form.formState.errors.lastName && <p className="text-xs text-destructive">{form.formState.errors.lastName.message}</p>}
+                    {form.formState.errors.lastName && <p className="text-sm font-semibold text-red-400">{form.formState.errors.lastName.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
                     <Input id="email" type="email" {...form.register("email")} data-testid="input-email" className="border-white/30" />
-                    {form.formState.errors.email && <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>}
+                    {form.formState.errors.email && <p className="text-sm font-semibold text-red-400">{form.formState.errors.email.message}</p>}
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="phone">Cell Phone</Label>
@@ -730,7 +730,7 @@ export function ConsignmentForm() {
                         </Button>
                       )}
                     </div>
-                    {form.formState.errors.phone && <p className="text-xs text-destructive">{form.formState.errors.phone.message}</p>}
+                    {form.formState.errors.phone && <p className="text-sm font-semibold text-red-400">{form.formState.errors.phone.message}</p>}
                     
                     {codeSent && !phoneVerified && (
                       <div className="space-y-2 mt-3 p-3 bg-muted rounded-lg">
@@ -892,7 +892,7 @@ export function ConsignmentForm() {
                         </div>
                       </div>
                       {form.formState.errors.ownershipConfirmed && (
-                        <p className="text-xs text-destructive">{form.formState.errors.ownershipConfirmed.message}</p>
+                        <p className="text-sm font-semibold text-red-400">{form.formState.errors.ownershipConfirmed.message}</p>
                       )}
 
                       <div className="flex items-start space-x-3">
@@ -912,7 +912,7 @@ export function ConsignmentForm() {
                         </div>
                       </div>
                       {form.formState.errors.agreementAccepted && (
-                        <p className="text-xs text-destructive">{form.formState.errors.agreementAccepted.message}</p>
+                        <p className="text-sm font-semibold text-red-400">{form.formState.errors.agreementAccepted.message}</p>
                       )}
 
                       <div className="flex items-start space-x-3">
@@ -932,7 +932,7 @@ export function ConsignmentForm() {
                         </div>
                       </div>
                       {form.formState.errors.termsAccepted && (
-                        <p className="text-xs text-destructive">{form.formState.errors.termsAccepted.message}</p>
+                        <p className="text-sm font-semibold text-red-400">{form.formState.errors.termsAccepted.message}</p>
                       )}
                     </div>
 
