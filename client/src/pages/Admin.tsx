@@ -1554,7 +1554,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const pendingSubmissions = submissions.filter(s => s.status === "pending");
 
   return (
-    <div className="min-h-screen [&_input]:border-white [&_textarea]:border-white [&_select]:border-white" style={{ backgroundColor: '#3f3e3e' }}>
+    <div className="min-h-screen [&_input]:border-white [&_textarea]:border-white [&_select]:border-white" style={{ backgroundColor: '#47546d' }}>
       <div className="container px-4 py-12 md:px-6">
         <div className="mb-8 flex items-center justify-between">
           <div>
