@@ -474,9 +474,9 @@ export function ConsignmentForm() {
                                   <CommandItem
                                     key={make.MakeId}
                                     value={make.MakeName}
-                                    onSelect={(currentValue) => {
-                                      setSelectedMake(currentValue);
-                                      form.setValue("make", currentValue);
+                                    onSelect={() => {
+                                      setSelectedMake(make.MakeName);
+                                      form.setValue("make", make.MakeName);
                                       form.setValue("model", "");
                                       setMakeOpen(false);
                                     }}
@@ -527,8 +527,8 @@ export function ConsignmentForm() {
                                   <CommandItem
                                     key={model.Model_ID}
                                     value={model.Model_Name}
-                                    onSelect={(currentValue) => {
-                                      form.setValue("model", currentValue);
+                                    onSelect={() => {
+                                      form.setValue("model", model.Model_Name);
                                       setModelOpen(false);
                                     }}
                                   >
