@@ -131,7 +131,10 @@ Uses Replit's Object Storage integration (Google Cloud Storage backend):
   - Notifies when new consignment is submitted (vehicle, owner name, phone)
   - Notifies when buyer inquiry is submitted (vehicle, buyer name, contact info, message)
   - Admin contacts tagged as "Admin Notification" in GoHighLevel
-- Requires `GHL_LOCATION_ID` and `GHL_API_TOKEN` secrets to be configured
+- **Configuration**: Can be configured per-site via the admin panel (Settings → Integrations tab)
+  - API Token: Write-only field for security (token is never exposed in API responses)
+  - Location ID: Editable in the admin panel
+  - Falls back to `GHL_LOCATION_ID` and `GHL_API_TOKEN` environment variables if not configured
 - Uses GoHighLevel API v2 with Private Integration Token authentication
 
 ### SEO Optimization
