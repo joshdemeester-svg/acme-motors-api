@@ -136,6 +136,8 @@ export const siteSettings = pgTable("site_settings", {
   commissionRate: integer("commission_rate").default(10),
   avgDaysToFirstInquiry: integer("avg_days_to_first_inquiry").default(5),
   avgDaysToSell: integer("avg_days_to_sell").default(45),
+  adminNotifyPhone1: text("admin_notify_phone_1"),
+  adminNotifyPhone2: text("admin_notify_phone_2"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
