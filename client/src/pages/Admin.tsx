@@ -283,6 +283,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [showGhlToken, setShowGhlToken] = useState(false);
   const [privacyPolicy, setPrivacyPolicy] = useState("");
   const [termsOfService, setTermsOfService] = useState("");
+  const [sellerConfirmationSms, setSellerConfirmationSms] = useState("Thank you for submitting your {year} {make} {model} to {siteName}! We'll review your submission and contact you within 24 hours.");
 
   const { data: settings, isLoading } = useQuery<SiteSettings & { ghlConfigured?: boolean }>({
     queryKey: ["/api/settings"],
@@ -332,6 +333,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setGhlConfigured(settings.ghlConfigured || false);
       setPrivacyPolicy(settings.privacyPolicy || "");
       setTermsOfService(settings.termsOfService || "");
+      setSellerConfirmationSms(settings.sellerConfirmationSms || "Thank you for submitting your {year} {make} {model} to {siteName}! We'll review your submission and contact you within 24 hours.");
     }
   }, [settings]);
 
@@ -379,6 +381,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           ghlLocationId: ghlLocationId || null,
           privacyPolicy: privacyPolicy || null,
           termsOfService: termsOfService || null,
+          sellerConfirmationSms: sellerConfirmationSms || null,
         }),
       });
       if (!res.ok) throw new Error("Failed to update settings");
@@ -1365,6 +1368,47 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
               data-testid="button-save-notifications"
             >
               {updateMutation.isPending ? "Saving..." : "Save Notification Settings"}
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card className="border-white border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" /> Seller Confirmation SMS
+            </CardTitle>
+            <CardDescription>Customize the SMS message sent to sellers when they submit a consignment form</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="sellerConfirmationSms">Message Template</Label>
+              <Textarea
+                id="sellerConfirmationSms"
+                value={sellerConfirmationSms}
+                onChange={(e) => setSellerConfirmationSms(e.target.value)}
+                placeholder="Thank you for submitting your {year} {make} {model}..."
+                className="min-h-[100px]"
+                data-testid="input-seller-confirmation-sms"
+              />
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p className="font-medium">Available placeholders:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  <li><code className="bg-muted px-1 rounded">{"{year}"}</code> - Vehicle year</li>
+                  <li><code className="bg-muted px-1 rounded">{"{make}"}</code> - Vehicle make</li>
+                  <li><code className="bg-muted px-1 rounded">{"{model}"}</code> - Vehicle model</li>
+                  <li><code className="bg-muted px-1 rounded">{"{siteName}"}</code> - Your business name</li>
+                  <li><code className="bg-muted px-1 rounded">{"{firstName}"}</code> - Seller's first name</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              onClick={() => updateMutation.mutate()} 
+              disabled={updateMutation.isPending}
+              data-testid="button-save-seller-sms"
+            >
+              {updateMutation.isPending ? "Saving..." : "Save SMS Template"}
             </Button>
           </CardFooter>
         </Card>

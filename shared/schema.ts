@@ -143,6 +143,7 @@ export const siteSettings = pgTable("site_settings", {
   ghlLocationId: text("ghl_location_id"),
   privacyPolicy: text("privacy_policy"),
   termsOfService: text("terms_of_service"),
+  sellerConfirmationSms: text("seller_confirmation_sms").default("Thank you for submitting your {year} {make} {model} to {siteName}! We'll review your submission and contact you within 24 hours."),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

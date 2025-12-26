@@ -245,6 +245,59 @@ async function sendAdminNotificationSMS(message: string): Promise<void> {
   }
 }
 
+async function sendSellerConfirmationSMS(consignmentData: {
+  phone: string;
+  firstName: string;
+  year: string;
+  make: string;
+  model: string;
+}): Promise<void> {
+  try {
+    if (!consignmentData.phone) {
+      console.log("[Notify] No phone provided, skipping seller SMS");
+      return;
+    }
+
+    const normalizedPhone = normalizePhoneNumber(consignmentData.phone);
+    if (!normalizedPhone || normalizedPhone === "+" || normalizedPhone.length < 10) {
+      console.log("[Notify] Invalid phone number, skipping seller SMS");
+      return;
+    }
+
+    const settings = await storage.getSiteSettings();
+    if (!settings) return;
+
+    const template = settings.sellerConfirmationSms || 
+      "Thank you for submitting your {year} {make} {model} to {siteName}! We'll review your submission and contact you within 24 hours.";
+    
+    const message = template
+      .replace(/\{year\}/g, consignmentData.year)
+      .replace(/\{make\}/g, consignmentData.make)
+      .replace(/\{model\}/g, consignmentData.model)
+      .replace(/\{siteName\}/g, settings.siteName || "our dealership")
+      .replace(/\{firstName\}/g, consignmentData.firstName);
+
+    const contactId = await getOrCreateGHLContactByPhone(
+      normalizedPhone, 
+      consignmentData.firstName, 
+      "Consignment Seller"
+    );
+    
+    if (contactId) {
+      const sent = await sendGHLSMS(contactId, message);
+      if (sent) {
+        console.log(`[Notify] Seller confirmation SMS sent to ${normalizedPhone}`);
+      } else {
+        console.error(`[Notify] Failed to send seller SMS to ${normalizedPhone}`);
+      }
+    } else {
+      console.error(`[Notify] Could not create/get contact for ${normalizedPhone}`);
+    }
+  } catch (error) {
+    console.error("[Notify] Failed to send seller confirmation:", error);
+  }
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -863,6 +916,11 @@ export async function registerRoutes(
       const notifyMessage = `New Consignment Submitted!\n\nVehicle: ${validatedData.year} ${validatedData.make} ${validatedData.model}\nOwner: ${validatedData.firstName} ${validatedData.lastName}\nPhone: ${validatedData.phone}\n\nLogin to review and approve.`;
       sendAdminNotificationSMS(notifyMessage).catch((err) => {
         console.error("Admin notification SMS failed:", err);
+      });
+      
+      // Send seller confirmation SMS
+      sendSellerConfirmationSMS(validatedData).catch((err) => {
+        console.error("Seller confirmation SMS failed:", err);
       });
       
       res.status(201).json(submission);
