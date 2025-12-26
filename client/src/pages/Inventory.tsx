@@ -386,31 +386,32 @@ export default function Inventory() {
 
       {/* Floating Compare Bar */}
       {compareIds.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg z-50 p-4" data-testid="compare-bar">
-          <div className="container mx-auto flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Scale className="h-5 w-5 text-primary" />
-              <div>
+        <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg z-50 p-3 sm:p-4" data-testid="compare-bar">
+          <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Scale className="h-5 w-5 text-primary flex-shrink-0" />
+              <div className="text-center sm:text-left">
                 <span className="font-semibold">{compareIds.length} vehicle{compareIds.length !== 1 ? 's' : ''} selected</span>
-                <span className="text-muted-foreground ml-2">
-                  {compareIds.length < 2 ? '(select at least 2 to compare)' : '(max 3)'}
+                <span className="text-muted-foreground ml-2 text-sm">
+                  {compareIds.length < 2 ? '(select 2+ to compare)' : '(max 3)'}
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => setCompareIds([])}
+                className="flex-1 sm:flex-none"
                 data-testid="btn-clear-compare"
               >
-                Clear All
+                Clear
               </Button>
               <Button 
                 size="sm"
                 disabled={compareIds.length < 2}
                 onClick={() => navigate(`/compare?ids=${compareIds.join(",")}`)}
-                className="gap-2"
+                className="gap-2 flex-1 sm:flex-none"
                 data-testid="btn-compare-now"
               >
                 <Scale className="h-4 w-4" />
