@@ -159,6 +159,12 @@ export default function VehicleDetails({ id }: { id: string }) {
     buyerPhone: "",
     buyerEmail: "",
     message: "",
+    interestType: "",
+    buyTimeline: "",
+    hasTradeIn: false,
+    financingPreference: "",
+    contactPreference: "",
+    bestTimeToContact: "",
   });
   const { settings } = useSettings();
 
@@ -249,7 +255,18 @@ export default function VehicleDetails({ id }: { id: string }) {
     },
     onSuccess: () => {
       setContactSuccess(true);
-      setFormData({ buyerName: "", buyerPhone: "", buyerEmail: "", message: "" });
+      setFormData({ 
+        buyerName: "", 
+        buyerPhone: "", 
+        buyerEmail: "", 
+        message: "",
+        interestType: "",
+        buyTimeline: "",
+        hasTradeIn: false,
+        financingPreference: "",
+        contactPreference: "",
+        bestTimeToContact: "",
+      });
     },
   });
 
@@ -917,6 +934,25 @@ export default function VehicleDetails({ id }: { id: string }) {
           ) : (
             <form onSubmit={handleContactSubmit} className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="interestType">What are you interested in? *</Label>
+                <select
+                  id="interestType"
+                  data-testid="select-interest-type"
+                  value={formData.interestType}
+                  onChange={(e) => setFormData({ ...formData, interestType: e.target.value })}
+                  required
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="">Select an option...</option>
+                  <option value="test_drive">Schedule a Test Drive</option>
+                  <option value="financing">Get Financing Information</option>
+                  <option value="make_offer">Make an Offer</option>
+                  <option value="more_photos">Request More Photos/Video</option>
+                  <option value="question">Ask a Question</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="buyerName">Your Name *</Label>
                 <Input
                   id="buyerName"
@@ -954,6 +990,94 @@ export default function VehicleDetails({ id }: { id: string }) {
                 />
               </div>
 
+              <div className="rounded-md border border-border/50 bg-muted/30 p-3 space-y-3">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Help us serve you better (optional)</p>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="buyTimeline" className="text-xs">Buying Timeline</Label>
+                    <select
+                      id="buyTimeline"
+                      data-testid="select-buy-timeline"
+                      value={formData.buyTimeline}
+                      onChange={(e) => setFormData({ ...formData, buyTimeline: e.target.value })}
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="">Select...</option>
+                      <option value="this_week">This Week</option>
+                      <option value="this_month">This Month</option>
+                      <option value="just_browsing">Just Browsing</option>
+                    </select>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="financingPreference" className="text-xs">Financing</Label>
+                    <select
+                      id="financingPreference"
+                      data-testid="select-financing-preference"
+                      value={formData.financingPreference}
+                      onChange={(e) => setFormData({ ...formData, financingPreference: e.target.value })}
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="">Select...</option>
+                      <option value="cash">Cash</option>
+                      <option value="finance">Finance</option>
+                      <option value="undecided">Undecided</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="hasTradeIn"
+                    data-testid="checkbox-has-trade-in"
+                    checked={formData.hasTradeIn}
+                    onChange={(e) => setFormData({ ...formData, hasTradeIn: e.target.checked })}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <Label htmlFor="hasTradeIn" className="text-sm cursor-pointer">I have a vehicle to trade in</Label>
+                </div>
+              </div>
+
+              <div className="rounded-md border border-border/50 bg-muted/30 p-3 space-y-3">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Contact Preferences (optional)</p>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="contactPreference" className="text-xs">Contact Me By</Label>
+                    <select
+                      id="contactPreference"
+                      data-testid="select-contact-preference"
+                      value={formData.contactPreference}
+                      onChange={(e) => setFormData({ ...formData, contactPreference: e.target.value })}
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="">Select...</option>
+                      <option value="call">Call</option>
+                      <option value="text">Text</option>
+                      <option value="email">Email</option>
+                    </select>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="bestTimeToContact" className="text-xs">Best Time</Label>
+                    <select
+                      id="bestTimeToContact"
+                      data-testid="select-best-time"
+                      value={formData.bestTimeToContact}
+                      onChange={(e) => setFormData({ ...formData, bestTimeToContact: e.target.value })}
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="">Select...</option>
+                      <option value="morning">Morning</option>
+                      <option value="afternoon">Afternoon</option>
+                      <option value="evening">Evening</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="message">Message (Optional)</Label>
                 <Textarea
@@ -975,7 +1099,7 @@ export default function VehicleDetails({ id }: { id: string }) {
               <Button 
                 type="submit" 
                 className="w-full"
-                disabled={inquiryMutation.isPending}
+                disabled={inquiryMutation.isPending || !formData.interestType}
                 data-testid="button-submit-inquiry"
               >
                 {inquiryMutation.isPending ? (
