@@ -1675,6 +1675,9 @@ function UsersPanel() {
   const [newRole, setNewRole] = useState<"master" | "admin">("admin");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [userToResetPassword, setUserToResetPassword] = useState<AdminUser | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
 
   const { data: session } = useQuery<{ authenticated: boolean; userId?: string }>({
     queryKey: ["/api/auth/session"],
@@ -1763,6 +1766,30 @@ function UsersPanel() {
     },
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ id, password }: { id: string; password: string }) => {
+      const res = await fetch(`/api/users/${id}/password`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to reset password");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Password Reset", description: "The user's password has been updated." });
+      setResetPasswordDialogOpen(false);
+      setUserToResetPassword(null);
+      setResetPassword("");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -1834,6 +1861,17 @@ function UsersPanel() {
                       Demote to Admin
                     </Button>
                   )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setUserToResetPassword(user);
+                      setResetPasswordDialogOpen(true);
+                    }}
+                    data-testid={`button-reset-password-${user.id}`}
+                  >
+                    <Lock className="h-4 w-4 mr-1" /> Reset Password
+                  </Button>
                   {user.id !== currentUserId && (
                     <Button
                       variant="destructive"
@@ -1942,6 +1980,44 @@ function UsersPanel() {
               data-testid="button-confirm-delete-user"
             >
               {deleteUserMutation.isPending ? "Deleting..." : "Delete User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Set a new password for {userToResetPassword?.username}. You'll need to share this password with them securely.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="reset-password">New Password</Label>
+              <Input
+                id="reset-password"
+                type="password"
+                value={resetPassword}
+                onChange={(e) => setResetPassword(e.target.value)}
+                placeholder="Enter new password (min 6 characters)"
+                data-testid="input-reset-password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setResetPasswordDialogOpen(false);
+              setUserToResetPassword(null);
+              setResetPassword("");
+            }}>Cancel</Button>
+            <Button
+              onClick={() => userToResetPassword && resetPasswordMutation.mutate({ id: userToResetPassword.id, password: resetPassword })}
+              disabled={!resetPassword || resetPassword.length < 6 || resetPasswordMutation.isPending}
+              data-testid="button-confirm-reset-password"
+            >
+              {resetPasswordMutation.isPending ? "Resetting..." : "Reset Password"}
             </Button>
           </DialogFooter>
         </DialogContent>

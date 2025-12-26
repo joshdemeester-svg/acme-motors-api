@@ -530,6 +530,33 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/users/:id/password", requireMasterAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { password } = req.body;
+
+      if (!password || password.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      }
+
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const hashedPassword = hashPassword(password);
+      const updatedUser = await storage.updateUserPassword(id, hashedPassword);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json({ success: true, message: `Password updated for ${user.username}` });
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      res.status(500).json({ error: "Failed to reset password" });
+    }
+  });
+
   // Temporary secured endpoint to create/reset admin in production (POST version for CDN bypass)
   app.post("/api/create-admin-now", async (req, res) => {
     const secretKey = req.body?.key || req.query.key;
