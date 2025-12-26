@@ -174,3 +174,20 @@
 .social-icon-btn:hover {
   background-color: var(--social-icon-hover-color, #B8960C);
 }
+
+/* Calculator slider styles - targets Radix Slider components */
+/* Track - the full bar background (30% opacity tint) */
+.calculator-slider .slider-track {
+  background-color: color-mix(in srgb, var(--calculator-slider-color, #3B82F6) 30%, transparent) !important;
+}
+
+/* Range - the filled portion (full color) */
+.calculator-slider .slider-range {
+  background-color: var(--calculator-slider-color, #3B82F6) !important;
+}
+
+/* Thumb - the draggable handle */
+.calculator-slider .slider-thumb {
+  background-color: white !important;
+  border: 2px solid var(--calculator-slider-color, #3B82F6) !important;
+}

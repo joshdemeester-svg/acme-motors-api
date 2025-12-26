@@ -153,6 +153,8 @@ function FinancingCalculator({ price }: { price: number }) {
   const [downPayment, setDownPayment] = useState(Math.round(price * 0.1));
   const [interestRate, setInterestRate] = useState(6.5);
   const [loanTerm, setLoanTerm] = useState(60);
+  const [downPaymentInput, setDownPaymentInput] = useState(Math.round(price * 0.1).toLocaleString());
+  const [interestInput, setInterestInput] = useState("6.5");
 
   const monthlyPayment = useMemo(() => {
     const principal = price - downPayment;
@@ -170,6 +172,40 @@ function FinancingCalculator({ price }: { price: number }) {
   const totalInterest = useMemo(() => {
     return (monthlyPayment * loanTerm) - (price - downPayment);
   }, [monthlyPayment, loanTerm, price, downPayment]);
+
+  const handleDownPaymentBlur = () => {
+    const num = parseInt(downPaymentInput.replace(/,/g, ''), 10);
+    if (!isNaN(num)) {
+      const snapped = Math.round(num / 500) * 500;
+      const final = Math.max(0, Math.min(snapped, price));
+      setDownPayment(final);
+      setDownPaymentInput(final.toLocaleString());
+    } else {
+      setDownPaymentInput(downPayment.toLocaleString());
+    }
+  };
+
+  const handleInterestBlur = () => {
+    const num = parseFloat(interestInput);
+    if (!isNaN(num)) {
+      const clamped = Math.max(0, Math.min(num, 30));
+      const snapped = Math.round(clamped / 0.25) * 0.25;
+      setInterestRate(snapped);
+      setInterestInput(String(snapped));
+    } else {
+      setInterestInput(String(interestRate));
+    }
+  };
+
+  const handleSliderDownPayment = (value: number[]) => {
+    setDownPayment(value[0]);
+    setDownPaymentInput(value[0].toLocaleString());
+  };
+
+  const handleSliderInterest = (value: number[]) => {
+    setInterestRate(value[0]);
+    setInterestInput(String(value[0]));
+  };
 
   return (
     <Card data-testid="financing-calculator">
@@ -194,35 +230,59 @@ function FinancingCalculator({ price }: { price: number }) {
           </p>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div>
-            <div className="flex justify-between mb-2">
+            <div className="flex justify-between items-center mb-2">
               <Label className="text-sm">Down Payment</Label>
-              <span className="text-sm font-medium">${downPayment.toLocaleString()}</span>
+              <div className="flex items-center gap-1">
+                <span className="text-sm">$</span>
+                <Input
+                  type="text"
+                  value={downPaymentInput}
+                  onChange={(e) => setDownPaymentInput(e.target.value)}
+                  onBlur={handleDownPaymentBlur}
+                  className="w-24 h-7 text-sm text-right"
+                  data-testid="input-down-payment"
+                />
+              </div>
             </div>
-            <Slider
-              value={[downPayment]}
-              onValueChange={(value) => setDownPayment(value[0])}
-              max={price}
-              min={0}
-              step={500}
-              data-testid="slider-down-payment"
-            />
+            <div className="calculator-slider">
+              <Slider
+                value={[downPayment]}
+                onValueChange={handleSliderDownPayment}
+                max={price}
+                min={0}
+                step={500}
+                data-testid="slider-down-payment"
+              />
+            </div>
           </div>
 
           <div>
-            <div className="flex justify-between mb-2">
+            <div className="flex justify-between items-center mb-2">
               <Label className="text-sm">Interest Rate (APR)</Label>
-              <span className="text-sm font-medium">{interestRate}%</span>
+              <div className="flex items-center gap-1">
+                <Input
+                  type="text"
+                  value={interestInput}
+                  onChange={(e) => setInterestInput(e.target.value)}
+                  onBlur={handleInterestBlur}
+                  className="w-20 h-7 text-sm text-right"
+                  data-testid="input-interest-rate"
+                />
+                <span className="text-sm">%</span>
+              </div>
             </div>
-            <Slider
-              value={[interestRate]}
-              onValueChange={(value) => setInterestRate(value[0])}
-              max={15}
-              min={0}
-              step={0.25}
-              data-testid="slider-interest-rate"
-            />
+            <div className="calculator-slider">
+              <Slider
+                value={[interestRate]}
+                onValueChange={handleSliderInterest}
+                max={15}
+                min={0}
+                step={0.25}
+                data-testid="slider-interest-rate"
+              />
+            </div>
           </div>
 
           <div>

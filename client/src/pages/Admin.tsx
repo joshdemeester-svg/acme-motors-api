@@ -263,6 +263,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [calculatorAccentColor, setCalculatorAccentColor] = useState("#3B82F6");
   const [calculatorBgColor, setCalculatorBgColor] = useState("#1E3A5F");
   const [calculatorTextColor, setCalculatorTextColor] = useState("#FFFFFF");
+  const [calculatorSliderColor, setCalculatorSliderColor] = useState("#3B82F6");
   const [footerTagline, setFooterTagline] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [logoWidth, setLogoWidth] = useState("120");
@@ -320,6 +321,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setCalculatorAccentColor(settings.calculatorAccentColor || "#3B82F6");
       setCalculatorBgColor(settings.calculatorBgColor || "#1E3A5F");
       setCalculatorTextColor(settings.calculatorTextColor || "#FFFFFF");
+      setCalculatorSliderColor(settings.calculatorSliderColor || "#3B82F6");
       setFooterTagline(settings.footerTagline || "");
       setLogoUrl(settings.logoUrl || "");
       setLogoWidth(settings.logoWidth || "120");
@@ -371,6 +373,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           calculatorAccentColor,
           calculatorBgColor,
           calculatorTextColor,
+          calculatorSliderColor,
           footerTagline: footerTagline || null,
           logoUrl: logoUrl || null,
           logoWidth: logoWidth || "120",
@@ -1192,7 +1195,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           <CardDescription>Customize the financing calculator appearance on vehicle pages</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
               <Label>Payment Amount Color</Label>
               <div className="flex items-center gap-2">
@@ -1255,6 +1258,27 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
               </div>
               <p className="text-xs text-muted-foreground">Background color for the display</p>
             </div>
+
+            <div className="space-y-2">
+              <Label>Slider Bar Color</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={calculatorSliderColor}
+                  onChange={(e) => setCalculatorSliderColor(e.target.value)}
+                  className="h-10 w-14 p-1 cursor-pointer"
+                  data-testid="input-calculator-slider-color-picker"
+                />
+                <Input
+                  value={calculatorSliderColor}
+                  onChange={(e) => setCalculatorSliderColor(e.target.value)}
+                  placeholder="#3B82F6"
+                  className="flex-1"
+                  data-testid="input-calculator-slider-color-hex"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Color for the slider bars</p>
+            </div>
           </div>
 
           {/* Preview */}
@@ -1271,6 +1295,10 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
               >
                 $1,250/mo
               </p>
+            </div>
+            <div className="mt-4 px-4">
+              <div className="h-2 rounded-full" style={{ backgroundColor: calculatorSliderColor }}></div>
+              <p className="text-xs text-muted-foreground text-center mt-2">Slider preview</p>
             </div>
           </div>
         </CardContent>
@@ -2821,17 +2849,17 @@ function AnalyticsPanel() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {stats.map((stat, index) => (
               <Card key={index} className="border">
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${stat.color}`}>
-                      <stat.icon className="h-5 w-5" />
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className={`p-4 rounded-xl ${stat.color}`}>
+                      <stat.icon className="h-8 w-8" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{stat.value}</p>
-                      <p className="text-xs text-muted-foreground">{stat.label}</p>
+                      <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">{stat.label}</p>
+                      <p className="text-4xl font-extrabold">{stat.value}</p>
                     </div>
                   </div>
                 </CardContent>
