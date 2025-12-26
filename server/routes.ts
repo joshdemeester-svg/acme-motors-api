@@ -1392,6 +1392,70 @@ export async function initializeDefaultAdmin(): Promise<void> {
   }
 }
 
+export async function seedDatabaseFromConfig(): Promise<void> {
+  console.log("[seed] Checking if database needs seeding...");
+  try {
+    const { seedSettings, seedAdmin, getHashedAdminPassword } = await import("./seed-data");
+    
+    const currentSettings = await storage.getSiteSettings();
+    const needsSeeding = !currentSettings || !currentSettings.siteName || currentSettings.siteName === "Your Company Name";
+    
+    if (needsSeeding) {
+      console.log("[seed] Seeding site settings from configuration...");
+      
+      const existingAdmin = await storage.getUserByUsername(seedAdmin.username);
+      if (!existingAdmin) {
+        console.log(`[seed] Creating admin user '${seedAdmin.username}'...`);
+        const hashedPassword = await getHashedAdminPassword();
+        await storage.createUser({
+          username: seedAdmin.username,
+          password: hashedPassword,
+          isAdmin: true,
+        });
+        console.log(`[seed] Admin user '${seedAdmin.username}' created`);
+      }
+      await storage.updateSiteSettings({
+        primaryColor: seedSettings.primaryColor,
+        backgroundColor: seedSettings.backgroundColor,
+        mainMenuColor: seedSettings.mainMenuColor,
+        mainMenuHoverColor: seedSettings.mainMenuHoverColor,
+        contactButtonColor: seedSettings.contactButtonColor,
+        contactButtonHoverColor: seedSettings.contactButtonHoverColor,
+        menuFontSize: seedSettings.menuFontSize,
+        bodyFontSize: seedSettings.bodyFontSize,
+        menuAllCaps: seedSettings.menuAllCaps,
+        vehicleTitleColor: seedSettings.vehicleTitleColor,
+        vehiclePriceColor: seedSettings.vehiclePriceColor,
+        stepBgColor: seedSettings.stepBgColor,
+        stepNumberColor: seedSettings.stepNumberColor,
+        socialIconBgColor: seedSettings.socialIconBgColor,
+        socialIconHoverColor: seedSettings.socialIconHoverColor,
+        footerTagline: seedSettings.footerTagline,
+        logoUrl: seedSettings.logoUrl,
+        logoWidth: seedSettings.logoWidth,
+        siteName: seedSettings.siteName,
+        contactAddress1: seedSettings.contactAddress1,
+        contactAddress2: seedSettings.contactAddress2,
+        contactPhone: seedSettings.contactPhone,
+        contactEmail: seedSettings.contactEmail,
+        facebookUrl: seedSettings.facebookUrl,
+        instagramUrl: seedSettings.instagramUrl,
+        twitterUrl: seedSettings.twitterUrl,
+        youtubeUrl: seedSettings.youtubeUrl,
+        tiktokUrl: seedSettings.tiktokUrl,
+        commissionRate: seedSettings.commissionRate,
+        avgDaysToFirstInquiry: seedSettings.avgDaysToFirstInquiry,
+        avgDaysToSell: seedSettings.avgDaysToSell,
+      });
+      console.log("[seed] Site settings seeded successfully");
+    } else {
+      console.log("[seed] Site settings already configured, skipping seed");
+    }
+  } catch (error) {
+    console.error("[seed] Error seeding database:", error);
+  }
+}
+
 export async function createAdminIfNotExists(): Promise<{ created: boolean; message: string }> {
   try {
     const existingAdmin = await storage.getUserByUsername("Josh");
