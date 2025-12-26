@@ -1,16 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Car, Fuel, Gauge, Calendar, Palette, FileText, Settings, MapPin, Shield, Zap, Users, Factory, Cog, DollarSign, Weight, CircleDot, Lightbulb, Battery, Loader2, CheckCircle, MessageSquare, Search } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { ArrowLeft, Car, Fuel, Gauge, Calendar, Palette, FileText, Settings, MapPin, Shield, Zap, Users, Factory, Cog, DollarSign, Weight, CircleDot, Lightbulb, Battery, Loader2, CheckCircle, MessageSquare, Search, Calculator } from "lucide-react";
 import { Link } from "wouter";
 import type { InventoryCar } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
@@ -146,6 +147,116 @@ interface VinData {
   NCSAMake?: string;
   NCSAModel?: string;
   NCSANote?: string;
+}
+
+function FinancingCalculator({ price }: { price: number }) {
+  const [downPayment, setDownPayment] = useState(Math.round(price * 0.1));
+  const [interestRate, setInterestRate] = useState(6.5);
+  const [loanTerm, setLoanTerm] = useState(60);
+
+  const monthlyPayment = useMemo(() => {
+    const principal = price - downPayment;
+    if (principal <= 0) return 0;
+    
+    const monthlyRate = interestRate / 100 / 12;
+    if (monthlyRate === 0) {
+      return principal / loanTerm;
+    }
+    
+    const payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, loanTerm)) / (Math.pow(1 + monthlyRate, loanTerm) - 1);
+    return payment;
+  }, [price, downPayment, interestRate, loanTerm]);
+
+  const totalInterest = useMemo(() => {
+    return (monthlyPayment * loanTerm) - (price - downPayment);
+  }, [monthlyPayment, loanTerm, price, downPayment]);
+
+  return (
+    <Card data-testid="financing-calculator">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Calculator className="h-5 w-5" />
+          Payment Calculator
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="text-center p-4 bg-primary/10 rounded-lg">
+          <p className="text-sm text-muted-foreground">Estimated Monthly Payment</p>
+          <p className="text-3xl font-bold text-primary" data-testid="text-monthly-payment">
+            ${monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/mo
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <div className="flex justify-between mb-2">
+              <Label className="text-sm">Down Payment</Label>
+              <span className="text-sm font-medium">${downPayment.toLocaleString()}</span>
+            </div>
+            <Slider
+              value={[downPayment]}
+              onValueChange={(value) => setDownPayment(value[0])}
+              max={price}
+              min={0}
+              step={500}
+              data-testid="slider-down-payment"
+            />
+          </div>
+
+          <div>
+            <div className="flex justify-between mb-2">
+              <Label className="text-sm">Interest Rate (APR)</Label>
+              <span className="text-sm font-medium">{interestRate}%</span>
+            </div>
+            <Slider
+              value={[interestRate]}
+              onValueChange={(value) => setInterestRate(value[0])}
+              max={15}
+              min={0}
+              step={0.25}
+              data-testid="slider-interest-rate"
+            />
+          </div>
+
+          <div>
+            <div className="flex justify-between mb-2">
+              <Label className="text-sm">Loan Term</Label>
+              <span className="text-sm font-medium">{loanTerm} months</span>
+            </div>
+            <div className="flex gap-2">
+              {[36, 48, 60, 72, 84].map((term) => (
+                <Button
+                  key={term}
+                  variant={loanTerm === term ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setLoanTerm(term)}
+                  className="flex-1"
+                  data-testid={`button-term-${term}`}
+                >
+                  {term}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-3 border-t text-sm space-y-1 text-muted-foreground">
+          <div className="flex justify-between">
+            <span>Loan Amount:</span>
+            <span>${(price - downPayment).toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Total Interest:</span>
+            <span>${totalInterest.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+          </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground text-center">
+          *Estimates only. Actual rates and terms may vary based on credit approval.
+        </p>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function VehicleDetails({ id }: { id: string }) {
@@ -474,6 +585,8 @@ export default function VehicleDetails({ id }: { id: string }) {
                 </CardContent>
               </Card>
             )}
+
+            <FinancingCalculator price={car.price} />
 
             <Button 
               className="btn-contact w-full gap-2" 

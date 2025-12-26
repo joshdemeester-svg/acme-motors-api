@@ -1228,6 +1228,16 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/inventory/sold", async (req, res) => {
+    try {
+      const cars = await storage.getSoldInventoryCars();
+      res.json(cars);
+    } catch (error) {
+      console.error("Error fetching sold vehicles:", error);
+      res.status(500).json({ error: "Failed to fetch sold vehicles" });
+    }
+  });
+
   app.get("/api/vin-decode/:vin", async (req, res) => {
     try {
       const { vin } = req.params;
@@ -1490,6 +1500,80 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating inquiry status:", error);
       res.status(500).json({ error: "Failed to update inquiry status" });
+    }
+  });
+
+  // Trade-in value submission
+  const tradeInSchema = z.object({
+    firstName: z.string().min(1),
+    lastName: z.string().min(1),
+    email: z.string().email(),
+    phone: z.string().min(10),
+    year: z.string().min(4),
+    make: z.string().min(1),
+    model: z.string().min(1),
+    mileage: z.string().min(1),
+    condition: z.enum(["excellent", "good", "fair", "poor"]),
+    vin: z.string().optional(),
+    payoffAmount: z.string().optional(),
+    additionalInfo: z.string().optional(),
+  });
+
+  app.post("/api/trade-in", async (req, res) => {
+    try {
+      const data = tradeInSchema.parse(req.body);
+      const { locationId, apiToken } = await getGHLCredentials();
+
+      if (locationId && apiToken) {
+        // Create contact in GoHighLevel
+        const response = await fetch(`${GHL_API_BASE}/contacts/upsert`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiToken}`,
+            "Version": "2021-07-28",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            phone: data.phone,
+            locationId: locationId,
+            tags: ["Trade-In Lead", `${data.year} ${data.make} ${data.model}`],
+            source: "Website - Trade-In Form",
+            customFields: [
+              { key: "trade_in_year", value: data.year },
+              { key: "trade_in_make", value: data.make },
+              { key: "trade_in_model", value: data.model },
+              { key: "trade_in_mileage", value: data.mileage },
+              { key: "trade_in_condition", value: data.condition },
+              { key: "trade_in_vin", value: data.vin || "Not provided" },
+              { key: "trade_in_payoff", value: data.payoffAmount || "None" },
+            ],
+          }),
+        });
+
+        if (!response.ok) {
+          console.error("[GHL] Failed to create trade-in contact:", await response.text());
+        } else {
+          console.log("[GHL] Trade-in contact created successfully");
+        }
+
+        // Send admin SMS notification
+        const smsMessage = `NEW TRADE-IN REQUEST\n\nVehicle: ${data.year} ${data.make} ${data.model}\nCondition: ${data.condition}\nMileage: ${data.mileage}\n\nCustomer: ${data.firstName} ${data.lastName}\nPhone: ${data.phone}\nEmail: ${data.email}`;
+        sendAdminNotificationSMS(smsMessage).catch((err) => {
+          console.error("Admin notification SMS failed:", err);
+        });
+      }
+
+      res.json({ success: true, message: "Trade-in request submitted successfully" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      console.error("Error submitting trade-in:", error);
+      res.status(500).json({ error: "Failed to submit trade-in request" });
     }
   });
 
