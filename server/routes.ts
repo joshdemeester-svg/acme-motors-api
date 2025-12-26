@@ -1413,6 +1413,53 @@ ${allPages.map(page => `  <url>
     }
   });
 
+  // Force resync settings from seed data (admin only)
+  app.post("/api/settings/resync", requireAdmin, async (req, res) => {
+    try {
+      const { seedSettings } = await import("./seed-data");
+      
+      await storage.updateSiteSettings({
+        primaryColor: seedSettings.primaryColor,
+        backgroundColor: seedSettings.backgroundColor,
+        mainMenuColor: seedSettings.mainMenuColor,
+        mainMenuHoverColor: seedSettings.mainMenuHoverColor,
+        contactButtonColor: seedSettings.contactButtonColor,
+        contactButtonHoverColor: seedSettings.contactButtonHoverColor,
+        menuFontSize: seedSettings.menuFontSize,
+        bodyFontSize: seedSettings.bodyFontSize,
+        menuAllCaps: seedSettings.menuAllCaps,
+        vehicleTitleColor: seedSettings.vehicleTitleColor,
+        vehiclePriceColor: seedSettings.vehiclePriceColor,
+        stepBgColor: seedSettings.stepBgColor,
+        stepNumberColor: seedSettings.stepNumberColor,
+        socialIconBgColor: seedSettings.socialIconBgColor,
+        socialIconHoverColor: seedSettings.socialIconHoverColor,
+        footerTagline: seedSettings.footerTagline,
+        logoUrl: seedSettings.logoUrl,
+        logoWidth: seedSettings.logoWidth,
+        siteName: seedSettings.siteName,
+        contactAddress1: seedSettings.contactAddress1,
+        contactAddress2: seedSettings.contactAddress2,
+        contactPhone: seedSettings.contactPhone,
+        contactEmail: seedSettings.contactEmail,
+        facebookUrl: seedSettings.facebookUrl,
+        instagramUrl: seedSettings.instagramUrl,
+        twitterUrl: seedSettings.twitterUrl,
+        youtubeUrl: seedSettings.youtubeUrl,
+        tiktokUrl: seedSettings.tiktokUrl,
+        commissionRate: seedSettings.commissionRate,
+        avgDaysToFirstInquiry: seedSettings.avgDaysToFirstInquiry,
+        avgDaysToSell: seedSettings.avgDaysToSell,
+      });
+      
+      console.log("[settings] Force resync from seed data completed");
+      res.json({ success: true, message: "Settings resynced from configuration" });
+    } catch (error) {
+      console.error("Error resyncing settings:", error);
+      res.status(500).json({ error: "Failed to resync settings" });
+    }
+  });
+
   return httpServer;
 }
 
