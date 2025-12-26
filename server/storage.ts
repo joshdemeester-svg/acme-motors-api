@@ -50,6 +50,7 @@ export interface IStorage {
   getAllInventoryCars(): Promise<InventoryCar[]>;
   getAvailableInventoryCars(): Promise<InventoryCar[]>;
   getFeaturedInventoryCars(): Promise<InventoryCar[]>;
+  getSoldInventoryCars(): Promise<InventoryCar[]>;
   updateInventoryCarStatus(id: string, status: string): Promise<InventoryCar | undefined>;
   updateInventoryCar(id: string, data: Partial<InsertInventoryCar>): Promise<InventoryCar | undefined>;
   
@@ -196,6 +197,10 @@ export class DatabaseStorage implements IStorage {
 
   async getFeaturedInventoryCars(): Promise<InventoryCar[]> {
     return db.select().from(inventoryCars).where(and(eq(inventoryCars.status, "available"), eq(inventoryCars.featured, true))).orderBy(desc(inventoryCars.createdAt));
+  }
+
+  async getSoldInventoryCars(): Promise<InventoryCar[]> {
+    return db.select().from(inventoryCars).where(eq(inventoryCars.status, "sold")).orderBy(desc(inventoryCars.createdAt));
   }
 
   async updateInventoryCarStatus(id: string, status: string): Promise<InventoryCar | undefined> {
