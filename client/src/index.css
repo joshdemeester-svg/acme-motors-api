@@ -51,20 +51,20 @@
 
 /* Luxury Dark Mode Theme */
 :root {
-  /* Dark Slate / Gunmetal Base */
-  --background: 220 15% 10%;
+  /* Dark Slate Base - matches #1e293b */
+  --background: 222 47% 17%;
   --foreground: 220 10% 95%;
 
   /* Slightly lighter dark for cards */
-  --card: 220 15% 13%;
+  --card: 222 47% 20%;
   --card-foreground: 220 10% 95%;
 
-  --popover: 220 15% 13%;
+  --popover: 222 47% 20%;
   --popover-foreground: 220 10% 95%;
 
-  /* Gold/Bronze Accent for Primary */
-  --primary: 38 45% 55%;
-  --primary-foreground: 220 15% 10%;
+  /* Red Accent for Primary - matches #cc181f */
+  --primary: 358 79% 45%;
+  --primary-foreground: 0 0% 100%;
 
   /* Muted Silver for Secondary */
   --secondary: 220 10% 20%;
@@ -81,9 +81,9 @@
 
   --border: 220 10% 20%;
   --input: 220 10% 20%;
-  --ring: 38 45% 55%;
+  --ring: 358 79% 45%;
 
-  --chart-1: 38 45% 55%;
+  --chart-1: 358 79% 45%;
   --chart-2: 220 10% 60%;
   --chart-3: 196 70% 45%;
   --chart-4: 150 60% 45%;
