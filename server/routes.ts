@@ -1353,37 +1353,106 @@ export async function registerRoutes(
         buyerPhone: z.string().min(10, "Phone is required"),
         buyerEmail: z.string().email("Valid email is required"),
         message: z.string().optional(),
+        interestType: z.string().min(1, "Interest type is required"),
+        buyTimeline: z.string().optional(),
+        hasTradeIn: z.boolean().optional(),
+        financingPreference: z.string().optional(),
+        contactPreference: z.string().optional(),
+        bestTimeToContact: z.string().optional(),
       });
 
       const data = inquirySchema.parse(req.body);
 
-      const settings = await storage.getSiteSettings();
-      if (!settings?.contactPhone) {
-        return res.status(400).json({ error: "Owner contact phone not configured" });
-      }
-
-      const ownerPhone = normalizePhoneNumber(settings.contactPhone);
-      const contactId = await getOrCreateGHLContactByPhone(ownerPhone, "Owner");
-
-      if (!contactId) {
-        return res.status(500).json({ error: "Failed to connect to messaging service" });
-      }
-
-      const smsMessage = `New Vehicle Inquiry!\n\nVehicle: ${data.year} ${data.make} ${data.model}\nVIN: ${data.vin}\n\nBuyer Info:\nName: ${data.buyerName}\nPhone: ${data.buyerPhone}\nEmail: ${data.buyerEmail}${data.message ? `\n\nMessage: ${data.message}` : ""}`;
-
-      const smsResult = await sendGHLSMS(contactId, smsMessage);
-
-      if (!smsResult.success) {
-        return res.status(500).json({ error: smsResult.error || "Failed to send inquiry message" });
-      }
-
-      console.log(`[Inquiry] Vehicle inquiry sent for ${data.vin} from ${data.buyerName}`);
-      
-      // Also send notification to admin phones
-      const adminMessage = `New Buyer Inquiry!\n\nVehicle: ${data.year} ${data.make} ${data.model}\nVIN: ${data.vin}\n\nBuyer: ${data.buyerName}\nPhone: ${data.buyerPhone}\nEmail: ${data.buyerEmail}${data.message ? `\n\nMessage: ${data.message}` : ""}`;
-      sendAdminNotificationSMS(adminMessage).catch((err) => {
-        console.error("Admin notification SMS failed:", err);
+      // Save inquiry to database
+      const inquiry = await storage.createBuyerInquiry({
+        inventoryCarId: data.vehicleId,
+        buyerName: data.buyerName,
+        buyerPhone: data.buyerPhone,
+        buyerEmail: data.buyerEmail,
+        message: data.message || null,
+        interestType: data.interestType,
+        buyTimeline: data.buyTimeline || null,
+        hasTradeIn: data.hasTradeIn ?? null,
+        financingPreference: data.financingPreference || null,
+        contactPreference: data.contactPreference || null,
+        bestTimeToContact: data.bestTimeToContact || null,
       });
+
+      console.log(`[Inquiry] Saved inquiry ${inquiry.id} for vehicle ${data.vehicleId}`);
+
+      const settings = await storage.getSiteSettings();
+      
+      // Build detailed SMS message with new fields
+      const interestLabels: Record<string, string> = {
+        test_drive: "Schedule Test Drive",
+        financing: "Financing Info",
+        make_offer: "Make an Offer",
+        more_photos: "Request More Photos/Video",
+        question: "Ask a Question",
+      };
+      
+      const timelineLabels: Record<string, string> = {
+        this_week: "This Week",
+        this_month: "This Month",
+        just_browsing: "Just Browsing",
+      };
+      
+      const financingLabels: Record<string, string> = {
+        cash: "Cash",
+        finance: "Finance",
+        undecided: "Undecided",
+      };
+      
+      const contactLabels: Record<string, string> = {
+        call: "Call",
+        text: "Text",
+        email: "Email",
+      };
+      
+      const timeLabels: Record<string, string> = {
+        morning: "Morning",
+        afternoon: "Afternoon",
+        evening: "Evening",
+      };
+
+      let smsMessage = `New Vehicle Inquiry!\n\nVehicle: ${data.year} ${data.make} ${data.model}\nVIN: ${data.vin}\n\nInterest: ${interestLabels[data.interestType] || data.interestType}\n\nBuyer Info:\nName: ${data.buyerName}\nPhone: ${data.buyerPhone}\nEmail: ${data.buyerEmail}`;
+      
+      if (data.buyTimeline) {
+        smsMessage += `\n\nBuying Timeline: ${timelineLabels[data.buyTimeline] || data.buyTimeline}`;
+      }
+      if (data.hasTradeIn !== undefined) {
+        smsMessage += `\nHas Trade-In: ${data.hasTradeIn ? "Yes" : "No"}`;
+      }
+      if (data.financingPreference) {
+        smsMessage += `\nFinancing: ${financingLabels[data.financingPreference] || data.financingPreference}`;
+      }
+      if (data.contactPreference) {
+        smsMessage += `\n\nPreferred Contact: ${contactLabels[data.contactPreference] || data.contactPreference}`;
+      }
+      if (data.bestTimeToContact) {
+        smsMessage += `\nBest Time: ${timeLabels[data.bestTimeToContact] || data.bestTimeToContact}`;
+      }
+      if (data.message) {
+        smsMessage += `\n\nMessage: ${data.message}`;
+      }
+
+      // Try to send SMS if configured
+      if (settings?.contactPhone) {
+        const ownerPhone = normalizePhoneNumber(settings.contactPhone);
+        const contactId = await getOrCreateGHLContactByPhone(ownerPhone, "Owner");
+
+        if (contactId) {
+          const smsResult = await sendGHLSMS(contactId, smsMessage);
+          if (!smsResult.success) {
+            console.error("Failed to send inquiry SMS:", smsResult.error);
+          }
+        }
+        
+        // Also send notification to admin phones
+        sendAdminNotificationSMS(smsMessage).catch((err) => {
+          console.error("Admin notification SMS failed:", err);
+        });
+      }
       
       res.json({ success: true, message: "Your inquiry has been sent! We'll be in touch soon." });
     } catch (error) {
@@ -1392,6 +1461,35 @@ export async function registerRoutes(
       }
       console.error("Error sending vehicle inquiry:", error);
       res.status(500).json({ error: "Failed to send inquiry" });
+    }
+  });
+
+  // Get all buyer inquiries (admin only)
+  app.get("/api/inquiries", requireAdmin, async (req, res) => {
+    try {
+      const inquiries = await storage.getAllBuyerInquiries();
+      res.json(inquiries);
+    } catch (error) {
+      console.error("Error fetching inquiries:", error);
+      res.status(500).json({ error: "Failed to fetch inquiries" });
+    }
+  });
+
+  // Update inquiry status (admin only)
+  app.patch("/api/inquiries/:id/status", requireAdmin, async (req, res) => {
+    try {
+      const { status } = req.body;
+      if (!status || !["new", "contacted", "qualified", "closed"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status. Must be: new, contacted, qualified, or closed" });
+      }
+      const updated = await storage.updateBuyerInquiryStatus(req.params.id, status);
+      if (!updated) {
+        return res.status(404).json({ error: "Inquiry not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating inquiry status:", error);
+      res.status(500).json({ error: "Failed to update inquiry status" });
     }
   });
 
