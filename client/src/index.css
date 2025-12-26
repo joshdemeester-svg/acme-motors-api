@@ -101,6 +101,17 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif;
   }
+  .container {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 1280px;
+  }
+  @media (min-width: 1536px) {
+    .container {
+      max-width: 1400px;
+    }
+  }
 }
 
 /* Custom button styles using CSS variables */
