@@ -290,6 +290,12 @@ export default function VehicleDetails({ id }: { id: string }) {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
 
+  useEffect(() => {
+    if (id) {
+      fetch(`/api/vehicles/${id}/view`, { method: "POST" }).catch(() => {});
+    }
+  }, [id]);
+
   const { data: car, isLoading: carLoading } = useQuery<InventoryCar>({
     queryKey: [`/api/inventory/${id}`],
     queryFn: async () => {

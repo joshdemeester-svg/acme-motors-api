@@ -251,3 +251,89 @@ export const insertBuyerInquirySchema = createInsertSchema(buyerInquiries).omit(
 
 export type InsertBuyerInquiry = z.infer<typeof insertBuyerInquirySchema>;
 export type BuyerInquiry = typeof buyerInquiries.$inferSelect;
+
+export const vehicleAlerts = pgTable("vehicle_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  email: text("email").notNull(),
+  phone: text("phone"),
+  name: text("name").notNull(),
+  
+  makes: text("makes").array().default(sql`'{}'::text[]`),
+  models: text("models").array().default(sql`'{}'::text[]`),
+  minYear: integer("min_year"),
+  maxYear: integer("max_year"),
+  minPrice: integer("min_price"),
+  maxPrice: integer("max_price"),
+  
+  notifyEmail: boolean("notify_email").default(true),
+  notifySms: boolean("notify_sms").default(false),
+  
+  active: boolean("active").default(true),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertVehicleAlertSchema = createInsertSchema(vehicleAlerts).omit({
+  id: true,
+  createdAt: true,
+  active: true,
+});
+
+export type InsertVehicleAlert = z.infer<typeof insertVehicleAlertSchema>;
+export type VehicleAlert = typeof vehicleAlerts.$inferSelect;
+
+export const testimonials = pgTable("testimonials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  customerName: text("customer_name").notNull(),
+  customerLocation: text("customer_location"),
+  vehicleSold: text("vehicle_sold"),
+  rating: integer("rating").default(5),
+  content: text("content").notNull(),
+  
+  photoUrl: text("photo_url"),
+  
+  featured: boolean("featured").default(false),
+  approved: boolean("approved").default(false),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertTestimonialSchema = createInsertSchema(testimonials).omit({
+  id: true,
+  createdAt: true,
+  approved: true,
+});
+
+export type InsertTestimonial = z.infer<typeof insertTestimonialSchema>;
+export type Testimonial = typeof testimonials.$inferSelect;
+
+export const vehicleViews = pgTable("vehicle_views", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  vehicleId: varchar("vehicle_id").notNull().references(() => inventoryCars.id),
+  viewedAt: timestamp("viewed_at").defaultNow(),
+  userAgent: text("user_agent"),
+  referrer: text("referrer"),
+});
+
+export type VehicleView = typeof vehicleViews.$inferSelect;
+
+export const vehicleDocuments = pgTable("vehicle_documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  vehicleId: varchar("vehicle_id").notNull().references(() => inventoryCars.id),
+  documentType: text("document_type").notNull(),
+  fileName: text("file_name").notNull(),
+  fileUrl: text("file_url").notNull(),
+  notes: text("notes"),
+  uploadedBy: varchar("uploaded_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertVehicleDocumentSchema = createInsertSchema(vehicleDocuments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertVehicleDocument = z.infer<typeof insertVehicleDocumentSchema>;
+export type VehicleDocument = typeof vehicleDocuments.$inferSelect;

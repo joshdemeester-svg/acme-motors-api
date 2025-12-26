@@ -2101,6 +2101,335 @@ ${allPages.map(page => `  <url>
     }
   });
 
+  // Vehicle Alerts - Public create, Admin manage
+  app.post("/api/vehicle-alerts", async (req, res) => {
+    try {
+      const { name, email, phone, makes, models, minYear, maxYear, minPrice, maxPrice, notifyEmail, notifySms } = req.body;
+      
+      if (!name || !email) {
+        return res.status(400).json({ error: "Name and email are required" });
+      }
+      
+      const alert = await storage.createVehicleAlert({
+        name,
+        email,
+        phone: phone || null,
+        makes: makes || [],
+        models: models || [],
+        minYear: minYear || null,
+        maxYear: maxYear || null,
+        minPrice: minPrice || null,
+        maxPrice: maxPrice || null,
+        notifyEmail: notifyEmail !== false,
+        notifySms: notifySms || false,
+      });
+      
+      res.status(201).json(alert);
+    } catch (error) {
+      console.error("Error creating vehicle alert:", error);
+      res.status(500).json({ error: "Failed to create vehicle alert" });
+    }
+  });
+
+  app.get("/api/vehicle-alerts", requireAdmin, async (req, res) => {
+    try {
+      const alerts = await storage.getAllVehicleAlerts();
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error fetching vehicle alerts:", error);
+      res.status(500).json({ error: "Failed to fetch vehicle alerts" });
+    }
+  });
+
+  app.patch("/api/vehicle-alerts/:id/status", requireAdmin, async (req, res) => {
+    try {
+      const { active } = req.body;
+      const alert = await storage.updateVehicleAlertStatus(req.params.id, active);
+      if (!alert) {
+        return res.status(404).json({ error: "Vehicle alert not found" });
+      }
+      res.json(alert);
+    } catch (error) {
+      console.error("Error updating vehicle alert:", error);
+      res.status(500).json({ error: "Failed to update vehicle alert" });
+    }
+  });
+
+  app.delete("/api/vehicle-alerts/:id", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteVehicleAlert(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting vehicle alert:", error);
+      res.status(500).json({ error: "Failed to delete vehicle alert" });
+    }
+  });
+
+  // Testimonials - Public view, Admin manage
+  app.get("/api/testimonials", async (req, res) => {
+    try {
+      const testimonials = await storage.getApprovedTestimonials();
+      res.json(testimonials);
+    } catch (error) {
+      console.error("Error fetching testimonials:", error);
+      res.status(500).json({ error: "Failed to fetch testimonials" });
+    }
+  });
+
+  app.get("/api/testimonials/featured", async (req, res) => {
+    try {
+      const testimonials = await storage.getFeaturedTestimonials();
+      res.json(testimonials);
+    } catch (error) {
+      console.error("Error fetching featured testimonials:", error);
+      res.status(500).json({ error: "Failed to fetch featured testimonials" });
+    }
+  });
+
+  app.get("/api/testimonials/all", requireAdmin, async (req, res) => {
+    try {
+      const testimonials = await storage.getAllTestimonials();
+      res.json(testimonials);
+    } catch (error) {
+      console.error("Error fetching all testimonials:", error);
+      res.status(500).json({ error: "Failed to fetch testimonials" });
+    }
+  });
+
+  app.post("/api/testimonials", requireAdmin, async (req, res) => {
+    try {
+      const { customerName, customerLocation, vehicleSold, rating, content, photoUrl, featured } = req.body;
+      
+      if (!customerName || !content) {
+        return res.status(400).json({ error: "Customer name and content are required" });
+      }
+      
+      const testimonial = await storage.createTestimonial({
+        customerName,
+        customerLocation: customerLocation || null,
+        vehicleSold: vehicleSold || null,
+        rating: rating || 5,
+        content,
+        photoUrl: photoUrl || null,
+        featured: featured || false,
+      });
+      
+      res.status(201).json(testimonial);
+    } catch (error) {
+      console.error("Error creating testimonial:", error);
+      res.status(500).json({ error: "Failed to create testimonial" });
+    }
+  });
+
+  app.patch("/api/testimonials/:id", requireAdmin, async (req, res) => {
+    try {
+      const testimonial = await storage.updateTestimonial(req.params.id, req.body);
+      if (!testimonial) {
+        return res.status(404).json({ error: "Testimonial not found" });
+      }
+      res.json(testimonial);
+    } catch (error) {
+      console.error("Error updating testimonial:", error);
+      res.status(500).json({ error: "Failed to update testimonial" });
+    }
+  });
+
+  app.delete("/api/testimonials/:id", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteTestimonial(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting testimonial:", error);
+      res.status(500).json({ error: "Failed to delete testimonial" });
+    }
+  });
+
+  // Vehicle Documents
+  app.get("/api/vehicles/:id/documents", requireAdmin, async (req, res) => {
+    try {
+      const docs = await storage.getVehicleDocuments(req.params.id);
+      res.json(docs);
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+      res.status(500).json({ error: "Failed to fetch documents" });
+    }
+  });
+
+  app.post("/api/vehicles/:id/documents", requireAdmin, async (req, res) => {
+    try {
+      const { documentType, fileName, fileUrl, notes } = req.body;
+      const userId = (req.session as any).userId;
+      
+      const doc = await storage.createVehicleDocument({
+        vehicleId: req.params.id,
+        documentType,
+        fileName,
+        fileUrl,
+        notes: notes || null,
+        uploadedBy: userId || null,
+      });
+      res.json(doc);
+    } catch (error) {
+      console.error("Error creating document:", error);
+      res.status(500).json({ error: "Failed to create document" });
+    }
+  });
+
+  app.delete("/api/documents/:id", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteVehicleDocument(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      res.status(500).json({ error: "Failed to delete document" });
+    }
+  });
+
+  // Vehicle View Tracking
+  app.post("/api/vehicles/:id/view", async (req, res) => {
+    try {
+      const vehicleId = req.params.id;
+      const userAgent = req.headers["user-agent"] || undefined;
+      const referrer = req.headers["referer"] || undefined;
+      
+      await storage.recordVehicleView(vehicleId, userAgent, referrer);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error recording view:", error);
+      res.status(500).json({ error: "Failed to record view" });
+    }
+  });
+
+  app.get("/api/vehicles/:id/views", requireAdmin, async (req, res) => {
+    try {
+      const count = await storage.getVehicleViewCount(req.params.id);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching view count:", error);
+      res.status(500).json({ error: "Failed to fetch view count" });
+    }
+  });
+
+  // SMS Blast
+  app.post("/api/sms/blast", requireAdmin, async (req, res) => {
+    try {
+      const { message, targetGroup } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+      
+      const { locationId, apiToken } = await getGHLCredentials();
+      if (!locationId || !apiToken) {
+        return res.status(400).json({ error: "GoHighLevel not configured" });
+      }
+      
+      let phoneNumbers: string[] = [];
+      
+      if (targetGroup === "inquiries") {
+        const inquiries = await storage.getAllBuyerInquiries();
+        phoneNumbers = inquiries.filter(i => i.buyerPhone).map(i => i.buyerPhone);
+      } else if (targetGroup === "consignments") {
+        const consignments = await storage.getAllConsignments();
+        phoneNumbers = consignments.filter(c => c.phone).map(c => c.phone);
+      } else if (targetGroup === "alerts") {
+        const alerts = await storage.getAllVehicleAlerts();
+        phoneNumbers = alerts.filter(a => a.phone && a.notifySms).map(a => a.phone!);
+      } else {
+        return res.status(400).json({ error: "Invalid target group" });
+      }
+      
+      const uniquePhones = [...new Set(phoneNumbers.filter(Boolean))];
+      
+      if (uniquePhones.length === 0) {
+        return res.status(400).json({ error: "No phone numbers found for selected group" });
+      }
+      
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const phone of uniquePhones) {
+        try {
+          const response = await fetch(`${GHL_API_BASE}/conversations/messages`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${apiToken}`,
+              "Content-Type": "application/json",
+              "Version": "2021-07-28",
+            },
+            body: JSON.stringify({
+              type: "SMS",
+              locationId,
+              phone,
+              message,
+            }),
+          });
+          
+          if (response.ok) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch (e) {
+          failCount++;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      res.json({
+        success: true,
+        sent: successCount,
+        failed: failCount,
+        total: uniquePhones.length,
+      });
+    } catch (error) {
+      console.error("Error sending SMS blast:", error);
+      res.status(500).json({ error: "Failed to send SMS blast" });
+    }
+  });
+
+  // Analytics Dashboard
+  app.get("/api/analytics", requireAdmin, async (req, res) => {
+    try {
+      const totalViews = await storage.getTotalViewsCount();
+      const inventory = await storage.getAllInventoryCars();
+      const inquiries = await storage.getAllBuyerInquiries();
+      const consignments = await storage.getAllConsignments();
+      const alerts = await storage.getAllVehicleAlerts();
+      
+      const availableCount = inventory.filter(c => c.status === "available").length;
+      const soldCount = inventory.filter(c => c.status === "sold").length;
+      const pendingConsignments = consignments.filter(c => c.status === "pending").length;
+      const newInquiries = inquiries.filter(i => i.status === "new").length;
+      const activeAlerts = alerts.filter(a => a.active).length;
+      
+      res.json({
+        totalViews,
+        inventory: {
+          total: inventory.length,
+          available: availableCount,
+          sold: soldCount,
+        },
+        inquiries: {
+          total: inquiries.length,
+          new: newInquiries,
+        },
+        consignments: {
+          total: consignments.length,
+          pending: pendingConsignments,
+        },
+        alerts: {
+          total: alerts.length,
+          active: activeAlerts,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
   return httpServer;
 }
 

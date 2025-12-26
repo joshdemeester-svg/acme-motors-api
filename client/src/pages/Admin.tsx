@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare, Link, Bell, Plug, FileText, Download, ExternalLink, Eye, EyeOff, Users, Shield, UserPlus, Calculator } from "lucide-react";
+import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare, Link, Bell, Plug, FileText, Download, ExternalLink, Eye, EyeOff, Users, Shield, UserPlus, Calculator, BarChart3 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import type { ConsignmentSubmission, InventoryCar, SiteSettings, BuyerInquiry } from "@shared/schema";
@@ -2314,6 +2314,535 @@ function UsersPanel() {
   );
 }
 
+interface VehicleAlert {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  makes: string[];
+  models: string[];
+  minYear: number | null;
+  maxYear: number | null;
+  minPrice: number | null;
+  maxPrice: number | null;
+  notifyEmail: boolean;
+  notifySms: boolean;
+  active: boolean;
+  createdAt: string;
+}
+
+function AlertsPanel() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const { data: alerts = [], isLoading } = useQuery<VehicleAlert[]>({
+    queryKey: ["/api/vehicle-alerts"],
+    queryFn: async () => {
+      const res = await fetch("/api/vehicle-alerts");
+      if (!res.ok) throw new Error("Failed to fetch alerts");
+      return res.json();
+    },
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const res = await fetch(`/api/vehicle-alerts/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active }),
+      });
+      if (!res.ok) throw new Error("Failed to update alert");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicle-alerts"] });
+      toast({ title: "Alert updated" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/vehicle-alerts/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete alert");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicle-alerts"] });
+      toast({ title: "Alert deleted" });
+    },
+  });
+
+  if (isLoading) return <p>Loading...</p>;
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-white border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5" /> Vehicle Alert Subscriptions
+          </CardTitle>
+          <CardDescription>
+            Manage buyers who want to be notified about new vehicles.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {alerts.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No vehicle alerts yet. Buyers can subscribe from the inventory page.</p>
+          ) : (
+            <div className="space-y-4">
+              {alerts.map((alert) => (
+                <Card key={alert.id} className={`border ${alert.active ? 'border-green-500/30' : 'border-red-500/30'}`}>
+                  <CardContent className="pt-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <p className="font-semibold">{alert.name}</p>
+                        <p className="text-sm text-muted-foreground">{alert.email}</p>
+                        {alert.phone && <p className="text-sm text-muted-foreground">{alert.phone}</p>}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant={alert.active ? "outline" : "default"}
+                          onClick={() => toggleMutation.mutate({ id: alert.id, active: !alert.active })}
+                        >
+                          {alert.active ? "Pause" : "Activate"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deleteMutation.mutate(alert.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                      {alert.makes.length > 0 && (
+                        <span className="bg-primary/10 px-2 py-1 rounded">Makes: {alert.makes.join(", ")}</span>
+                      )}
+                      {(alert.minPrice || alert.maxPrice) && (
+                        <span className="bg-primary/10 px-2 py-1 rounded">
+                          Price: ${alert.minPrice?.toLocaleString() || "0"} - ${alert.maxPrice?.toLocaleString() || "Any"}
+                        </span>
+                      )}
+                      {(alert.minYear || alert.maxYear) && (
+                        <span className="bg-primary/10 px-2 py-1 rounded">
+                          Year: {alert.minYear || "Any"} - {alert.maxYear || "Any"}
+                        </span>
+                      )}
+                      {alert.notifyEmail && <span className="bg-blue-500/20 px-2 py-1 rounded"><Mail className="h-3 w-3 inline mr-1" />Email</span>}
+                      {alert.notifySms && <span className="bg-green-500/20 px-2 py-1 rounded"><Phone className="h-3 w-3 inline mr-1" />SMS</span>}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+interface Testimonial {
+  id: string;
+  customerName: string;
+  customerLocation: string | null;
+  vehicleSold: string | null;
+  rating: number;
+  content: string;
+  photoUrl: string | null;
+  featured: boolean;
+  approved: boolean;
+  createdAt: string;
+}
+
+function TestimonialsPanel() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerLocation, setCustomerLocation] = useState("");
+  const [vehicleSold, setVehicleSold] = useState("");
+  const [rating, setRating] = useState(5);
+  const [content, setContent] = useState("");
+  const [featured, setFeatured] = useState(false);
+
+  const { data: testimonials = [], isLoading } = useQuery<Testimonial[]>({
+    queryKey: ["/api/testimonials/all"],
+    queryFn: async () => {
+      const res = await fetch("/api/testimonials/all");
+      if (!res.ok) throw new Error("Failed to fetch testimonials");
+      return res.json();
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await fetch("/api/testimonials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to create testimonial");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
+      toast({ title: "Testimonial created" });
+      setAddDialogOpen(false);
+      setCustomerName("");
+      setCustomerLocation("");
+      setVehicleSold("");
+      setRating(5);
+      setContent("");
+      setFeatured(false);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const res = await fetch(`/api/testimonials/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update testimonial");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
+      toast({ title: "Testimonial updated" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/testimonials/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete testimonial");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
+      toast({ title: "Testimonial deleted" });
+    },
+  });
+
+  if (isLoading) return <p>Loading...</p>;
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-white border">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Star className="h-5 w-5" /> Customer Testimonials
+            </CardTitle>
+            <CardDescription>
+              Manage customer reviews displayed on the homepage.
+            </CardDescription>
+          </div>
+          <Button onClick={() => setAddDialogOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" /> Add Testimonial
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {testimonials.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No testimonials yet. Add your first testimonial to display on the homepage.</p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {testimonials.map((t) => (
+                <Card key={t.id} className={`border ${t.approved ? 'border-green-500/30' : 'border-yellow-500/30'}`}>
+                  <CardContent className="pt-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="font-semibold">{t.customerName}</p>
+                        {t.customerLocation && <p className="text-xs text-muted-foreground">{t.customerLocation}</p>}
+                        {t.vehicleSold && <p className="text-xs text-primary">{t.vehicleSold}</p>}
+                      </div>
+                      <div className="flex gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className={`h-3 w-3 ${i < t.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} />
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground italic mb-3">"{t.content}"</p>
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <div className="flex gap-2">
+                        {t.featured && <span className="text-xs bg-yellow-500/20 px-2 py-1 rounded">Featured</span>}
+                        {t.approved ? (
+                          <span className="text-xs bg-green-500/20 px-2 py-1 rounded">Approved</span>
+                        ) : (
+                          <span className="text-xs bg-yellow-500/20 px-2 py-1 rounded">Pending</span>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => updateMutation.mutate({ id: t.id, data: { approved: !t.approved } })}
+                        >
+                          {t.approved ? "Unapprove" : "Approve"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => updateMutation.mutate({ id: t.id, data: { featured: !t.featured } })}
+                        >
+                          {t.featured ? "Unfeature" : "Feature"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deleteMutation.mutate(t.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Testimonial</DialogTitle>
+            <DialogDescription>Create a new customer testimonial for the homepage.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Customer Name *</Label>
+              <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="John D." />
+            </div>
+            <div className="space-y-2">
+              <Label>Location</Label>
+              <Input value={customerLocation} onChange={(e) => setCustomerLocation(e.target.value)} placeholder="Miami, FL" />
+            </div>
+            <div className="space-y-2">
+              <Label>Vehicle Sold/Purchased</Label>
+              <Input value={vehicleSold} onChange={(e) => setVehicleSold(e.target.value)} placeholder="2022 Porsche 911 GT3" />
+            </div>
+            <div className="space-y-2">
+              <Label>Rating</Label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((r) => (
+                  <Button
+                    key={r}
+                    type="button"
+                    size="sm"
+                    variant={rating >= r ? "default" : "outline"}
+                    onClick={() => setRating(r)}
+                  >
+                    <Star className={`h-4 w-4 ${rating >= r ? 'fill-current' : ''}`} />
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Testimonial Content *</Label>
+              <Textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Their experience..." rows={3} />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox checked={featured} onCheckedChange={(c) => setFeatured(c as boolean)} id="featured" />
+              <Label htmlFor="featured">Featured on homepage</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={() => createMutation.mutate({
+                customerName,
+                customerLocation: customerLocation || null,
+                vehicleSold: vehicleSold || null,
+                rating,
+                content,
+                featured,
+              })}
+              disabled={!customerName || !content || createMutation.isPending}
+            >
+              {createMutation.isPending ? "Creating..." : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+interface AnalyticsData {
+  totalViews: number;
+  inventory: { total: number; available: number; sold: number };
+  inquiries: { total: number; new: number };
+  consignments: { total: number; pending: number };
+  alerts: { total: number; active: number };
+}
+
+function SMSBlastPanel() {
+  const { toast } = useToast();
+  const [message, setMessage] = useState("");
+  const [targetGroup, setTargetGroup] = useState("");
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<{ sent: number; failed: number; total: number } | null>(null);
+
+  const handleSend = async () => {
+    if (!message || !targetGroup) {
+      toast({ title: "Error", description: "Please enter a message and select a target group", variant: "destructive" });
+      return;
+    }
+    
+    setSending(true);
+    setResult(null);
+    
+    try {
+      const res = await fetch("/api/sms/blast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, targetGroup }),
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to send");
+      }
+      
+      const data = await res.json();
+      setResult(data);
+      toast({ 
+        title: "SMS Blast Sent",
+        description: `Successfully sent to ${data.sent} of ${data.total} recipients`
+      });
+      setMessage("");
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-white border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" /> SMS Blast
+          </CardTitle>
+          <CardDescription>
+            Send bulk SMS messages to your leads via GoHighLevel.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Target Group</Label>
+            <select
+              className="w-full h-10 px-3 rounded-md border bg-background"
+              value={targetGroup}
+              onChange={(e) => setTargetGroup(e.target.value)}
+            >
+              <option value="">Select audience...</option>
+              <option value="inquiries">Buyer Inquiries</option>
+              <option value="consignments">Vehicle Consigners</option>
+              <option value="alerts">Alert Subscribers (SMS enabled)</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label>Message</Label>
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Type your message here..."
+              rows={4}
+              maxLength={160}
+            />
+            <p className="text-xs text-muted-foreground">{message.length}/160 characters</p>
+          </div>
+          <Button 
+            onClick={handleSend} 
+            disabled={sending || !message || !targetGroup}
+            className="w-full"
+          >
+            {sending ? "Sending..." : "Send SMS Blast"}
+          </Button>
+          {result && (
+            <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+              <p className="font-medium text-green-600">Blast Complete</p>
+              <p className="text-sm">Sent: {result.sent} | Failed: {result.failed} | Total: {result.total}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function AnalyticsPanel() {
+  const { data: analytics, isLoading } = useQuery<AnalyticsData>({
+    queryKey: ["/api/analytics"],
+    queryFn: async () => {
+      const res = await fetch("/api/analytics");
+      if (!res.ok) throw new Error("Failed to fetch analytics");
+      return res.json();
+    },
+  });
+
+  if (isLoading) return <p>Loading analytics...</p>;
+  if (!analytics) return <p>No analytics data</p>;
+
+  const stats = [
+    { label: "Total Views", value: analytics.totalViews, icon: Eye, color: "bg-blue-500/20 text-blue-600" },
+    { label: "Vehicles Listed", value: analytics.inventory.total, icon: Car, color: "bg-purple-500/20 text-purple-600" },
+    { label: "Available", value: analytics.inventory.available, icon: Car, color: "bg-green-500/20 text-green-600" },
+    { label: "Sold", value: analytics.inventory.sold, icon: Car, color: "bg-yellow-500/20 text-yellow-600" },
+    { label: "Total Inquiries", value: analytics.inquiries.total, icon: MessageSquare, color: "bg-orange-500/20 text-orange-600" },
+    { label: "New Inquiries", value: analytics.inquiries.new, icon: MessageSquare, color: "bg-red-500/20 text-red-600" },
+    { label: "Consignments", value: analytics.consignments.total, icon: FileText, color: "bg-indigo-500/20 text-indigo-600" },
+    { label: "Pending Review", value: analytics.consignments.pending, icon: Clock, color: "bg-pink-500/20 text-pink-600" },
+    { label: "Alert Subscribers", value: analytics.alerts.total, icon: Bell, color: "bg-teal-500/20 text-teal-600" },
+    { label: "Active Alerts", value: analytics.alerts.active, icon: Bell, color: "bg-cyan-500/20 text-cyan-600" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <Card className="border-white border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" /> Dashboard Analytics
+          </CardTitle>
+          <CardDescription>
+            Overview of your dealership's performance metrics.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            {stats.map((stat, index) => (
+              <Card key={index} className="border">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${stat.color}`}>
+                      <stat.icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{stat.value}</p>
+                      <p className="text-xs text-muted-foreground">{stat.label}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -2426,6 +2955,11 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
   const [quickAddYear, setQuickAddYear] = useState("");
   const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
   const [selectedDocumentsId, setSelectedDocumentsId] = useState<string | null>(null);
+  const [docsDialogOpen, setDocsDialogOpen] = useState(false);
+  const [selectedVehicleForDocs, setSelectedVehicleForDocs] = useState<InventoryCar | null>(null);
+  const [newDocType, setNewDocType] = useState("");
+  const [newDocUrl, setNewDocUrl] = useState("");
+  const [newDocNotes, setNewDocNotes] = useState("");
   const [quickAddMake, setQuickAddMake] = useState("");
   const [quickAddModel, setQuickAddModel] = useState("");
   const [quickAddColor, setQuickAddColor] = useState("");
@@ -2621,6 +3155,59 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
     },
   });
 
+  interface VehicleDoc {
+    id: string;
+    vehicleId: string;
+    documentType: string;
+    fileName: string;
+    fileUrl: string;
+    notes: string | null;
+    uploadedBy: string | null;
+    createdAt: string;
+  }
+
+  const { data: vehicleDocs = [], refetch: refetchDocs } = useQuery<VehicleDoc[]>({
+    queryKey: ["/api/vehicles", selectedVehicleForDocs?.id, "documents"],
+    queryFn: async () => {
+      if (!selectedVehicleForDocs) return [];
+      const res = await fetch(`/api/vehicles/${selectedVehicleForDocs.id}/documents`);
+      if (!res.ok) throw new Error("Failed to fetch documents");
+      return res.json();
+    },
+    enabled: !!selectedVehicleForDocs,
+  });
+
+  const addDocMutation = useMutation({
+    mutationFn: async (data: { vehicleId: string; documentType: string; fileName: string; fileUrl: string; notes?: string }) => {
+      const res = await fetch(`/api/vehicles/${data.vehicleId}/documents`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to add document");
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchDocs();
+      toast({ title: "Document added" });
+      setNewDocType("");
+      setNewDocUrl("");
+      setNewDocNotes("");
+    },
+  });
+
+  const deleteDocMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete document");
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchDocs();
+      toast({ title: "Document deleted" });
+    },
+  });
+
   const openEditDialog = (car: InventoryCar) => {
     setSelectedCar(car);
     setEditVin(car.vin);
@@ -2807,7 +3394,7 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList>
+          <TabsList className="flex-wrap">
             <TabsTrigger value="submissions" className="gap-2">
               Submissions
               {pendingSubmissions.length > 0 && (
@@ -2819,6 +3406,22 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
               Inquiries
             </TabsTrigger>
             <TabsTrigger value="inventory">Inventory ({inventory.length})</TabsTrigger>
+            <TabsTrigger value="alerts" className="gap-2" data-testid="tab-alerts">
+              <Bell className="h-4 w-4" />
+              Alerts
+            </TabsTrigger>
+            <TabsTrigger value="testimonials" className="gap-2" data-testid="tab-testimonials">
+              <Star className="h-4 w-4" />
+              Reviews
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-2" data-testid="tab-analytics">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="messaging" className="gap-2" data-testid="tab-messaging">
+              <MessageSquare className="h-4 w-4" />
+              Messaging
+            </TabsTrigger>
             <TabsTrigger value="settings" className="gap-2">
               <Settings className="h-4 w-4" /> Settings
             </TabsTrigger>
@@ -3027,6 +3630,18 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                         >
                           <Pencil className="h-3 w-3" /> Edit Listing
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedVehicleForDocs(car);
+                            setDocsDialogOpen(true);
+                          }}
+                          className="gap-2"
+                          data-testid={`button-docs-${car.id}`}
+                        >
+                          <FileText className="h-3 w-3" /> Documents
+                        </Button>
                         {car.status === "available" ? (
                           <Button
                             size="sm"
@@ -3054,6 +3669,22 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="alerts">
+            <AlertsPanel />
+          </TabsContent>
+
+          <TabsContent value="testimonials">
+            <TestimonialsPanel />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <AnalyticsPanel />
+          </TabsContent>
+
+          <TabsContent value="messaging">
+            <SMSBlastPanel />
           </TabsContent>
 
           <TabsContent value="settings">
@@ -3489,6 +4120,109 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
               {updateCarMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={docsDialogOpen} onOpenChange={setDocsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Documents - {selectedVehicleForDocs?.year} {selectedVehicleForDocs?.make} {selectedVehicleForDocs?.model}
+            </DialogTitle>
+            <DialogDescription>
+              Manage vehicle documents like title, inspection reports, and other paperwork.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+            {vehicleDocs.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">No documents uploaded yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {vehicleDocs.map((doc) => (
+                  <Card key={doc.id} className="border">
+                    <CardContent className="py-3 flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{doc.documentType}</p>
+                        <p className="text-xs text-muted-foreground">{doc.fileName}</p>
+                        {doc.notes && <p className="text-xs text-muted-foreground mt-1">{doc.notes}</p>}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" asChild>
+                          <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-3 w-3 mr-1" /> View
+                          </a>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deleteDocMutation.mutate(doc.id)}
+                          disabled={deleteDocMutation.isPending}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+            <div className="border-t pt-4 space-y-3">
+              <p className="font-medium text-sm">Add New Document</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label>Document Type</Label>
+                  <select
+                    className="w-full h-9 px-3 rounded-md border bg-background text-sm"
+                    value={newDocType}
+                    onChange={(e) => setNewDocType(e.target.value)}
+                  >
+                    <option value="">Select type...</option>
+                    <option value="Title">Title</option>
+                    <option value="Inspection Report">Inspection Report</option>
+                    <option value="Carfax/History">Carfax/History Report</option>
+                    <option value="Bill of Sale">Bill of Sale</option>
+                    <option value="Registration">Registration</option>
+                    <option value="Insurance">Insurance</option>
+                    <option value="Warranty">Warranty</option>
+                    <option value="Service Records">Service Records</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <Label>Document URL</Label>
+                  <Input
+                    placeholder="https://..."
+                    value={newDocUrl}
+                    onChange={(e) => setNewDocUrl(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label>Notes (optional)</Label>
+                <Input
+                  placeholder="Any additional notes..."
+                  value={newDocNotes}
+                  onChange={(e) => setNewDocNotes(e.target.value)}
+                />
+              </div>
+              <Button
+                onClick={() => {
+                  if (!selectedVehicleForDocs || !newDocType || !newDocUrl) return;
+                  addDocMutation.mutate({
+                    vehicleId: selectedVehicleForDocs.id,
+                    documentType: newDocType,
+                    fileName: newDocType,
+                    fileUrl: newDocUrl,
+                    notes: newDocNotes || undefined,
+                  });
+                }}
+                disabled={!newDocType || !newDocUrl || addDocMutation.isPending}
+                className="w-full"
+              >
+                {addDocMutation.isPending ? "Adding..." : "Add Document"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
