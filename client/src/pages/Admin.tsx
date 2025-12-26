@@ -1398,6 +1398,37 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
             </div>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" /> Configuration Sync
+            </CardTitle>
+            <CardDescription>Sync settings from the seed configuration file</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              If your production site is missing settings, you can force a resync from the configuration file. 
+              This will overwrite current settings with the values defined in the seed configuration.
+            </p>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  const res = await fetch("/api/settings/resync", { method: "POST" });
+                  if (!res.ok) throw new Error("Failed to resync");
+                  const data = await res.json();
+                  toast({ title: "Settings Resynced", description: data.message });
+                  queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+                } catch (error) {
+                  toast({ title: "Error", description: "Failed to resync settings", variant: "destructive" });
+                }
+              }}
+              className="gap-2"
+            >
+              <Upload className="h-4 w-4" /> Resync Settings from Configuration
+            </Button>
+          </CardContent>
+        </Card>
       </TabsContent>
 
     </Tabs>
