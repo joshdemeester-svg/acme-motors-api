@@ -18,6 +18,7 @@ declare module "express-session" {
   interface SessionData {
     userId?: string;
     isAdmin?: boolean;
+    role?: string;
     sellerPhone?: string;
     isSeller?: boolean;
   }

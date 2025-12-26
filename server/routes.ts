@@ -270,6 +270,13 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+function requireMasterAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.session.isAdmin || req.session.role !== "master") {
+    return res.status(403).json({ error: "Master admin access required" });
+  }
+  next();
+}
+
 async function sendAdminNotificationSMS(message: string): Promise<void> {
   try {
     const settings = await storage.getSiteSettings();
@@ -373,8 +380,9 @@ export async function registerRoutes(
 
       req.session.userId = user.id;
       req.session.isAdmin = user.isAdmin || false;
+      req.session.role = user.role || "admin";
 
-      res.json({ user: { id: user.id, username: user.username, isAdmin: user.isAdmin } });
+      res.json({ user: { id: user.id, username: user.username, isAdmin: user.isAdmin, role: user.role || "admin" } });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ error: "Login failed" });
@@ -392,9 +400,130 @@ export async function registerRoutes(
 
   app.get("/api/auth/session", (req, res) => {
     if (req.session.userId && req.session.isAdmin) {
-      res.json({ authenticated: true, isAdmin: req.session.isAdmin });
+      res.json({ authenticated: true, isAdmin: req.session.isAdmin, role: req.session.role || "admin" });
     } else {
       res.json({ authenticated: false });
+    }
+  });
+
+  // User management endpoints (Master Admin only)
+  app.get("/api/users", requireMasterAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const safeUsers = users.map(u => ({
+        id: u.id,
+        username: u.username,
+        role: u.role || "admin",
+        isAdmin: u.isAdmin,
+        createdAt: u.createdAt
+      }));
+      res.json(safeUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  app.post("/api/users", requireMasterAdmin, async (req, res) => {
+    try {
+      const { username, password, role } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password are required" });
+      }
+      if (role && !["master", "admin"].includes(role)) {
+        return res.status(400).json({ error: "Invalid role. Must be 'master' or 'admin'" });
+      }
+
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(409).json({ error: "Username already exists" });
+      }
+
+      const hashedPassword = hashPassword(password);
+      const newUser = await storage.createUser({
+        username,
+        password: hashedPassword,
+        isAdmin: true,
+        role: role || "admin"
+      });
+
+      res.json({
+        id: newUser.id,
+        username: newUser.username,
+        role: newUser.role || "admin",
+        isAdmin: newUser.isAdmin,
+        createdAt: newUser.createdAt
+      });
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ error: "Failed to create user" });
+    }
+  });
+
+  app.delete("/api/users/:id", requireMasterAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      if (id === req.session.userId) {
+        return res.status(400).json({ error: "Cannot delete your own account" });
+      }
+
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      if (user.role === "master") {
+        const masterCount = await storage.countMasterAdmins();
+        if (masterCount <= 1) {
+          return res.status(400).json({ error: "Cannot delete the last master admin" });
+        }
+      }
+
+      await storage.deleteUser(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+
+  app.patch("/api/users/:id/role", requireMasterAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { role } = req.body;
+
+      if (!role || !["master", "admin"].includes(role)) {
+        return res.status(400).json({ error: "Invalid role. Must be 'master' or 'admin'" });
+      }
+
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      if (user.role === "master" && role === "admin") {
+        const masterCount = await storage.countMasterAdmins();
+        if (masterCount <= 1) {
+          return res.status(400).json({ error: "Cannot demote the last master admin" });
+        }
+      }
+
+      const updatedUser = await storage.updateUserRole(id, role);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json({
+        id: updatedUser.id,
+        username: updatedUser.username,
+        role: updatedUser.role || "admin",
+        isAdmin: updatedUser.isAdmin,
+        createdAt: updatedUser.createdAt
+      });
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ error: "Failed to update user role" });
     }
   });
 
