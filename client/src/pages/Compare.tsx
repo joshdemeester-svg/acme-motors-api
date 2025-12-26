@@ -108,7 +108,7 @@ export default function Compare() {
         ) : (
           <div className="space-y-8">
             {/* Vehicle Cards */}
-            <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${Math.min(selectedVehicles.length + 1, MAX_COMPARE + 1)}, minmax(0, 1fr))` }}>
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {selectedVehicles.map((car) => (
                 <Card key={car.id} className="relative overflow-hidden" data-testid={`compare-card-${car.id}`}>
                   <Button
@@ -163,14 +163,17 @@ export default function Compare() {
 
             {/* Comparison Table */}
             {selectedVehicles.length >= 2 && (
-              <div className="overflow-x-auto rounded-lg border border-border">
-                <table className="w-full">
+              <div className="overflow-x-auto rounded-lg border border-border -mx-4 sm:mx-0">
+                <p className="text-xs text-muted-foreground p-2 sm:hidden">← Scroll to see all vehicles →</p>
+                <table className="w-full min-w-[500px]">
                   <thead className="bg-muted/50">
                     <tr>
-                      <th className="px-4 py-3 text-left font-semibold">Specification</th>
+                      <th className="px-3 sm:px-4 py-3 text-left font-semibold text-sm sm:text-base whitespace-nowrap">Spec</th>
                       {selectedVehicles.map((car) => (
-                        <th key={car.id} className="px-4 py-3 text-center font-semibold">
-                          {car.year} {car.make} {car.model}
+                        <th key={car.id} className="px-3 sm:px-4 py-3 text-center font-semibold text-sm sm:text-base min-w-[140px]">
+                          <div className="sm:hidden">{car.make}</div>
+                          <div className="sm:hidden text-xs text-muted-foreground">{car.model}</div>
+                          <span className="hidden sm:inline">{car.year} {car.make} {car.model}</span>
                         </th>
                       ))}
                     </tr>
@@ -178,9 +181,9 @@ export default function Compare() {
                   <tbody>
                     {specs.map((spec, idx) => (
                       <tr key={spec.key} className={idx % 2 === 0 ? "bg-background" : "bg-muted/20"}>
-                        <td className="px-4 py-3 font-medium">{spec.label}</td>
+                        <td className="px-3 sm:px-4 py-2 sm:py-3 font-medium text-sm whitespace-nowrap">{spec.label}</td>
                         {selectedVehicles.map((car) => (
-                          <td key={car.id} className="px-4 py-3 text-center">
+                          <td key={car.id} className="px-3 sm:px-4 py-2 sm:py-3 text-center text-sm">
                             {spec.format((car as any)[spec.key])}
                           </td>
                         ))}
