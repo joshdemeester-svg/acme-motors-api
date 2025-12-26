@@ -8,6 +8,10 @@ import {
   sellerNotes,
   sellerDocuments,
   buyerInquiries,
+  vehicleAlerts,
+  testimonials,
+  vehicleViews,
+  vehicleDocuments,
   type User, 
   type InsertUser,
   type ConsignmentSubmission,
@@ -23,7 +27,14 @@ import {
   type SellerDocument,
   type InsertSellerDocument,
   type BuyerInquiry,
-  type InsertBuyerInquiry
+  type InsertBuyerInquiry,
+  type VehicleAlert,
+  type InsertVehicleAlert,
+  type Testimonial,
+  type InsertTestimonial,
+  type VehicleView,
+  type VehicleDocument,
+  type InsertVehicleDocument
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt } from "drizzle-orm";
@@ -86,6 +97,28 @@ export interface IStorage {
   getBuyerInquiry(id: string): Promise<BuyerInquiry | undefined>;
   updateBuyerInquiryStatus(id: string, status: string): Promise<BuyerInquiry | undefined>;
   getInquiriesForCar(carId: string): Promise<BuyerInquiry[]>;
+  
+  createVehicleAlert(data: InsertVehicleAlert): Promise<VehicleAlert>;
+  getAllVehicleAlerts(): Promise<VehicleAlert[]>;
+  getActiveVehicleAlerts(): Promise<VehicleAlert[]>;
+  updateVehicleAlertStatus(id: string, active: boolean): Promise<VehicleAlert | undefined>;
+  deleteVehicleAlert(id: string): Promise<boolean>;
+  
+  createTestimonial(data: InsertTestimonial): Promise<Testimonial>;
+  getAllTestimonials(): Promise<Testimonial[]>;
+  getApprovedTestimonials(): Promise<Testimonial[]>;
+  getFeaturedTestimonials(): Promise<Testimonial[]>;
+  updateTestimonial(id: string, data: Partial<InsertTestimonial & { approved: boolean; featured: boolean }>): Promise<Testimonial | undefined>;
+  deleteTestimonial(id: string): Promise<boolean>;
+  
+  recordVehicleView(vehicleId: string, userAgent?: string, referrer?: string): Promise<VehicleView>;
+  getVehicleViewCount(vehicleId: string): Promise<number>;
+  getViewsInRange(startDate: Date, endDate: Date): Promise<VehicleView[]>;
+  getTotalViewsCount(): Promise<number>;
+  
+  createVehicleDocument(data: InsertVehicleDocument): Promise<VehicleDocument>;
+  getVehicleDocuments(vehicleId: string): Promise<VehicleDocument[]>;
+  deleteVehicleDocument(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -391,6 +424,112 @@ export class DatabaseStorage implements IStorage {
       .from(buyerInquiries)
       .where(eq(buyerInquiries.inventoryCarId, carId))
       .orderBy(desc(buyerInquiries.createdAt));
+  }
+
+  async createVehicleAlert(data: InsertVehicleAlert): Promise<VehicleAlert> {
+    const [alert] = await db.insert(vehicleAlerts).values(data).returning();
+    return alert;
+  }
+
+  async getAllVehicleAlerts(): Promise<VehicleAlert[]> {
+    return db.select().from(vehicleAlerts).orderBy(desc(vehicleAlerts.createdAt));
+  }
+
+  async getActiveVehicleAlerts(): Promise<VehicleAlert[]> {
+    return db.select().from(vehicleAlerts).where(eq(vehicleAlerts.active, true)).orderBy(desc(vehicleAlerts.createdAt));
+  }
+
+  async updateVehicleAlertStatus(id: string, active: boolean): Promise<VehicleAlert | undefined> {
+    const [updated] = await db
+      .update(vehicleAlerts)
+      .set({ active })
+      .where(eq(vehicleAlerts.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteVehicleAlert(id: string): Promise<boolean> {
+    const result = await db.delete(vehicleAlerts).where(eq(vehicleAlerts.id, id));
+    return true;
+  }
+
+  async createTestimonial(data: InsertTestimonial): Promise<Testimonial> {
+    const [testimonial] = await db.insert(testimonials).values(data).returning();
+    return testimonial;
+  }
+
+  async getAllTestimonials(): Promise<Testimonial[]> {
+    return db.select().from(testimonials).orderBy(desc(testimonials.createdAt));
+  }
+
+  async getApprovedTestimonials(): Promise<Testimonial[]> {
+    return db.select().from(testimonials).where(eq(testimonials.approved, true)).orderBy(desc(testimonials.createdAt));
+  }
+
+  async getFeaturedTestimonials(): Promise<Testimonial[]> {
+    return db
+      .select()
+      .from(testimonials)
+      .where(and(eq(testimonials.approved, true), eq(testimonials.featured, true)))
+      .orderBy(desc(testimonials.createdAt));
+  }
+
+  async updateTestimonial(id: string, data: Partial<InsertTestimonial & { approved: boolean; featured: boolean }>): Promise<Testimonial | undefined> {
+    const [updated] = await db
+      .update(testimonials)
+      .set(data)
+      .where(eq(testimonials.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteTestimonial(id: string): Promise<boolean> {
+    await db.delete(testimonials).where(eq(testimonials.id, id));
+    return true;
+  }
+
+  async recordVehicleView(vehicleId: string, userAgent?: string, referrer?: string): Promise<VehicleView> {
+    const [view] = await db.insert(vehicleViews).values({
+      vehicleId,
+      userAgent: userAgent || null,
+      referrer: referrer || null,
+    }).returning();
+    return view;
+  }
+
+  async getVehicleViewCount(vehicleId: string): Promise<number> {
+    const result = await db.select().from(vehicleViews).where(eq(vehicleViews.vehicleId, vehicleId));
+    return result.length;
+  }
+
+  async getViewsInRange(startDate: Date, endDate: Date): Promise<VehicleView[]> {
+    return db.select().from(vehicleViews)
+      .where(and(
+        gt(vehicleViews.viewedAt, startDate),
+        gt(endDate, vehicleViews.viewedAt!)
+      ))
+      .orderBy(desc(vehicleViews.viewedAt));
+  }
+
+  async getTotalViewsCount(): Promise<number> {
+    const result = await db.select().from(vehicleViews);
+    return result.length;
+  }
+
+  async createVehicleDocument(data: InsertVehicleDocument): Promise<VehicleDocument> {
+    const [doc] = await db.insert(vehicleDocuments).values(data).returning();
+    return doc;
+  }
+
+  async getVehicleDocuments(vehicleId: string): Promise<VehicleDocument[]> {
+    return db.select().from(vehicleDocuments)
+      .where(eq(vehicleDocuments.vehicleId, vehicleId))
+      .orderBy(desc(vehicleDocuments.createdAt));
+  }
+
+  async deleteVehicleDocument(id: string): Promise<boolean> {
+    await db.delete(vehicleDocuments).where(eq(vehicleDocuments.id, id));
+    return true;
   }
 }
 

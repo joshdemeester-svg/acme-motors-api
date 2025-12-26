@@ -13,6 +13,7 @@ import { Link } from "wouter";
 import type { InventoryCar } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
 import { useSEO } from "@/hooks/use-seo";
+import { VehicleAlerts } from "@/components/VehicleAlerts";
 
 interface Filters {
   make: string;
@@ -126,7 +127,7 @@ export default function Inventory() {
             <p className="text-muted-foreground">Browse our collection of available premium vehicles.</p>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <div className="relative w-full md:w-80">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input 
@@ -151,6 +152,7 @@ export default function Inventory() {
                 </span>
               )}
             </Button>
+            <VehicleAlerts />
           </div>
         </div>
 
