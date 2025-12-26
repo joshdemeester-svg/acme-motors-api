@@ -18,7 +18,7 @@ export function Footer() {
                 <img 
                   src={settings.logoUrl} 
                   alt={siteName} 
-                  style={{ width: `${Math.min(parseInt(settings.logoWidth || '120', 10) || 120, 150)}px`, height: 'auto' }}
+                  style={{ width: `${settings.logoWidth || 120}px`, height: 'auto' }}
                 />
               ) : (
                 <>
