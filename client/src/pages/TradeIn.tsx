@@ -286,7 +286,7 @@ export default function TradeIn() {
                           <Command>
                             <CommandInput placeholder="Search make..." />
                             <CommandList>
-                              <CommandEmpty>No make found. Type to use custom value.</CommandEmpty>
+                              <CommandEmpty>No make found.</CommandEmpty>
                               <CommandGroup>
                                 {makes
                                   .filter((make) => make.MakeName)
@@ -314,12 +314,6 @@ export default function TradeIn() {
                           </Command>
                         </PopoverContent>
                       </Popover>
-                      <Input
-                        value={formData.make}
-                        onChange={(e) => setFormData(prev => ({ ...prev, make: e.target.value }))}
-                        placeholder="Or type custom make"
-                        className="mt-1"
-                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Model *</Label>
@@ -341,7 +335,7 @@ export default function TradeIn() {
                           <Command>
                             <CommandInput placeholder="Search model..." />
                             <CommandList>
-                              <CommandEmpty>No model found. Type to use custom value.</CommandEmpty>
+                              <CommandEmpty>No model found.</CommandEmpty>
                               <CommandGroup>
                                 {models
                                   .filter((model) => model.Model_Name)
@@ -369,12 +363,6 @@ export default function TradeIn() {
                           </Command>
                         </PopoverContent>
                       </Popover>
-                      <Input
-                        value={formData.model}
-                        onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
-                        placeholder="Or type custom model"
-                        className="mt-1"
-                      />
                     </div>
                   </div>
 

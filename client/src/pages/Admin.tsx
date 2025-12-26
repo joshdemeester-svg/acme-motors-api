@@ -4109,7 +4109,7 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                     <Command>
                       <CommandInput placeholder="Search make..." />
                       <CommandList>
-                        <CommandEmpty>No make found. Type to use custom value.</CommandEmpty>
+                        <CommandEmpty>No make found.</CommandEmpty>
                         <CommandGroup>
                           {makes
                             .filter((make) => make.MakeName)
@@ -4138,12 +4138,6 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                     </Command>
                   </PopoverContent>
                 </Popover>
-                <Input
-                  value={editMake}
-                  onChange={(e) => setEditMake(e.target.value)}
-                  placeholder="Or type custom make"
-                  className="mt-1"
-                />
               </div>
               <div className="space-y-2">
                 <Label>Model</Label>
@@ -4165,7 +4159,7 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                     <Command>
                       <CommandInput placeholder="Search model..." />
                       <CommandList>
-                        <CommandEmpty>No model found. Type to use custom value.</CommandEmpty>
+                        <CommandEmpty>No model found.</CommandEmpty>
                         <CommandGroup>
                           {editModels
                             .filter((model) => model.Model_Name)
@@ -4193,12 +4187,6 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                     </Command>
                   </PopoverContent>
                 </Popover>
-                <Input
-                  value={editModel}
-                  onChange={(e) => setEditModel(e.target.value)}
-                  placeholder="Or type custom model"
-                  className="mt-1"
-                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="editColor">Color</Label>
@@ -4533,7 +4521,7 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                     <Command>
                       <CommandInput placeholder="Search make..." />
                       <CommandList>
-                        <CommandEmpty>No make found. Type to use custom value.</CommandEmpty>
+                        <CommandEmpty>No make found.</CommandEmpty>
                         <CommandGroup>
                           {makes
                             .filter((make) => make.MakeName)
@@ -4562,12 +4550,6 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                     </Command>
                   </PopoverContent>
                 </Popover>
-                <Input
-                  value={quickAddMake}
-                  onChange={(e) => setQuickAddMake(e.target.value)}
-                  placeholder="Or type custom make"
-                  className="mt-1"
-                />
               </div>
               <div className="space-y-2">
                 <Label>Model</Label>
@@ -4589,7 +4571,7 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                     <Command>
                       <CommandInput placeholder="Search model..." />
                       <CommandList>
-                        <CommandEmpty>No model found. Type to use custom value.</CommandEmpty>
+                        <CommandEmpty>No model found.</CommandEmpty>
                         <CommandGroup>
                           {quickAddModels
                             .filter((model) => model.Model_Name)
@@ -4617,12 +4599,6 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                     </Command>
                   </PopoverContent>
                 </Popover>
-                <Input
-                  value={quickAddModel}
-                  onChange={(e) => setQuickAddModel(e.target.value)}
-                  placeholder="Or type custom model"
-                  className="mt-1"
-                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="quickAddColor">Color</Label>
