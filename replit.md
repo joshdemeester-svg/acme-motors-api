@@ -126,6 +126,11 @@ Uses Replit's Object Storage integration (Google Cloud Storage backend):
   - Sends 6-digit verification code via GoHighLevel SMS
   - Codes expire after 10 minutes
   - Prevents form submission until phone is verified
+- **Admin SMS Notifications**: Configurable in admin settings panel
+  - Up to 2 phone numbers can receive notifications
+  - Notifies when new consignment is submitted (vehicle, owner name, phone)
+  - Notifies when buyer inquiry is submitted (vehicle, buyer name, contact info, message)
+  - Admin contacts tagged as "Admin Notification" in GoHighLevel
 - Requires `GHL_LOCATION_ID` and `GHL_API_TOKEN` secrets to be configured
 - Uses GoHighLevel API v2 with Private Integration Token authentication
 

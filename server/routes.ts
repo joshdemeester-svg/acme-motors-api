@@ -123,7 +123,7 @@ async function sendGHLSMS(contactId: string, message: string): Promise<boolean> 
   }
 }
 
-async function getOrCreateGHLContactByPhone(phone: string, name: string): Promise<string | null> {
+async function getOrCreateGHLContactByPhone(phone: string, name: string, tag: string = "Owner"): Promise<string | null> {
   if (!GHL_LOCATION_ID || !GHL_API_TOKEN) {
     console.log("[GHL] Not configured, skipping contact lookup");
     return null;
@@ -142,7 +142,7 @@ async function getOrCreateGHLContactByPhone(phone: string, name: string): Promis
         phone,
         firstName: name,
         locationId: GHL_LOCATION_ID,
-        tags: ["Owner"],
+        tags: [tag],
       }),
     });
 
@@ -198,6 +198,30 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ error: "Unauthorized" });
   }
   next();
+}
+
+async function sendAdminNotificationSMS(message: string): Promise<void> {
+  try {
+    const settings = await storage.getSiteSettings();
+    if (!settings) return;
+
+    const phones = [settings.adminNotifyPhone1, settings.adminNotifyPhone2].filter(Boolean) as string[];
+    
+    for (const phone of phones) {
+      const normalizedPhone = normalizePhoneNumber(phone);
+      const contactId = await getOrCreateGHLContactByPhone(normalizedPhone, "Admin", "Admin Notification");
+      if (contactId) {
+        const sent = await sendGHLSMS(contactId, message);
+        if (sent) {
+          console.log(`[Notify] Admin SMS sent to ${normalizedPhone}`);
+        } else {
+          console.error(`[Notify] Failed to send SMS to ${normalizedPhone}`);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("[Notify] Failed to send admin notification:", error);
+  }
 }
 
 export async function registerRoutes(
@@ -813,6 +837,12 @@ export async function registerRoutes(
         console.error("Background GHL sync failed:", err);
       });
       
+      // Send admin notification SMS
+      const notifyMessage = `New Consignment Submitted!\n\nVehicle: ${validatedData.year} ${validatedData.make} ${validatedData.model}\nOwner: ${validatedData.firstName} ${validatedData.lastName}\nPhone: ${validatedData.phone}\n\nLogin to review and approve.`;
+      sendAdminNotificationSMS(notifyMessage).catch((err) => {
+        console.error("Admin notification SMS failed:", err);
+      });
+      
       res.status(201).json(submission);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1059,6 +1089,13 @@ export async function registerRoutes(
       }
 
       console.log(`[Inquiry] Vehicle inquiry sent for ${data.vin} from ${data.buyerName}`);
+      
+      // Also send notification to admin phones
+      const adminMessage = `New Buyer Inquiry!\n\nVehicle: ${data.year} ${data.make} ${data.model}\nVIN: ${data.vin}\n\nBuyer: ${data.buyerName}\nPhone: ${data.buyerPhone}\nEmail: ${data.buyerEmail}${data.message ? `\n\nMessage: ${data.message}` : ""}`;
+      sendAdminNotificationSMS(adminMessage).catch((err) => {
+        console.error("Admin notification SMS failed:", err);
+      });
+      
       res.json({ success: true, message: "Your inquiry has been sent! We'll be in touch soon." });
     } catch (error) {
       if (error instanceof z.ZodError) {
