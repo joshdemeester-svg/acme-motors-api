@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Search, SlidersHorizontal, X, Scale } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState, useMemo } from "react";
@@ -308,20 +307,25 @@ export default function Inventory() {
                   <div className="absolute top-4 right-4 rounded bg-black/70 px-3 py-1 text-xs font-medium text-white backdrop-blur-md capitalize">
                     {car.status}
                   </div>
-                  <label className="absolute top-4 left-4 flex items-center gap-2 rounded bg-black/70 px-2 py-1 text-xs font-medium text-white backdrop-blur-md cursor-pointer">
-                    <Checkbox 
-                      checked={compareIds.includes(car.id)}
-                      onCheckedChange={(checked) => {
-                        if (checked && compareIds.length < 3) {
-                          setCompareIds([...compareIds, car.id]);
-                        } else if (!checked) {
-                          setCompareIds(compareIds.filter(id => id !== car.id));
-                        }
-                      }}
-                      data-testid={`checkbox-compare-${car.id}`}
-                    />
-                    Compare
-                  </label>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (compareIds.includes(car.id)) {
+                        setCompareIds(compareIds.filter(id => id !== car.id));
+                      } else if (compareIds.length < 3) {
+                        setCompareIds([...compareIds, car.id]);
+                      }
+                    }}
+                    className={`absolute top-4 left-4 flex items-center gap-2 rounded px-3 py-2 text-sm font-medium backdrop-blur-md cursor-pointer transition-all ${
+                      compareIds.includes(car.id)
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-black/70 text-white hover:bg-black/90'
+                    }`}
+                    data-testid={`btn-compare-${car.id}`}
+                  >
+                    <Scale className="h-4 w-4" />
+                    {compareIds.includes(car.id) ? 'Selected' : 'Compare'}
+                  </button>
                 </div>
                 <div className="p-6">
                   <div className="mb-2 text-sm font-medium text-white">{car.year} {car.make}</div>
@@ -379,6 +383,43 @@ export default function Inventory() {
           </div>
         )}
       </div>
+
+      {/* Floating Compare Bar */}
+      {compareIds.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg z-50 p-4" data-testid="compare-bar">
+          <div className="container mx-auto flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Scale className="h-5 w-5 text-primary" />
+              <div>
+                <span className="font-semibold">{compareIds.length} vehicle{compareIds.length !== 1 ? 's' : ''} selected</span>
+                <span className="text-muted-foreground ml-2">
+                  {compareIds.length < 2 ? '(select at least 2 to compare)' : '(max 3)'}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setCompareIds([])}
+                data-testid="btn-clear-compare"
+              >
+                Clear All
+              </Button>
+              <Button 
+                size="sm"
+                disabled={compareIds.length < 2}
+                onClick={() => navigate(`/compare?ids=${compareIds.join(",")}`)}
+                className="gap-2"
+                data-testid="btn-compare-now"
+              >
+                <Scale className="h-4 w-4" />
+                Compare Now
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
