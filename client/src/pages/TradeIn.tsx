@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Car, CheckCircle, Loader2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Car, CheckCircle, Loader2, ChevronsUpDown, Check } from "lucide-react";
 import { useSEO } from "@/hooks/use-seo";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 30 }, (_, i) => currentYear - i);
@@ -37,6 +41,58 @@ export default function TradeIn() {
     payoffAmount: "",
     additionalInfo: "",
   });
+  const [vinLoading, setVinLoading] = useState(false);
+  const [makeOpen, setMakeOpen] = useState(false);
+  const [modelOpen, setModelOpen] = useState(false);
+  const { toast } = useToast();
+
+  const { data: makes = [], isLoading: isLoadingMakes } = useQuery<{ MakeId: number; MakeName: string }[]>({
+    queryKey: ["/api/vehicle-makes"],
+    queryFn: async () => {
+      const res = await fetch("/api/vehicle-makes");
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const { data: models = [], isLoading: isLoadingModels } = useQuery<{ Model_ID: number; Model_Name: string }[]>({
+    queryKey: ["/api/vehicle-models", formData.make, formData.year],
+    queryFn: async () => {
+      if (!formData.make || !formData.year) return [];
+      const res = await fetch(`/api/vehicle-models/${encodeURIComponent(formData.make)}/${formData.year}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!formData.make && !!formData.year,
+  });
+
+  const handleVinDecode = async (vin: string) => {
+    if (vin.length !== 17) return;
+    
+    setVinLoading(true);
+    try {
+      const res = await fetch(`/api/vin-decode/${vin}`);
+      if (!res.ok) throw new Error("Failed to decode VIN");
+      const data = await res.json();
+      
+      if (data.ErrorCode && data.ErrorCode !== "0") {
+        return;
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        year: data.ModelYear || prev.year,
+        make: data.Make || prev.make,
+        model: data.Model || prev.model,
+      }));
+      
+      toast({ title: "VIN Decoded", description: `Found: ${data.ModelYear} ${data.Make} ${data.Model}` });
+    } catch {
+      // Silently fail for auto-decode
+    } finally {
+      setVinLoading(false);
+    }
+  };
 
   useSEO({
     title: "Trade-In Value",
@@ -165,12 +221,40 @@ export default function TradeIn() {
                 <div className="border-t pt-6">
                   <h3 className="mb-4 font-medium">Vehicle Information</h3>
                   
+                  <div className="mb-4 space-y-2">
+                    <Label htmlFor="vin">VIN (Enter to auto-fill vehicle details)</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="vin"
+                        value={formData.vin}
+                        onChange={(e) => {
+                          const newVin = e.target.value.toUpperCase();
+                          setFormData(prev => ({ ...prev, vin: newVin }));
+                          if (newVin.length === 17) {
+                            handleVinDecode(newVin);
+                          }
+                        }}
+                        placeholder="17-character VIN"
+                        maxLength={17}
+                        className="flex-1"
+                        data-testid="input-trade-vin"
+                      />
+                      {vinLoading && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="text-sm">Decoding...</span>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Enter your VIN to automatically fill year, make, and model</p>
+                  </div>
+                  
                   <div className="grid gap-4 md:grid-cols-3">
                     <div className="space-y-2">
                       <Label htmlFor="year">Year *</Label>
                       <Select
                         value={formData.year}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, year: value }))}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, year: value, model: "" }))}
                       >
                         <SelectTrigger data-testid="select-trade-year">
                           <SelectValue placeholder="Select year" />
@@ -183,25 +267,113 @@ export default function TradeIn() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="make">Make *</Label>
+                      <Label>Make *</Label>
+                      <Popover open={makeOpen} onOpenChange={setMakeOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={makeOpen}
+                            className="w-full justify-between font-normal"
+                            data-testid="select-trade-make"
+                            disabled={isLoadingMakes}
+                          >
+                            {formData.make || (isLoadingMakes ? "Loading..." : "Search make...")}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0" align="start">
+                          <Command>
+                            <CommandInput placeholder="Search make..." />
+                            <CommandList>
+                              <CommandEmpty>No make found. Type to use custom value.</CommandEmpty>
+                              <CommandGroup>
+                                {makes
+                                  .filter((make) => make.MakeName)
+                                  .sort((a, b) => (a.MakeName || "").localeCompare(b.MakeName || ""))
+                                  .map((make) => (
+                                    <CommandItem
+                                      key={make.MakeId}
+                                      value={make.MakeName}
+                                      onSelect={() => {
+                                        setFormData(prev => ({ ...prev, make: make.MakeName, model: "" }));
+                                        setMakeOpen(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          formData.make === make.MakeName ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      {make.MakeName}
+                                    </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                       <Input
-                        id="make"
                         value={formData.make}
                         onChange={(e) => setFormData(prev => ({ ...prev, make: e.target.value }))}
-                        placeholder="e.g., BMW"
-                        required
-                        data-testid="input-trade-make"
+                        placeholder="Or type custom make"
+                        className="mt-1"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="model">Model *</Label>
+                      <Label>Model *</Label>
+                      <Popover open={modelOpen} onOpenChange={setModelOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={modelOpen}
+                            className="w-full justify-between font-normal"
+                            data-testid="select-trade-model"
+                            disabled={!formData.make || !formData.year || isLoadingModels}
+                          >
+                            {formData.model || (!formData.make ? "Select make first" : !formData.year ? "Select year first" : isLoadingModels ? "Loading..." : "Search model...")}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0" align="start">
+                          <Command>
+                            <CommandInput placeholder="Search model..." />
+                            <CommandList>
+                              <CommandEmpty>No model found. Type to use custom value.</CommandEmpty>
+                              <CommandGroup>
+                                {models
+                                  .filter((model) => model.Model_Name)
+                                  .sort((a, b) => (a.Model_Name || "").localeCompare(b.Model_Name || ""))
+                                  .map((model) => (
+                                    <CommandItem
+                                      key={model.Model_ID}
+                                      value={model.Model_Name}
+                                      onSelect={() => {
+                                        setFormData(prev => ({ ...prev, model: model.Model_Name }));
+                                        setModelOpen(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          formData.model === model.Model_Name ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      {model.Model_Name}
+                                    </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                       <Input
-                        id="model"
                         value={formData.model}
                         onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
-                        placeholder="e.g., M5"
-                        required
-                        data-testid="input-trade-model"
+                        placeholder="Or type custom model"
+                        className="mt-1"
                       />
                     </div>
                   </div>
@@ -237,18 +409,7 @@ export default function TradeIn() {
                     </div>
                   </div>
 
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="vin">VIN (Optional)</Label>
-                      <Input
-                        id="vin"
-                        value={formData.vin}
-                        onChange={(e) => setFormData(prev => ({ ...prev, vin: e.target.value.toUpperCase() }))}
-                        placeholder="17-character VIN"
-                        maxLength={17}
-                        data-testid="input-trade-vin"
-                      />
-                    </div>
+                  <div className="mt-4">
                     <div className="space-y-2">
                       <Label htmlFor="payoffAmount">Loan Payoff Amount (if any)</Label>
                       <Input
