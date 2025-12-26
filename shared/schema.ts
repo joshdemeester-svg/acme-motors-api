@@ -8,16 +8,20 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   isAdmin: boolean("is_admin").default(false),
+  role: text("role").default("admin"), // 'master' or 'admin'
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
   isAdmin: true,
+  role: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type UserRole = "master" | "admin";
 
 export const consignmentSubmissions = pgTable("consignment_submissions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
