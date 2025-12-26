@@ -31,6 +31,10 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   setUserAdmin(id: string, isAdmin: boolean): Promise<User | undefined>;
   updateUserPassword(id: string, hashedPassword: string): Promise<User | undefined>;
+  updateUserRole(id: string, role: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
+  deleteUser(id: string): Promise<boolean>;
+  countMasterAdmins(): Promise<number>;
   
   createConsignment(data: InsertConsignment): Promise<ConsignmentSubmission>;
   getConsignment(id: string): Promise<ConsignmentSubmission | undefined>;
@@ -106,6 +110,29 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return updated || undefined;
+  }
+
+  async updateUserRole(id: string, role: string): Promise<User | undefined> {
+    const [updated] = await db
+      .update(users)
+      .set({ role })
+      .where(eq(users.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    const result = await db.delete(users).where(eq(users.id, id));
+    return true;
+  }
+
+  async countMasterAdmins(): Promise<number> {
+    const masterAdmins = await db.select().from(users).where(eq(users.role, "master"));
+    return masterAdmins.length;
   }
 
   async createConsignment(data: InsertConsignment): Promise<ConsignmentSubmission> {
