@@ -76,6 +76,12 @@ function applyCSSVariables(settings: Partial<SiteSettings>) {
   if (settings.socialIconHoverColor) {
     document.documentElement.style.setProperty("--social-icon-hover-color", settings.socialIconHoverColor);
   }
+  if (settings.calculatorAccentColor) {
+    document.documentElement.style.setProperty("--calculator-accent-color", settings.calculatorAccentColor);
+  }
+  if (settings.calculatorBgColor) {
+    document.documentElement.style.setProperty("--calculator-bg-color", settings.calculatorBgColor);
+  }
 }
 
 function loadCachedSettings(): Partial<SiteSettings> | null {
@@ -106,6 +112,8 @@ function saveCachedSettings(settings: SiteSettings) {
       stepNumberColor: settings.stepNumberColor,
       socialIconBgColor: settings.socialIconBgColor,
       socialIconHoverColor: settings.socialIconHoverColor,
+      calculatorAccentColor: settings.calculatorAccentColor,
+      calculatorBgColor: settings.calculatorBgColor,
     };
     localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(colorSettings));
   } catch {}

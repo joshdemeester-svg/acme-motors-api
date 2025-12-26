@@ -180,9 +180,16 @@ function FinancingCalculator({ price }: { price: number }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="text-center p-4 bg-primary/10 rounded-lg">
+        <div 
+          className="text-center p-4 rounded-lg"
+          style={{ backgroundColor: 'var(--calculator-bg-color, #1E3A5F)' }}
+        >
           <p className="text-sm text-muted-foreground">Estimated Monthly Payment</p>
-          <p className="text-3xl font-bold text-primary" data-testid="text-monthly-payment">
+          <p 
+            className="text-3xl font-bold" 
+            style={{ color: 'var(--calculator-accent-color, #3B82F6)' }}
+            data-testid="text-monthly-payment"
+          >
             ${monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/mo
           </p>
         </div>
