@@ -7,11 +7,26 @@ import { z } from "zod";
 import crypto from "crypto";
 
 const GHL_API_BASE = "https://services.leadconnectorhq.com";
-const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID;
-const GHL_API_TOKEN = process.env.GHL_API_TOKEN;
+
+async function getGHLCredentials(): Promise<{ locationId: string | null; apiToken: string | null }> {
+  try {
+    const settings = await storage.getSiteSettings();
+    const locationId = settings?.ghlLocationId || process.env.GHL_LOCATION_ID || null;
+    const apiToken = settings?.ghlApiToken || process.env.GHL_API_TOKEN || null;
+    return { locationId, apiToken };
+  } catch (error) {
+    console.error("[GHL] Error fetching credentials from database:", error);
+    return { 
+      locationId: process.env.GHL_LOCATION_ID || null, 
+      apiToken: process.env.GHL_API_TOKEN || null 
+    };
+  }
+}
 
 async function createGHLContact(consignment: InsertConsignment & { id: string }): Promise<void> {
-  if (!GHL_LOCATION_ID || !GHL_API_TOKEN) {
+  const { locationId, apiToken } = await getGHLCredentials();
+  
+  if (!locationId || !apiToken) {
     console.log("GoHighLevel not configured, skipping contact creation");
     return;
   }
@@ -20,7 +35,7 @@ async function createGHLContact(consignment: InsertConsignment & { id: string })
     const response = await fetch(`${GHL_API_BASE}/contacts/upsert`, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${GHL_API_TOKEN}`,
+        "Authorization": `Bearer ${apiToken}`,
         "Version": "2021-07-28",
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -30,7 +45,7 @@ async function createGHLContact(consignment: InsertConsignment & { id: string })
         lastName: consignment.lastName,
         email: consignment.email,
         phone: consignment.phone,
-        locationId: GHL_LOCATION_ID,
+        locationId: locationId,
         tags: ["Consignment Lead", `${consignment.year} ${consignment.make} ${consignment.model}`],
         source: "Consignment Website",
       }),
@@ -49,7 +64,9 @@ async function createGHLContact(consignment: InsertConsignment & { id: string })
 }
 
 async function createGHLContactForVerification(phone: string, firstName: string): Promise<string | null> {
-  if (!GHL_LOCATION_ID || !GHL_API_TOKEN) {
+  const { locationId, apiToken } = await getGHLCredentials();
+  
+  if (!locationId || !apiToken) {
     console.log("[GHL] Not configured, skipping verification contact creation");
     return null;
   }
@@ -58,7 +75,7 @@ async function createGHLContactForVerification(phone: string, firstName: string)
     const response = await fetch(`${GHL_API_BASE}/contacts/upsert`, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${GHL_API_TOKEN}`,
+        "Authorization": `Bearer ${apiToken}`,
         "Version": "2021-07-28",
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -66,7 +83,7 @@ async function createGHLContactForVerification(phone: string, firstName: string)
       body: JSON.stringify({
         firstName: firstName || "Customer",
         phone,
-        locationId: GHL_LOCATION_ID,
+        locationId: locationId,
         tags: ["Phone Verification"],
         source: "Consignment Website - Verification",
       }),
@@ -87,7 +104,9 @@ async function createGHLContactForVerification(phone: string, firstName: string)
 }
 
 async function sendGHLSMS(contactId: string, message: string): Promise<boolean> {
-  if (!GHL_LOCATION_ID || !GHL_API_TOKEN) {
+  const { locationId, apiToken } = await getGHLCredentials();
+  
+  if (!locationId || !apiToken) {
     console.log("[GHL] Not configured, skipping SMS send");
     return false;
   }
@@ -96,7 +115,7 @@ async function sendGHLSMS(contactId: string, message: string): Promise<boolean> 
     const response = await fetch(`${GHL_API_BASE}/conversations/messages`, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${GHL_API_TOKEN}`,
+        "Authorization": `Bearer ${apiToken}`,
         "Version": "2021-07-28",
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -104,7 +123,7 @@ async function sendGHLSMS(contactId: string, message: string): Promise<boolean> 
       body: JSON.stringify({
         type: "SMS",
         contactId,
-        locationId: GHL_LOCATION_ID,
+        locationId: locationId,
         message,
       }),
     });
@@ -124,7 +143,9 @@ async function sendGHLSMS(contactId: string, message: string): Promise<boolean> 
 }
 
 async function getOrCreateGHLContactByPhone(phone: string, name: string, tag: string = "Owner"): Promise<string | null> {
-  if (!GHL_LOCATION_ID || !GHL_API_TOKEN) {
+  const { locationId, apiToken } = await getGHLCredentials();
+  
+  if (!locationId || !apiToken) {
     console.log("[GHL] Not configured, skipping contact lookup");
     return null;
   }
@@ -133,7 +154,7 @@ async function getOrCreateGHLContactByPhone(phone: string, name: string, tag: st
     const response = await fetch(`${GHL_API_BASE}/contacts/upsert`, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${GHL_API_TOKEN}`,
+        "Authorization": `Bearer ${apiToken}`,
         "Version": "2021-07-28",
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -141,7 +162,7 @@ async function getOrCreateGHLContactByPhone(phone: string, name: string, tag: st
       body: JSON.stringify({
         phone,
         firstName: name,
-        locationId: GHL_LOCATION_ID,
+        locationId: locationId,
         tags: [tag],
       }),
     });
