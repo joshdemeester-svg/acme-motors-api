@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Search, SlidersHorizontal, X, Scale } from "lucide-react";
+import { useLocation } from "wouter";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -35,9 +37,11 @@ const defaultFilters: Filters = {
 };
 
 export default function Inventory() {
+  const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Filters>(defaultFilters);
+  const [compareIds, setCompareIds] = useState<string[]>([]);
   
   useSEO({
     title: "Current Inventory",
@@ -259,8 +263,19 @@ export default function Inventory() {
               </div>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-border text-sm text-muted-foreground">
-              Showing {filteredInventory.length} of {inventory.length} vehicles
+            <div className="mt-4 pt-4 border-t border-border flex items-center justify-between text-sm text-muted-foreground">
+              <span>Showing {filteredInventory.length} of {inventory.length} vehicles</span>
+              {compareIds.length >= 2 && (
+                <Button 
+                  size="sm" 
+                  onClick={() => navigate(`/compare?ids=${compareIds.join(",")}`)}
+                  className="gap-2"
+                  data-testid="btn-compare-selected"
+                >
+                  <Scale className="h-4 w-4" />
+                  Compare ({compareIds.length})
+                </Button>
+              )}
             </div>
           </div>
         )}
@@ -291,6 +306,20 @@ export default function Inventory() {
                   <div className="absolute top-4 right-4 rounded bg-black/70 px-3 py-1 text-xs font-medium text-white backdrop-blur-md capitalize">
                     {car.status}
                   </div>
+                  <label className="absolute top-4 left-4 flex items-center gap-2 rounded bg-black/70 px-2 py-1 text-xs font-medium text-white backdrop-blur-md cursor-pointer">
+                    <Checkbox 
+                      checked={compareIds.includes(car.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked && compareIds.length < 3) {
+                          setCompareIds([...compareIds, car.id]);
+                        } else if (!checked) {
+                          setCompareIds(compareIds.filter(id => id !== car.id));
+                        }
+                      }}
+                      data-testid={`checkbox-compare-${car.id}`}
+                    />
+                    Compare
+                  </label>
                 </div>
                 <div className="p-6">
                   <div className="mb-2 text-sm font-medium text-white">{car.year} {car.make}</div>
