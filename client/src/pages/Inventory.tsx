@@ -127,22 +127,22 @@ export default function Inventory() {
             <p className="text-muted-foreground">Browse our collection of available premium vehicles.</p>
           </div>
           
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
             <div className="relative w-full md:w-80">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input 
                 placeholder="Search make or model..." 
-                className="pl-9"
+                className="pl-9 bg-[#1a2a3c] border-white/20 text-white placeholder:text-white/50"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 data-testid="input-search"
               />
             </div>
             <Button 
-              variant={showFilters ? "default" : "outline"} 
+              variant="outline"
               size="icon"
               onClick={() => setShowFilters(!showFilters)}
-              className="relative"
+              className={`relative bg-[#1a2a3c] border-white/20 hover:bg-[#243548] ${showFilters ? 'border-white/50' : ''}`}
               data-testid="button-toggle-filters"
             >
               <SlidersHorizontal className="h-4 w-4" />

@@ -12,9 +12,34 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare, Link, Bell, Plug, FileText, Download, ExternalLink, Eye, EyeOff, Users, Shield, UserPlus, Calculator, BarChart3 } from "lucide-react";
+import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare, Link, Bell, Plug, FileText, Download, ExternalLink, Eye, EyeOff, Users, Shield, UserPlus, Calculator, BarChart3, ChevronsUpDown, Loader2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
+
+interface NHTSAMake {
+  MakeId: number;
+  MakeName: string;
+}
+
+interface NHTSAModel {
+  Model_ID: number;
+  Model_Name: string;
+}
+
+async function fetchMakesForYear(): Promise<NHTSAMake[]> {
+  const res = await fetch(`/api/vehicle-makes`);
+  if (!res.ok) throw new Error("Failed to fetch makes");
+  return res.json();
+}
+
+async function fetchModelsForMakeYear(make: string, year: string): Promise<NHTSAModel[]> {
+  const res = await fetch(`/api/vehicle-models/${encodeURIComponent(make)}/${year}`);
+  if (!res.ok) throw new Error("Failed to fetch models");
+  return res.json();
+}
 import type { ConsignmentSubmission, InventoryCar, SiteSettings, BuyerInquiry } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
 import { ObjectUploader } from "@/components/ObjectUploader";
@@ -2997,6 +3022,11 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
   const [quickAddCondition, setQuickAddCondition] = useState("Excellent");
   const [quickAddDescription, setQuickAddDescription] = useState("");
   const [vinLookupLoading, setVinLookupLoading] = useState(false);
+  const [quickAddMakeOpen, setQuickAddMakeOpen] = useState(false);
+  const [quickAddModelOpen, setQuickAddModelOpen] = useState(false);
+  const [editMakeOpen, setEditMakeOpen] = useState(false);
+  const [editModelOpen, setEditModelOpen] = useState(false);
+  const [editVinLoading, setEditVinLoading] = useState(false);
 
   const { data: submissions = [], isLoading: loadingSubmissions } = useQuery<ConsignmentSubmission[]>({
     queryKey: ["/api/consignments"],
@@ -3025,6 +3055,26 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
       return res.json();
     },
     enabled: !!selectedDocumentsId && documentsDialogOpen,
+  });
+
+  const { data: makes = [], isLoading: isLoadingMakes } = useQuery({
+    queryKey: ["vehicleMakes"],
+    queryFn: fetchMakesForYear,
+    staleTime: 1000 * 60 * 60,
+  });
+
+  const { data: quickAddModels = [], isLoading: isLoadingQuickAddModels } = useQuery({
+    queryKey: ["vehicleModels", quickAddMake, quickAddYear],
+    queryFn: () => fetchModelsForMakeYear(quickAddMake, quickAddYear),
+    enabled: !!quickAddMake && !!quickAddYear,
+    staleTime: 1000 * 60 * 60,
+  });
+
+  const { data: editModels = [], isLoading: isLoadingEditModels } = useQuery({
+    queryKey: ["vehicleModels", editMake, editYear],
+    queryFn: () => fetchModelsForMakeYear(editMake, editYear),
+    enabled: !!editMake && !!editYear,
+    staleTime: 1000 * 60 * 60,
   });
 
   const approveMutation = useMutation({
@@ -3289,20 +3339,25 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
     setQuickAddDescription("");
   };
 
-  const handleVinLookup = async () => {
-    if (!quickAddVin || quickAddVin.length < 11) {
-      toast({ title: "Error", description: "Please enter a valid VIN (at least 11 characters).", variant: "destructive" });
+  const handleVinLookup = async (vin?: string) => {
+    const vinToLookup = vin || quickAddVin;
+    if (!vinToLookup || vinToLookup.length < 11) {
+      if (!vin) {
+        toast({ title: "Error", description: "Please enter a valid VIN (at least 11 characters).", variant: "destructive" });
+      }
       return;
     }
     
     setVinLookupLoading(true);
     try {
-      const res = await fetch(`/api/vin-decode/${quickAddVin}`);
+      const res = await fetch(`/api/vin-decode/${vinToLookup}`);
       if (!res.ok) throw new Error("Failed to decode VIN");
       const data = await res.json();
       
       if (data.ErrorCode && data.ErrorCode !== "0") {
-        toast({ title: "VIN Not Found", description: "Could not find vehicle information for this VIN.", variant: "destructive" });
+        if (!vin) {
+          toast({ title: "VIN Not Found", description: "Could not find vehicle information for this VIN.", variant: "destructive" });
+        }
         return;
       }
       
@@ -3312,9 +3367,36 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
       
       toast({ title: "VIN Decoded", description: `Found: ${data.ModelYear} ${data.Make} ${data.Model}` });
     } catch {
-      toast({ title: "Error", description: "Failed to lookup VIN.", variant: "destructive" });
+      if (!vin) {
+        toast({ title: "Error", description: "Failed to lookup VIN.", variant: "destructive" });
+      }
     } finally {
       setVinLookupLoading(false);
+    }
+  };
+
+  const handleEditVinDecode = async (vin: string) => {
+    if (vin.length !== 17) return;
+    
+    setEditVinLoading(true);
+    try {
+      const res = await fetch(`/api/vin-decode/${vin}`);
+      if (!res.ok) throw new Error("Failed to decode VIN");
+      const data = await res.json();
+      
+      if (data.ErrorCode && data.ErrorCode !== "0") {
+        return;
+      }
+      
+      if (data.ModelYear) setEditYear(data.ModelYear);
+      if (data.Make) setEditMake(data.Make);
+      if (data.Model) setEditModel(data.Model);
+      
+      toast({ title: "VIN Decoded", description: `Found: ${data.ModelYear} ${data.Make} ${data.Model}` });
+    } catch {
+      // Silently fail for auto-decode
+    } finally {
+      setEditVinLoading(false);
     }
   };
 
@@ -3968,14 +4050,30 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
           <div className="flex-1 overflow-y-auto space-y-4 py-4 px-1">
             <div className="space-y-2">
               <Label htmlFor="editVin">VIN</Label>
-              <Input
-                id="editVin"
-                value={editVin}
-                onChange={(e) => setEditVin(e.target.value.toUpperCase())}
-                placeholder="17-character VIN"
-                maxLength={17}
-                data-testid="input-edit-vin"
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="editVin"
+                  value={editVin}
+                  onChange={(e) => {
+                    const newVin = e.target.value.toUpperCase();
+                    setEditVin(newVin);
+                    if (newVin.length === 17) {
+                      handleEditVinDecode(newVin);
+                    }
+                  }}
+                  placeholder="17-character VIN"
+                  maxLength={17}
+                  className="flex-1"
+                  data-testid="input-edit-vin"
+                />
+                {editVinLoading && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Decoding...</span>
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">Enter VIN to auto-fill vehicle details</p>
             </div>
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <div className="space-y-2">
@@ -3984,26 +4082,122 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                   id="editYear"
                   type="number"
                   value={editYear}
-                  onChange={(e) => setEditYear(e.target.value)}
+                  onChange={(e) => {
+                    setEditYear(e.target.value);
+                    setEditModel("");
+                  }}
                   data-testid="input-edit-year"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="editMake">Make</Label>
+                <Label>Make</Label>
+                <Popover open={editMakeOpen} onOpenChange={setEditMakeOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={editMakeOpen}
+                      className="w-full justify-between font-normal"
+                      data-testid="select-edit-make"
+                      disabled={isLoadingMakes}
+                    >
+                      {editMake || (isLoadingMakes ? "Loading..." : "Search make...")}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search make..." />
+                      <CommandList>
+                        <CommandEmpty>No make found. Type to use custom value.</CommandEmpty>
+                        <CommandGroup>
+                          {makes
+                            .filter((make) => make.MakeName)
+                            .sort((a, b) => (a.MakeName || "").localeCompare(b.MakeName || ""))
+                            .map((make) => (
+                              <CommandItem
+                                key={make.MakeId}
+                                value={make.MakeName}
+                                onSelect={() => {
+                                  setEditMake(make.MakeName);
+                                  setEditModel("");
+                                  setEditMakeOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    editMake === make.MakeName ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {make.MakeName}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <Input
-                  id="editMake"
                   value={editMake}
                   onChange={(e) => setEditMake(e.target.value)}
-                  data-testid="input-edit-make"
+                  placeholder="Or type custom make"
+                  className="mt-1"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="editModel">Model</Label>
+                <Label>Model</Label>
+                <Popover open={editModelOpen} onOpenChange={setEditModelOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={editModelOpen}
+                      className="w-full justify-between font-normal"
+                      data-testid="select-edit-model"
+                      disabled={!editMake || !editYear || isLoadingEditModels}
+                    >
+                      {editModel || (!editMake ? "Select make first" : !editYear ? "Select year first" : isLoadingEditModels ? "Loading..." : "Search model...")}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search model..." />
+                      <CommandList>
+                        <CommandEmpty>No model found. Type to use custom value.</CommandEmpty>
+                        <CommandGroup>
+                          {editModels
+                            .filter((model) => model.Model_Name)
+                            .sort((a, b) => (a.Model_Name || "").localeCompare(b.Model_Name || ""))
+                            .map((model) => (
+                              <CommandItem
+                                key={model.Model_ID}
+                                value={model.Model_Name}
+                                onSelect={() => {
+                                  setEditModel(model.Model_Name);
+                                  setEditModelOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    editModel === model.Model_Name ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {model.Model_Name}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <Input
-                  id="editModel"
                   value={editModel}
                   onChange={(e) => setEditModel(e.target.value)}
-                  data-testid="input-edit-model"
+                  placeholder="Or type custom model"
+                  className="mt-1"
                 />
               </div>
               <div className="space-y-2">
@@ -4282,24 +4476,26 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                 <Input
                   id="quickAddVin"
                   value={quickAddVin}
-                  onChange={(e) => setQuickAddVin(e.target.value.toUpperCase())}
+                  onChange={(e) => {
+                    const newVin = e.target.value.toUpperCase();
+                    setQuickAddVin(newVin);
+                    if (newVin.length === 17) {
+                      handleVinLookup(newVin);
+                    }
+                  }}
                   placeholder="Enter 17-character VIN"
                   maxLength={17}
                   className="flex-1"
                   data-testid="input-quick-add-vin"
                 />
-                <Button 
-                  type="button" 
-                  variant="secondary" 
-                  onClick={handleVinLookup}
-                  disabled={vinLookupLoading || quickAddVin.length < 11}
-                  className="gap-2"
-                  data-testid="button-vin-lookup"
-                >
-                  <Search className="h-4 w-4" />
-                  {vinLookupLoading ? "Looking up..." : "Lookup"}
-                </Button>
+                {vinLookupLoading && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Decoding...</span>
+                  </div>
+                )}
               </div>
+              <p className="text-xs text-muted-foreground">Enter VIN to auto-fill vehicle details</p>
             </div>
             
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
@@ -4309,29 +4505,123 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                   id="quickAddYear"
                   type="number"
                   value={quickAddYear}
-                  onChange={(e) => setQuickAddYear(e.target.value)}
+                  onChange={(e) => {
+                    setQuickAddYear(e.target.value);
+                    setQuickAddModel("");
+                  }}
                   placeholder="e.g. 2021"
                   data-testid="input-quick-add-year"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="quickAddMake">Make</Label>
+                <Label>Make</Label>
+                <Popover open={quickAddMakeOpen} onOpenChange={setQuickAddMakeOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={quickAddMakeOpen}
+                      className="w-full justify-between font-normal"
+                      data-testid="select-quick-add-make"
+                      disabled={isLoadingMakes}
+                    >
+                      {quickAddMake || (isLoadingMakes ? "Loading..." : "Search make...")}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search make..." />
+                      <CommandList>
+                        <CommandEmpty>No make found. Type to use custom value.</CommandEmpty>
+                        <CommandGroup>
+                          {makes
+                            .filter((make) => make.MakeName)
+                            .sort((a, b) => (a.MakeName || "").localeCompare(b.MakeName || ""))
+                            .map((make) => (
+                              <CommandItem
+                                key={make.MakeId}
+                                value={make.MakeName}
+                                onSelect={() => {
+                                  setQuickAddMake(make.MakeName);
+                                  setQuickAddModel("");
+                                  setQuickAddMakeOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    quickAddMake === make.MakeName ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {make.MakeName}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <Input
-                  id="quickAddMake"
                   value={quickAddMake}
                   onChange={(e) => setQuickAddMake(e.target.value)}
-                  placeholder="e.g. Ford"
-                  data-testid="input-quick-add-make"
+                  placeholder="Or type custom make"
+                  className="mt-1"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="quickAddModel">Model</Label>
+                <Label>Model</Label>
+                <Popover open={quickAddModelOpen} onOpenChange={setQuickAddModelOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={quickAddModelOpen}
+                      className="w-full justify-between font-normal"
+                      data-testid="select-quick-add-model"
+                      disabled={!quickAddMake || !quickAddYear || isLoadingQuickAddModels}
+                    >
+                      {quickAddModel || (!quickAddMake ? "Select make first" : !quickAddYear ? "Select year first" : isLoadingQuickAddModels ? "Loading..." : "Search model...")}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search model..." />
+                      <CommandList>
+                        <CommandEmpty>No model found. Type to use custom value.</CommandEmpty>
+                        <CommandGroup>
+                          {quickAddModels
+                            .filter((model) => model.Model_Name)
+                            .sort((a, b) => (a.Model_Name || "").localeCompare(b.Model_Name || ""))
+                            .map((model) => (
+                              <CommandItem
+                                key={model.Model_ID}
+                                value={model.Model_Name}
+                                onSelect={() => {
+                                  setQuickAddModel(model.Model_Name);
+                                  setQuickAddModelOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    quickAddModel === model.Model_Name ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {model.Model_Name}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <Input
-                  id="quickAddModel"
                   value={quickAddModel}
                   onChange={(e) => setQuickAddModel(e.target.value)}
-                  placeholder="e.g. Mustang"
-                  data-testid="input-quick-add-model"
+                  placeholder="Or type custom model"
+                  className="mt-1"
                 />
               </div>
               <div className="space-y-2">
