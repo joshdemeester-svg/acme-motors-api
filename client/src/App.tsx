@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SettingsProvider } from "@/contexts/SettingsContext";
+import { useFavicon } from "@/hooks/use-favicon";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Inventory from "@/pages/Inventory";
@@ -11,6 +12,11 @@ import VehicleDetails from "@/pages/VehicleDetails";
 import Consign from "@/pages/Consign";
 import Admin from "@/pages/Admin";
 import SellerPortal from "@/pages/SellerPortal";
+
+function FaviconLoader() {
+  useFavicon();
+  return null;
+}
 
 function Router() {
   return (
@@ -31,6 +37,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <SettingsProvider>
         <TooltipProvider>
+          <FaviconLoader />
           <Toaster />
           <Router />
         </TooltipProvider>

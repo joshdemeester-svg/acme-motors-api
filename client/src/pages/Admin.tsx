@@ -147,6 +147,98 @@ function LogoUploadCard({ logoUrl, setLogoUrl, siteName, saveMutation }: { logoU
   );
 }
 
+function FaviconUploadCard({ faviconUrl, setFaviconUrl, saveMutation }: { faviconUrl: string; setFaviconUrl: (url: string) => void; saveMutation: { mutate: () => void; isPending: boolean } }) {
+  const { getUploadParameters } = useUpload();
+  
+  const handleUploadComplete = (result: any) => {
+    if (result.successful && result.successful.length > 0) {
+      const uploadedFile = result.successful[0];
+      const urlParts = uploadedFile.uploadURL?.split("/") || [];
+      const objectId = urlParts[urlParts.length - 1]?.split("?")[0] || "";
+      const objectPath = `/objects/uploads/${objectId}`;
+      setFaviconUrl(objectPath);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Image className="h-5 w-5" /> Favicon
+        </CardTitle>
+        <CardDescription>Upload a favicon (browser tab icon) for your website</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+          {faviconUrl ? (
+            <div className="relative">
+              <div className="rounded-lg border bg-card p-4">
+                <img
+                  src={faviconUrl}
+                  alt="Current favicon"
+                  className="h-8 w-8 object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = placeholderCar;
+                  }}
+                />
+              </div>
+              <Button
+                variant="destructive"
+                size="icon"
+                className="absolute -top-2 -right-2 h-6 w-6"
+                onClick={() => setFaviconUrl("")}
+                data-testid="button-remove-favicon"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed bg-muted/50 p-4 text-center">
+              <Image className="mx-auto h-8 w-8 text-muted-foreground" />
+              <p className="mt-2 text-sm text-muted-foreground">No favicon</p>
+            </div>
+          )}
+          <div className="flex-1 space-y-3">
+            <ObjectUploader
+              maxNumberOfFiles={1}
+              maxFileSize={1048576}
+              onGetUploadParameters={getUploadParameters}
+              onComplete={handleUploadComplete}
+              buttonClassName="w-full sm:w-auto"
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              {faviconUrl ? "Replace Favicon" : "Upload Favicon"}
+            </ObjectUploader>
+            <p className="text-xs text-muted-foreground">
+              Upload a PNG, ICO, or SVG file (max 1MB). Recommended size: 32x32 or 64x64 pixels.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="faviconUrl" className="text-xs">Or enter a URL:</Label>
+              <Input
+                id="faviconUrl"
+                value={faviconUrl}
+                onChange={(e) => setFaviconUrl(e.target.value)}
+                placeholder="https://example.com/favicon.png"
+                className="text-sm"
+                data-testid="input-favicon-url"
+              />
+            </div>
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter>
+        <Button 
+          onClick={() => saveMutation.mutate()} 
+          disabled={saveMutation.isPending}
+          data-testid="button-save-favicon"
+        >
+          {saveMutation.isPending ? "Saving..." : "Save Favicon"}
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
+
 function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: () => void; isPending: boolean } | null) => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -169,6 +261,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [footerTagline, setFooterTagline] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [logoWidth, setLogoWidth] = useState("120");
+  const [faviconUrl, setFaviconUrl] = useState("");
   const [contactAddress1, setContactAddress1] = useState("");
   const [contactAddress2, setContactAddress2] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -213,6 +306,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setFooterTagline(settings.footerTagline || "");
       setLogoUrl(settings.logoUrl || "");
       setLogoWidth(settings.logoWidth || "120");
+      setFaviconUrl(settings.faviconUrl || "");
       setContactAddress1(settings.contactAddress1 || "");
       setContactAddress2(settings.contactAddress2 || "");
       setContactPhone(settings.contactPhone || "");
@@ -255,6 +349,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           footerTagline: footerTagline || null,
           logoUrl: logoUrl || null,
           logoWidth: logoWidth || "120",
+          faviconUrl: faviconUrl || null,
           contactAddress1: contactAddress1 || null,
           contactAddress2: contactAddress2 || null,
           contactPhone: contactPhone || null,
@@ -430,6 +525,105 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
             data-testid="button-save-logo"
           >
             {updateMutation.isPending ? "Saving..." : "Save Logo & Name"}
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {/* Favicon Section */}
+      <Card className="border-white border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Image className="h-5 w-5" /> Favicon
+          </CardTitle>
+          <CardDescription>Upload a favicon (browser tab icon) for your website</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex-shrink-0">
+              {faviconUrl ? (
+                <div className="relative">
+                  <div className="rounded-lg border bg-card p-4">
+                    <img
+                      src={faviconUrl}
+                      alt="Current favicon"
+                      className="h-12 w-12 object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = placeholderCar;
+                      }}
+                    />
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-6 w-6"
+                    onClick={() => setFaviconUrl("")}
+                    data-testid="button-remove-favicon"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed bg-muted/50 p-6 text-center">
+                  <Image className="mx-auto h-8 w-8 text-muted-foreground" />
+                  <p className="mt-2 text-sm text-muted-foreground">No favicon</p>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 space-y-4">
+              <div className="flex gap-2 items-end">
+                <div className="flex-1 space-y-2">
+                  <Label htmlFor="faviconUrl">Favicon URL</Label>
+                  <Input
+                    id="faviconUrl"
+                    value={faviconUrl}
+                    onChange={(e) => setFaviconUrl(e.target.value)}
+                    placeholder="https://example.com/favicon.png"
+                    data-testid="input-favicon-url"
+                  />
+                </div>
+                <ObjectUploader
+                  maxNumberOfFiles={1}
+                  maxFileSize={1048576}
+                  onGetUploadParameters={async (file) => {
+                    const res = await fetch("/api/uploads/request-url", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        name: file.name,
+                        size: file.size,
+                        contentType: file.type,
+                      }),
+                    });
+                    if (!res.ok) throw new Error("Failed to get upload URL");
+                    const { uploadURL } = await res.json();
+                    return { method: "PUT", url: uploadURL };
+                  }}
+                  onComplete={(result) => {
+                    if (result.successful && result.successful.length > 0) {
+                      const uploadedFile = result.successful[0];
+                      const urlParts = uploadedFile.uploadURL?.split("/") || [];
+                      const objectId = urlParts[urlParts.length - 1]?.split("?")[0] || "";
+                      setFaviconUrl(`/objects/uploads/${objectId}`);
+                    }
+                  }}
+                  buttonClassName="shrink-0"
+                >
+                  <Upload className="h-4 w-4 mr-2" /> Upload Favicon
+                </ObjectUploader>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Upload a PNG, ICO, or SVG file (max 1MB). Recommended size: 32x32 or 64x64 pixels.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button 
+            onClick={() => updateMutation.mutate()} 
+            disabled={updateMutation.isPending}
+            data-testid="button-save-favicon"
+          >
+            {updateMutation.isPending ? "Saving..." : "Save Favicon"}
           </Button>
         </CardFooter>
       </Card>
