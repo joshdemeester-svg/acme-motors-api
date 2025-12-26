@@ -316,14 +316,14 @@ export default function Inventory() {
                         setCompareIds([...compareIds, car.id]);
                       }
                     }}
-                    className={`absolute top-4 left-4 flex items-center gap-2 rounded px-3 py-2 text-sm font-medium backdrop-blur-md cursor-pointer transition-all ${
+                    className={`absolute top-2 left-2 sm:top-4 sm:left-4 flex items-center gap-1.5 sm:gap-2 rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-semibold shadow-lg cursor-pointer transition-all border ${
                       compareIds.includes(car.id)
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-black/70 text-white hover:bg-black/90'
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-black/80 text-white hover:bg-black border-white/30'
                     }`}
                     data-testid={`btn-compare-${car.id}`}
                   >
-                    <Scale className="h-4 w-4" />
+                    <Scale className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     {compareIds.includes(car.id) ? 'Selected' : 'Compare'}
                   </button>
                 </div>
