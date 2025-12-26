@@ -103,12 +103,51 @@ async function createGHLContactForVerification(phone: string, firstName: string)
   }
 }
 
-async function sendGHLSMS(contactId: string, message: string): Promise<boolean> {
+type SMSResult = { success: true } | { success: false; error: string; code?: number };
+type GHLTestResult = { success: true; locationName?: string } | { success: false; error: string; code?: number };
+
+async function testGHLCredentials(apiToken: string, locationId: string): Promise<GHLTestResult> {
+  try {
+    const response = await fetch(`${GHL_API_BASE}/locations/${locationId}`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${apiToken}`,
+        "Version": "2021-07-28",
+        "Accept": "application/json",
+      },
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log("[GHL] Credentials verified:", data.location?.name || "Connected");
+      return { success: true, locationName: data.location?.name };
+    }
+    
+    const errorText = await response.text();
+    console.error("[GHL] Credential test failed:", response.status, errorText);
+    
+    if (response.status === 401) {
+      return { success: false, error: "Invalid API Token - please check your token is correct and not expired", code: 401 };
+    }
+    if (response.status === 403) {
+      return { success: false, error: "Access denied - your API token may not have the required permissions", code: 403 };
+    }
+    if (response.status === 404) {
+      return { success: false, error: "Location not found - please verify your Location ID is correct", code: 404 };
+    }
+    return { success: false, error: `GoHighLevel returned error: ${response.status}`, code: response.status };
+  } catch (error) {
+    console.error("[GHL] Credential test error:", error);
+    return { success: false, error: "Failed to connect to GoHighLevel - network error" };
+  }
+}
+
+async function sendGHLSMS(contactId: string, message: string): Promise<SMSResult> {
   const { locationId, apiToken } = await getGHLCredentials();
   
   if (!locationId || !apiToken) {
     console.log("[GHL] Not configured, skipping SMS send");
-    return false;
+    return { success: false, error: "GoHighLevel is not configured. Please set up your API credentials in Settings → Integrations." };
   }
 
   try {
@@ -131,14 +170,24 @@ async function sendGHLSMS(contactId: string, message: string): Promise<boolean> 
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`[GHL] Failed to send SMS:`, response.status, errorText);
-      return false;
+      
+      if (response.status === 401) {
+        return { success: false, error: "Invalid API token. Please check your GoHighLevel credentials in Settings.", code: 401 };
+      }
+      if (response.status === 403) {
+        return { success: false, error: "Access denied. Your API token may not have SMS permissions.", code: 403 };
+      }
+      if (response.status === 404) {
+        return { success: false, error: "Contact or location not found in GoHighLevel.", code: 404 };
+      }
+      return { success: false, error: `Failed to send SMS (Error ${response.status})`, code: response.status };
     }
 
     console.log(`[GHL] SMS sent successfully to contact ${contactId}`);
-    return true;
+    return { success: true };
   } catch (error) {
     console.error(`[GHL] Network error sending SMS:`, error);
-    return false;
+    return { success: false, error: "Network error connecting to GoHighLevel. Please try again." };
   }
 }
 
@@ -232,11 +281,11 @@ async function sendAdminNotificationSMS(message: string): Promise<void> {
       const normalizedPhone = normalizePhoneNumber(phone);
       const contactId = await getOrCreateGHLContactByPhone(normalizedPhone, "Admin", "Admin Notification");
       if (contactId) {
-        const sent = await sendGHLSMS(contactId, message);
-        if (sent) {
+        const result = await sendGHLSMS(contactId, message);
+        if (result.success) {
           console.log(`[Notify] Admin SMS sent to ${normalizedPhone}`);
         } else {
-          console.error(`[Notify] Failed to send SMS to ${normalizedPhone}`);
+          console.error(`[Notify] Failed to send SMS to ${normalizedPhone}:`, result.error);
         }
       }
     }
@@ -285,11 +334,11 @@ async function sendSellerConfirmationSMS(consignmentData: {
     );
     
     if (contactId) {
-      const sent = await sendGHLSMS(contactId, message);
-      if (sent) {
+      const result = await sendGHLSMS(contactId, message);
+      if (result.success) {
         console.log(`[Notify] Seller confirmation SMS sent to ${normalizedPhone}`);
       } else {
-        console.error(`[Notify] Failed to send seller SMS to ${normalizedPhone}`);
+        console.error(`[Notify] Failed to send seller SMS to ${normalizedPhone}:`, result.error);
       }
     } else {
       console.error(`[Notify] Could not create/get contact for ${normalizedPhone}`);
@@ -475,9 +524,9 @@ export async function registerRoutes(
       const code = generateVerificationCode();
       await storage.createPhoneVerification(normalizedPhone, code, contactId);
 
-      const smsSuccess = await sendGHLSMS(contactId, `Your verification code is: ${code}. This code expires in 10 minutes.`);
-      if (!smsSuccess) {
-        return res.status(500).json({ error: "Failed to send verification SMS. Please try again." });
+      const smsResult = await sendGHLSMS(contactId, `Your verification code is: ${code}. This code expires in 10 minutes.`);
+      if (!smsResult.success) {
+        return res.status(500).json({ error: smsResult.error || "Failed to send verification SMS. Please try again." });
       }
 
       res.json({ success: true, message: "Verification code sent" });
@@ -557,9 +606,9 @@ export async function registerRoutes(
       const code = generateVerificationCode();
       await storage.createPhoneVerification(normalizedPhone, code, contactId);
 
-      const smsSuccess = await sendGHLSMS(contactId, `Your seller portal login code is: ${code}. This code expires in 10 minutes.`);
-      if (!smsSuccess) {
-        return res.status(500).json({ error: "Failed to send verification SMS. Please try again." });
+      const smsResult = await sendGHLSMS(contactId, `Your seller portal login code is: ${code}. This code expires in 10 minutes.`);
+      if (!smsResult.success) {
+        return res.status(500).json({ error: smsResult.error || "Failed to send verification SMS. Please try again." });
       }
 
       res.json({ success: true, message: "Verification code sent" });
@@ -1163,10 +1212,10 @@ export async function registerRoutes(
 
       const smsMessage = `New Vehicle Inquiry!\n\nVehicle: ${data.year} ${data.make} ${data.model}\nVIN: ${data.vin}\n\nBuyer Info:\nName: ${data.buyerName}\nPhone: ${data.buyerPhone}\nEmail: ${data.buyerEmail}${data.message ? `\n\nMessage: ${data.message}` : ""}`;
 
-      const success = await sendGHLSMS(contactId, smsMessage);
+      const smsResult = await sendGHLSMS(contactId, smsMessage);
 
-      if (!success) {
-        return res.status(500).json({ error: "Failed to send inquiry message" });
+      if (!smsResult.success) {
+        return res.status(500).json({ error: smsResult.error || "Failed to send inquiry message" });
       }
 
       console.log(`[Inquiry] Vehicle inquiry sent for ${data.vin} from ${data.buyerName}`);
@@ -1502,7 +1551,26 @@ ${allPages.map(page => `  <url>
         ghlLocationId
       };
       
-      if (ghlApiToken && ghlApiToken.trim().length > 0) {
+      // Validate GHL credentials whenever both token and location exist
+      const currentSettings = await storage.getSiteSettings();
+      const newToken = ghlApiToken && ghlApiToken.trim().length > 0 ? ghlApiToken : null;
+      const effectiveToken = newToken || currentSettings?.ghlApiToken;
+      const effectiveLocation = ghlLocationId !== undefined ? ghlLocationId : currentSettings?.ghlLocationId;
+      
+      // Always validate if both credentials exist (catches expired tokens)
+      let ghlValidated = false;
+      if (effectiveToken && effectiveLocation) {
+        const testResult = await testGHLCredentials(effectiveToken, effectiveLocation);
+        if (!testResult.success) {
+          return res.status(400).json({ 
+            error: `GoHighLevel credentials invalid: ${testResult.error}`,
+            ghlError: true
+          });
+        }
+        ghlValidated = true;
+      }
+      
+      if (newToken) {
         updateData.ghlApiToken = ghlApiToken;
       }
       
@@ -1515,6 +1583,45 @@ ${allPages.map(page => `  <url>
     } catch (error) {
       console.error("Error updating settings:", error);
       res.status(500).json({ error: "Failed to update settings" });
+    }
+  });
+
+  // Test GoHighLevel connection
+  app.post("/api/settings/test-ghl", requireAdmin, async (req, res) => {
+    try {
+      const { apiToken, locationId } = req.body;
+      
+      // Use provided values or fall back to stored values
+      const settings = await storage.getSiteSettings();
+      const testToken = apiToken || settings?.ghlApiToken;
+      const testLocationId = locationId || settings?.ghlLocationId;
+      
+      if (!testToken || !testLocationId) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "API Token and Location ID are required" 
+        });
+      }
+      
+      const testResult = await testGHLCredentials(testToken, testLocationId);
+      
+      if (testResult.success) {
+        return res.json({ 
+          success: true, 
+          message: `Connected to ${testResult.locationName || "GoHighLevel"}` 
+        });
+      }
+      
+      return res.status(testResult.code || 400).json({ 
+        success: false, 
+        error: testResult.error 
+      });
+    } catch (error) {
+      console.error("[GHL] Connection test error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to connect to GoHighLevel - network error" 
+      });
     }
   });
 
