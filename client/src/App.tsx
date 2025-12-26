@@ -15,6 +15,7 @@ import SellerPortal from "@/pages/SellerPortal";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import TradeIn from "@/pages/TradeIn";
+import Compare from "@/pages/Compare";
 
 function FaviconLoader() {
   useFavicon();
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/privacy" component={Privacy} />
       <Route path="/terms" component={Terms} />
       <Route path="/trade-in" component={TradeIn} />
+      <Route path="/compare" component={Compare} />
       <Route component={NotFound} />
     </Switch>
   );
