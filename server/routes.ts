@@ -259,7 +259,8 @@ async function sendSellerConfirmationSMS(consignmentData: {
     }
 
     const normalizedPhone = normalizePhoneNumber(consignmentData.phone);
-    if (!normalizedPhone || normalizedPhone === "+" || normalizedPhone.length < 10) {
+    const digitsOnly = normalizedPhone.replace(/\D/g, "");
+    if (!normalizedPhone || normalizedPhone === "+" || digitsOnly.length < 10) {
       console.log("[Notify] Invalid phone number, skipping seller SMS");
       return;
     }
