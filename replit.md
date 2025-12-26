@@ -83,6 +83,7 @@ PostgreSQL database with Drizzle ORM. Core tables:
   - Branding: primary color, logo URL, site name
   - Contact: address lines, phone, email
   - Social media: Facebook, Instagram, Twitter, YouTube, TikTok URLs
+  - Legal: privacyPolicy and termsOfService (markdown content)
 
 ### File Storage
 
