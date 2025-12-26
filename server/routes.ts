@@ -1577,6 +1577,94 @@ export async function registerRoutes(
     }
   });
 
+  // Appointment booking
+  const appointmentSchema = z.object({
+    firstName: z.string().min(1),
+    lastName: z.string().min(1),
+    email: z.string().email(),
+    phone: z.string().min(10),
+    appointmentType: z.enum(["test_drive", "showroom_visit", "inspection"]),
+    vehicleId: z.string().optional(),
+    preferredDate: z.string().min(1),
+    preferredTime: z.string().min(1),
+    alternateDate: z.string().optional(),
+    alternateTime: z.string().optional(),
+    notes: z.string().optional(),
+  });
+
+  app.post("/api/appointments", async (req, res) => {
+    try {
+      const data = appointmentSchema.parse(req.body);
+      const { locationId, apiToken } = await getGHLCredentials();
+
+      // Get vehicle details if provided
+      let vehicleInfo = "";
+      if (data.vehicleId) {
+        const car = await storage.getInventoryCar(data.vehicleId);
+        if (car) {
+          vehicleInfo = `${car.year} ${car.make} ${car.model}`;
+        }
+      }
+
+      const appointmentTypeLabel = data.appointmentType === "test_drive" 
+        ? "Test Drive" 
+        : data.appointmentType === "showroom_visit" 
+          ? "Showroom Visit" 
+          : "Vehicle Inspection";
+
+      if (locationId && apiToken) {
+        // Create contact in GoHighLevel
+        const response = await fetch(`${GHL_API_BASE}/contacts/upsert`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiToken}`,
+            "Version": "2021-07-28",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            phone: data.phone,
+            locationId: locationId,
+            tags: ["Appointment Request", appointmentTypeLabel, vehicleInfo].filter(Boolean),
+            source: "Website - Appointment Booking",
+          }),
+        });
+
+        if (!response.ok) {
+          console.error("[GHL] Failed to create appointment contact:", await response.text());
+        } else {
+          console.log("[GHL] Appointment contact created successfully");
+        }
+
+        // Send admin SMS notification
+        let smsMessage = `NEW APPOINTMENT REQUEST\n\nType: ${appointmentTypeLabel}`;
+        if (vehicleInfo) {
+          smsMessage += `\nVehicle: ${vehicleInfo}`;
+        }
+        smsMessage += `\nDate: ${data.preferredDate} at ${data.preferredTime}`;
+        if (data.alternateDate && data.alternateTime) {
+          smsMessage += `\nAlternate: ${data.alternateDate} at ${data.alternateTime}`;
+        }
+        smsMessage += `\n\nCustomer: ${data.firstName} ${data.lastName}\nPhone: ${data.phone}`;
+        
+        sendAdminNotificationSMS(smsMessage).catch((err) => {
+          console.error("Admin notification SMS failed:", err);
+        });
+      }
+
+      res.json({ success: true, message: "Appointment request submitted successfully" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      console.error("Error submitting appointment:", error);
+      res.status(500).json({ error: "Failed to submit appointment request" });
+    }
+  });
+
   app.get("/api/inventory/all", async (req, res) => {
     try {
       const cars = await storage.getAllInventoryCars();

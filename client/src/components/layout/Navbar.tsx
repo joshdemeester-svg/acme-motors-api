@@ -31,6 +31,7 @@ export function Navbar() {
     { href: "/inventory", label: "Inventory" },
     { href: "/consign", label: "Consign Your Car" },
     { href: "/trade-in", label: "Trade-In" },
+    { href: "/appointments", label: "Book Appointment" },
   ];
 
   return (
