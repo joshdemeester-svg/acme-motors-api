@@ -184,7 +184,7 @@ function FinancingCalculator({ price }: { price: number }) {
           className="text-center p-4 rounded-lg"
           style={{ backgroundColor: 'var(--calculator-bg-color, #1E3A5F)' }}
         >
-          <p className="text-sm text-muted-foreground">Estimated Monthly Payment</p>
+          <p className="text-sm" style={{ color: 'var(--calculator-text-color, #FFFFFF)', opacity: 0.8 }}>Estimated Monthly Payment</p>
           <p 
             className="text-3xl font-bold" 
             style={{ color: 'var(--calculator-accent-color, #3B82F6)' }}
