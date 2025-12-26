@@ -141,6 +141,8 @@ export const siteSettings = pgTable("site_settings", {
   adminNotifyPhone2: text("admin_notify_phone_2"),
   ghlApiToken: text("ghl_api_token"),
   ghlLocationId: text("ghl_location_id"),
+  privacyPolicy: text("privacy_policy"),
+  termsOfService: text("terms_of_service"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
