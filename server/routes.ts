@@ -1942,7 +1942,12 @@ ${allPages.map(page => `  <url>
         adminNotifyPhone1,
         adminNotifyPhone2,
         ghlApiToken,
-        ghlLocationId
+        ghlLocationId,
+        menuLabelHome,
+        menuLabelInventory,
+        menuLabelConsign,
+        menuLabelTradeIn,
+        menuLabelAppointments
       } = req.body;
       
       const updateData: Record<string, any> = {
@@ -1977,7 +1982,12 @@ ${allPages.map(page => `  <url>
         tiktokUrl,
         adminNotifyPhone1,
         adminNotifyPhone2,
-        ghlLocationId
+        ghlLocationId,
+        menuLabelHome,
+        menuLabelInventory,
+        menuLabelConsign,
+        menuLabelTradeIn,
+        menuLabelAppointments
       };
       
       // Validate GHL credentials whenever both token and location exist
