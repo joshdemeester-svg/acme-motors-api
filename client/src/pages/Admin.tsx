@@ -1907,14 +1907,14 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList>
-            <TabsTrigger value="submissions" className="gap-2" data-testid="tab-submissions">
+            <TabsTrigger value="submissions" className="gap-2">
               Submissions
               {pendingSubmissions.length > 0 && (
                 <Badge variant="secondary" className="ml-1">{pendingSubmissions.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="inventory" data-testid="tab-inventory">Inventory ({inventory.length})</TabsTrigger>
-            <TabsTrigger value="settings" className="gap-2" data-testid="tab-settings">
+            <TabsTrigger value="inventory">Inventory ({inventory.length})</TabsTrigger>
+            <TabsTrigger value="settings" className="gap-2">
               <Settings className="h-4 w-4" /> Settings
             </TabsTrigger>
           </TabsList>
@@ -2039,7 +2039,6 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                             setDocumentsDialogOpen(true);
                           }}
                           className="gap-1"
-                          data-testid={`button-documents-${sub.id}`}
                         >
                           <FileText className="h-4 w-4" /> Documents
                         </Button>
@@ -2349,7 +2348,6 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         variant="ghost"
                         size="icon"
                         onClick={() => window.open(doc.fileUrl, '_blank')}
-                        data-testid={`button-view-document-${doc.id}`}
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
@@ -2360,7 +2358,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDocumentsDialogOpen(false)} data-testid="button-close-documents">
+            <Button variant="outline" onClick={() => setDocumentsDialogOpen(false)}>
               Close
             </Button>
           </DialogFooter>
