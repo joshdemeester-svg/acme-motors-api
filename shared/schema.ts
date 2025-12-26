@@ -123,6 +123,7 @@ export const siteSettings = pgTable("site_settings", {
   footerTagline: text("footer_tagline").default("Luxury automotive consignment services for discerning collectors and enthusiasts."),
   logoUrl: text("logo_url"),
   logoWidth: text("logo_width").default("120"),
+  faviconUrl: text("favicon_url"),
   siteName: text("site_name").default("PRESTIGE"),
   contactAddress1: text("contact_address_1"),
   contactAddress2: text("contact_address_2"),
