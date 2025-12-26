@@ -12,6 +12,110 @@ const SettingsContext = createContext<SettingsContextType>({
   isLoading: true,
 });
 
+const SETTINGS_CACHE_KEY = "site-settings-cache";
+
+function applyCSSVariables(settings: Partial<SiteSettings>) {
+  if (settings.primaryColor) {
+    document.documentElement.style.setProperty("--primary-custom", settings.primaryColor);
+    const hsl = hexToHSL(settings.primaryColor);
+    if (hsl) {
+      document.documentElement.style.setProperty("--primary", `${hsl.h} ${hsl.s}% ${hsl.l}%`);
+      const foregroundL = hsl.l < 50 ? 100 : 0;
+      document.documentElement.style.setProperty("--primary-foreground", `0 0% ${foregroundL}%`);
+    }
+  }
+  if (settings.backgroundColor) {
+    const bgHsl = hexToHSL(settings.backgroundColor);
+    if (bgHsl) {
+      document.documentElement.style.setProperty("--background", `${bgHsl.h} ${bgHsl.s}% ${bgHsl.l}%`);
+      const cardL = Math.min(bgHsl.l + 5, 100);
+      document.documentElement.style.setProperty("--card", `${bgHsl.h} ${bgHsl.s}% ${cardL}%`);
+      const mutedL = Math.min(bgHsl.l + 10, 100);
+      document.documentElement.style.setProperty("--muted", `${bgHsl.h} ${bgHsl.s}% ${mutedL}%`);
+    }
+  }
+  if (settings.mainMenuColor) {
+    document.documentElement.style.setProperty("--main-menu-color", settings.mainMenuColor);
+  }
+  if (settings.mainMenuHoverColor) {
+    document.documentElement.style.setProperty("--main-menu-hover-color", settings.mainMenuHoverColor);
+  }
+  if (settings.contactButtonColor) {
+    document.documentElement.style.setProperty("--contact-button-color", settings.contactButtonColor);
+    const contactHsl = hexToHSL(settings.contactButtonColor);
+    if (contactHsl) {
+      const contactForegroundL = contactHsl.l < 50 ? 100 : 0;
+      document.documentElement.style.setProperty("--contact-button-foreground", `${contactForegroundL}%`);
+    }
+  }
+  if (settings.contactButtonHoverColor) {
+    document.documentElement.style.setProperty("--contact-button-hover-color", settings.contactButtonHoverColor);
+  }
+  if (settings.menuFontSize) {
+    document.documentElement.style.setProperty("--menu-font-size", `${settings.menuFontSize}px`);
+  }
+  if (settings.bodyFontSize) {
+    document.documentElement.style.setProperty("--body-font-size", `${settings.bodyFontSize}px`);
+  }
+  document.documentElement.style.setProperty("--menu-text-transform", settings.menuAllCaps !== false ? "uppercase" : "none");
+  if (settings.vehicleTitleColor) {
+    document.documentElement.style.setProperty("--vehicle-title-color", settings.vehicleTitleColor);
+  }
+  if (settings.vehiclePriceColor) {
+    document.documentElement.style.setProperty("--vehicle-price-color", settings.vehiclePriceColor);
+  }
+  if (settings.stepBgColor) {
+    document.documentElement.style.setProperty("--step-bg-color", settings.stepBgColor);
+  }
+  if (settings.stepNumberColor) {
+    document.documentElement.style.setProperty("--step-number-color", settings.stepNumberColor);
+  }
+  if (settings.socialIconBgColor) {
+    document.documentElement.style.setProperty("--social-icon-bg-color", settings.socialIconBgColor);
+  }
+  if (settings.socialIconHoverColor) {
+    document.documentElement.style.setProperty("--social-icon-hover-color", settings.socialIconHoverColor);
+  }
+}
+
+function loadCachedSettings(): Partial<SiteSettings> | null {
+  try {
+    const cached = localStorage.getItem(SETTINGS_CACHE_KEY);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch {}
+  return null;
+}
+
+function saveCachedSettings(settings: SiteSettings) {
+  try {
+    const colorSettings = {
+      primaryColor: settings.primaryColor,
+      backgroundColor: settings.backgroundColor,
+      mainMenuColor: settings.mainMenuColor,
+      mainMenuHoverColor: settings.mainMenuHoverColor,
+      contactButtonColor: settings.contactButtonColor,
+      contactButtonHoverColor: settings.contactButtonHoverColor,
+      menuFontSize: settings.menuFontSize,
+      bodyFontSize: settings.bodyFontSize,
+      menuAllCaps: settings.menuAllCaps,
+      vehicleTitleColor: settings.vehicleTitleColor,
+      vehiclePriceColor: settings.vehiclePriceColor,
+      stepBgColor: settings.stepBgColor,
+      stepNumberColor: settings.stepNumberColor,
+      socialIconBgColor: settings.socialIconBgColor,
+      socialIconHoverColor: settings.socialIconHoverColor,
+    };
+    localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(colorSettings));
+  } catch {}
+}
+
+const cachedSettings = loadCachedSettings();
+if (cachedSettings) {
+  applyCSSVariables(cachedSettings);
+}
+
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const { data: settings, isLoading } = useQuery<SiteSettings>({
     queryKey: ["/api/settings"],
@@ -23,68 +127,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    if (settings?.primaryColor) {
-      document.documentElement.style.setProperty("--primary-custom", settings.primaryColor);
-      const hsl = hexToHSL(settings.primaryColor);
-      if (hsl) {
-        document.documentElement.style.setProperty("--primary", `${hsl.h} ${hsl.s}% ${hsl.l}%`);
-        const foregroundL = hsl.l < 50 ? 100 : 0;
-        document.documentElement.style.setProperty("--primary-foreground", `0 0% ${foregroundL}%`);
-      }
+    if (settings) {
+      applyCSSVariables(settings);
+      saveCachedSettings(settings);
     }
-    if (settings?.backgroundColor) {
-      const bgHsl = hexToHSL(settings.backgroundColor);
-      if (bgHsl) {
-        document.documentElement.style.setProperty("--background", `${bgHsl.h} ${bgHsl.s}% ${bgHsl.l}%`);
-        const cardL = Math.min(bgHsl.l + 5, 100);
-        document.documentElement.style.setProperty("--card", `${bgHsl.h} ${bgHsl.s}% ${cardL}%`);
-        const mutedL = Math.min(bgHsl.l + 10, 100);
-        document.documentElement.style.setProperty("--muted", `${bgHsl.h} ${bgHsl.s}% ${mutedL}%`);
-      }
-    }
-    if (settings?.mainMenuColor) {
-      document.documentElement.style.setProperty("--main-menu-color", settings.mainMenuColor);
-    }
-    if (settings?.mainMenuHoverColor) {
-      document.documentElement.style.setProperty("--main-menu-hover-color", settings.mainMenuHoverColor);
-    }
-    if (settings?.contactButtonColor) {
-      document.documentElement.style.setProperty("--contact-button-color", settings.contactButtonColor);
-      const contactHsl = hexToHSL(settings.contactButtonColor);
-      if (contactHsl) {
-        const contactForegroundL = contactHsl.l < 50 ? 100 : 0;
-        document.documentElement.style.setProperty("--contact-button-foreground", `${contactForegroundL}%`);
-      }
-    }
-    if (settings?.contactButtonHoverColor) {
-      document.documentElement.style.setProperty("--contact-button-hover-color", settings.contactButtonHoverColor);
-    }
-    if (settings?.menuFontSize) {
-      document.documentElement.style.setProperty("--menu-font-size", `${settings.menuFontSize}px`);
-    }
-    if (settings?.bodyFontSize) {
-      document.documentElement.style.setProperty("--body-font-size", `${settings.bodyFontSize}px`);
-    }
-    document.documentElement.style.setProperty("--menu-text-transform", settings?.menuAllCaps !== false ? "uppercase" : "none");
-    if (settings?.vehicleTitleColor) {
-      document.documentElement.style.setProperty("--vehicle-title-color", settings.vehicleTitleColor);
-    }
-    if (settings?.vehiclePriceColor) {
-      document.documentElement.style.setProperty("--vehicle-price-color", settings.vehiclePriceColor);
-    }
-    if (settings?.stepBgColor) {
-      document.documentElement.style.setProperty("--step-bg-color", settings.stepBgColor);
-    }
-    if (settings?.stepNumberColor) {
-      document.documentElement.style.setProperty("--step-number-color", settings.stepNumberColor);
-    }
-    if (settings?.socialIconBgColor) {
-      document.documentElement.style.setProperty("--social-icon-bg-color", settings.socialIconBgColor);
-    }
-    if (settings?.socialIconHoverColor) {
-      document.documentElement.style.setProperty("--social-icon-hover-color", settings.socialIconHoverColor);
-    }
-  }, [settings?.primaryColor, settings?.backgroundColor, settings?.mainMenuColor, settings?.mainMenuHoverColor, settings?.contactButtonColor, settings?.contactButtonHoverColor, settings?.menuFontSize, settings?.bodyFontSize, settings?.menuAllCaps, settings?.vehicleTitleColor, settings?.vehiclePriceColor, settings?.stepBgColor, settings?.stepNumberColor, settings?.socialIconBgColor, settings?.socialIconHoverColor]);
+  }, [settings]);
 
   return (
     <SettingsContext.Provider value={{ settings: settings || null, isLoading }}>
