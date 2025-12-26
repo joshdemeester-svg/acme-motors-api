@@ -3382,7 +3382,7 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
 
   return (
     <div className="min-h-screen [&_input]:border-white [&_textarea]:border-white [&_select]:border-white" style={{ backgroundColor: '#47546d' }}>
-      <div className="container px-4 py-12 md:px-6">
+      <div className="container mx-auto px-4 py-12 md:px-6">
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="mb-2 font-serif text-4xl font-bold">Admin Dashboard</h1>
