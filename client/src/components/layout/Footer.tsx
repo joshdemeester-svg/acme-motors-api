@@ -122,8 +122,8 @@ export function Footer() {
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-8 text-xs text-muted-foreground md:flex-row">
           <p>&copy; {new Date().getFullYear()} {siteName} Auto Consignment. All rights reserved.</p>
           <div className="flex gap-4">
-            <a href="#" className="hover:text-foreground">Privacy Policy</a>
-            <a href="#" className="hover:text-foreground">Terms of Service</a>
+            <Link href="/privacy" className="hover:text-foreground" data-testid="link-privacy">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-foreground" data-testid="link-terms">Terms of Service</Link>
           </div>
         </div>
       </div>

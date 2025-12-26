@@ -281,6 +281,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [ghlLocationId, setGhlLocationId] = useState("");
   const [ghlConfigured, setGhlConfigured] = useState(false);
   const [showGhlToken, setShowGhlToken] = useState(false);
+  const [privacyPolicy, setPrivacyPolicy] = useState("");
+  const [termsOfService, setTermsOfService] = useState("");
 
   const { data: settings, isLoading } = useQuery<SiteSettings & { ghlConfigured?: boolean }>({
     queryKey: ["/api/settings"],
@@ -328,6 +330,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setAdminNotifyPhone2(settings.adminNotifyPhone2 || "");
       setGhlLocationId(settings.ghlLocationId || "");
       setGhlConfigured(settings.ghlConfigured || false);
+      setPrivacyPolicy(settings.privacyPolicy || "");
+      setTermsOfService(settings.termsOfService || "");
     }
   }, [settings]);
 
@@ -373,6 +377,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           adminNotifyPhone2: adminNotifyPhone2 || null,
           ...(ghlApiToken ? { ghlApiToken } : {}),
           ghlLocationId: ghlLocationId || null,
+          privacyPolicy: privacyPolicy || null,
+          termsOfService: termsOfService || null,
         }),
       });
       if (!res.ok) throw new Error("Failed to update settings");
@@ -407,7 +413,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
 
   return (
     <Tabs value={settingsTab} onValueChange={setSettingsTab} className="space-y-6">
-      <TabsList className="grid w-full grid-cols-5">
+      <TabsList className="grid w-full grid-cols-6">
         <TabsTrigger value="branding" className="flex items-center gap-2" data-testid="tab-branding">
           <Palette className="h-4 w-4" />
           <span className="hidden sm:inline">Branding</span>
@@ -423,6 +429,10 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
         <TabsTrigger value="consignment" className="flex items-center gap-2" data-testid="tab-consignment">
           <DollarSign className="h-4 w-4" />
           <span className="hidden sm:inline">Consignment</span>
+        </TabsTrigger>
+        <TabsTrigger value="legal" className="flex items-center gap-2" data-testid="tab-legal">
+          <FileText className="h-4 w-4" />
+          <span className="hidden sm:inline">Legal</span>
         </TabsTrigger>
         <TabsTrigger value="integrations" className="flex items-center gap-2" data-testid="tab-integrations">
           <Plug className="h-4 w-4" />
@@ -1355,6 +1365,72 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
               data-testid="button-save-notifications"
             >
               {updateMutation.isPending ? "Saving..." : "Save Notification Settings"}
+            </Button>
+          </CardFooter>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="legal" className="space-y-6">
+        <Card className="border-white border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" /> Privacy Policy
+            </CardTitle>
+            <CardDescription>
+              Edit the privacy policy displayed at <a href="/privacy" target="_blank" className="text-primary hover:underline">/privacy</a>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              value={privacyPolicy}
+              onChange={(e) => setPrivacyPolicy(e.target.value)}
+              placeholder="Enter your privacy policy content here. You can use markdown-style formatting:&#10;&#10;## Section Heading&#10;- Bullet point&#10;**Bold text**"
+              className="min-h-[300px] font-mono text-sm"
+              data-testid="input-privacy-policy"
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              Use ## for section headings, - for bullet points, and **text** for bold. Leave empty to use the default template.
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              onClick={() => updateMutation.mutate()} 
+              disabled={updateMutation.isPending}
+              data-testid="button-save-privacy"
+            >
+              {updateMutation.isPending ? "Saving..." : "Save Privacy Policy"}
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card className="border-white border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" /> Terms of Service
+            </CardTitle>
+            <CardDescription>
+              Edit the terms of service displayed at <a href="/terms" target="_blank" className="text-primary hover:underline">/terms</a>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              value={termsOfService}
+              onChange={(e) => setTermsOfService(e.target.value)}
+              placeholder="Enter your terms of service content here. You can use markdown-style formatting:&#10;&#10;## Section Heading&#10;- Bullet point&#10;**Bold text**"
+              className="min-h-[300px] font-mono text-sm"
+              data-testid="input-terms-of-service"
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              Use ## for section headings, - for bullet points, and **text** for bold. Leave empty to use the default template.
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              onClick={() => updateMutation.mutate()} 
+              disabled={updateMutation.isPending}
+              data-testid="button-save-terms"
+            >
+              {updateMutation.isPending ? "Saving..." : "Save Terms of Service"}
             </Button>
           </CardFooter>
         </Card>
