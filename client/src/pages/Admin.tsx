@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare, Link, Bell, Plug, FileText, Download, ExternalLink, Eye, EyeOff, Users, Shield, UserPlus } from "lucide-react";
+import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare, Link, Bell, Plug, FileText, Download, ExternalLink, Eye, EyeOff, Users, Shield, UserPlus, Calculator } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import type { ConsignmentSubmission, InventoryCar, SiteSettings, BuyerInquiry } from "@shared/schema";
@@ -259,6 +259,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [stepNumberColor, setStepNumberColor] = useState("#FFFFFF");
   const [socialIconBgColor, setSocialIconBgColor] = useState("#D4AF37");
   const [socialIconHoverColor, setSocialIconHoverColor] = useState("#B8960C");
+  const [calculatorAccentColor, setCalculatorAccentColor] = useState("#3B82F6");
+  const [calculatorBgColor, setCalculatorBgColor] = useState("#1E3A5F");
   const [footerTagline, setFooterTagline] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [logoWidth, setLogoWidth] = useState("120");
@@ -313,6 +315,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setStepNumberColor(settings.stepNumberColor || "#FFFFFF");
       setSocialIconBgColor(settings.socialIconBgColor || "#D4AF37");
       setSocialIconHoverColor(settings.socialIconHoverColor || "#B8960C");
+      setCalculatorAccentColor(settings.calculatorAccentColor || "#3B82F6");
+      setCalculatorBgColor(settings.calculatorBgColor || "#1E3A5F");
       setFooterTagline(settings.footerTagline || "");
       setLogoUrl(settings.logoUrl || "");
       setLogoWidth(settings.logoWidth || "120");
@@ -361,6 +365,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           stepNumberColor,
           socialIconBgColor,
           socialIconHoverColor,
+          calculatorAccentColor,
+          calculatorBgColor,
           footerTagline: footerTagline || null,
           logoUrl: logoUrl || null,
           logoWidth: logoWidth || "120",
@@ -1169,6 +1175,87 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
             data-testid="button-save-social-icon-colors"
           >
             {updateMutation.isPending ? "Saving..." : "Save Icon Colors"}
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {/* Payment Calculator Colors */}
+      <Card className="border-white border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calculator className="h-5 w-5" /> Payment Calculator Colors
+          </CardTitle>
+          <CardDescription>Customize the financing calculator appearance on vehicle pages</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Accent Color (Numbers)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={calculatorAccentColor}
+                  onChange={(e) => setCalculatorAccentColor(e.target.value)}
+                  className="h-10 w-14 p-1 cursor-pointer"
+                  data-testid="input-calculator-accent-color-picker"
+                />
+                <Input
+                  value={calculatorAccentColor}
+                  onChange={(e) => setCalculatorAccentColor(e.target.value)}
+                  placeholder="#3B82F6"
+                  className="flex-1"
+                  data-testid="input-calculator-accent-color-hex"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Color for the monthly payment number</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Background Color</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={calculatorBgColor}
+                  onChange={(e) => setCalculatorBgColor(e.target.value)}
+                  className="h-10 w-14 p-1 cursor-pointer"
+                  data-testid="input-calculator-bg-color-picker"
+                />
+                <Input
+                  value={calculatorBgColor}
+                  onChange={(e) => setCalculatorBgColor(e.target.value)}
+                  placeholder="#1E3A5F"
+                  className="flex-1"
+                  data-testid="input-calculator-bg-color-hex"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Background color for the payment display</p>
+            </div>
+          </div>
+
+          {/* Preview */}
+          <div className="mt-4 p-4 rounded-lg border border-border">
+            <p className="text-sm text-muted-foreground mb-2">Preview:</p>
+            <div 
+              className="text-center p-4 rounded-lg"
+              style={{ backgroundColor: calculatorBgColor }}
+            >
+              <p className="text-sm text-muted-foreground">Estimated Monthly Payment</p>
+              <p 
+                className="text-3xl font-bold"
+                style={{ color: calculatorAccentColor }}
+              >
+                $1,250/mo
+              </p>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button 
+            onClick={() => updateMutation.mutate()} 
+            disabled={updateMutation.isPending}
+            data-testid="button-save-calculator-colors"
+          >
+            {updateMutation.isPending ? "Saving..." : "Save Calculator Colors"}
           </Button>
         </CardFooter>
       </Card>
