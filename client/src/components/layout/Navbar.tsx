@@ -27,11 +27,11 @@ export function Navbar() {
   const siteName = settings?.siteName || "PRESTIGE";
 
   const links = [
-    { href: "/", label: "Home" },
-    { href: "/inventory", label: "Inventory" },
-    { href: "/consign", label: "Consign Your Car" },
-    { href: "/trade-in", label: "Trade-In" },
-    { href: "/appointments", label: "Book Appointment" },
+    { href: "/", label: settings?.menuLabelHome || "Home" },
+    { href: "/inventory", label: settings?.menuLabelInventory || "Inventory" },
+    { href: "/consign", label: settings?.menuLabelConsign || "Consign" },
+    { href: "/trade-in", label: settings?.menuLabelTradeIn || "Trade-In" },
+    { href: "/appointments", label: settings?.menuLabelAppointments || "Book Appointment" },
   ];
 
   return (

@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare, Link, Bell, Plug, FileText, Download, ExternalLink, Eye, EyeOff, Users, Shield, UserPlus, Calculator, BarChart3, ChevronsUpDown, Loader2 } from "lucide-react";
+import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare, Link, Bell, Plug, FileText, Download, ExternalLink, Eye, EyeOff, Users, Shield, UserPlus, Calculator, BarChart3, ChevronsUpDown, Loader2, Menu } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -316,6 +316,11 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [privacyPolicy, setPrivacyPolicy] = useState("");
   const [termsOfService, setTermsOfService] = useState("");
   const [sellerConfirmationSms, setSellerConfirmationSms] = useState("Thank you for submitting your {year} {make} {model} to {siteName}! We'll review your submission and contact you within 24 hours.");
+  const [menuLabelHome, setMenuLabelHome] = useState("Home");
+  const [menuLabelInventory, setMenuLabelInventory] = useState("Inventory");
+  const [menuLabelConsign, setMenuLabelConsign] = useState("Consign");
+  const [menuLabelTradeIn, setMenuLabelTradeIn] = useState("Trade-In");
+  const [menuLabelAppointments, setMenuLabelAppointments] = useState("Book Appointment");
 
   const { data: settings, isLoading } = useQuery<SiteSettings & { ghlConfigured?: boolean }>({
     queryKey: ["/api/settings"],
@@ -370,6 +375,11 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setPrivacyPolicy(settings.privacyPolicy || "");
       setTermsOfService(settings.termsOfService || "");
       setSellerConfirmationSms(settings.sellerConfirmationSms || "Thank you for submitting your {year} {make} {model} to {siteName}! We'll review your submission and contact you within 24 hours.");
+      setMenuLabelHome(settings.menuLabelHome || "Home");
+      setMenuLabelInventory(settings.menuLabelInventory || "Inventory");
+      setMenuLabelConsign(settings.menuLabelConsign || "Consign");
+      setMenuLabelTradeIn(settings.menuLabelTradeIn || "Trade-In");
+      setMenuLabelAppointments(settings.menuLabelAppointments || "Book Appointment");
     }
   }, [settings]);
 
@@ -422,6 +432,11 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           privacyPolicy: privacyPolicy || null,
           termsOfService: termsOfService || null,
           sellerConfirmationSms: sellerConfirmationSms || null,
+          menuLabelHome: menuLabelHome || "Home",
+          menuLabelInventory: menuLabelInventory || "Inventory",
+          menuLabelConsign: menuLabelConsign || "Consign",
+          menuLabelTradeIn: menuLabelTradeIn || "Trade-In",
+          menuLabelAppointments: menuLabelAppointments || "Book Appointment",
         }),
       });
       if (!res.ok) throw new Error("Failed to update settings");
@@ -456,10 +471,14 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
 
   return (
     <Tabs value={settingsTab} onValueChange={setSettingsTab} className="space-y-6">
-      <TabsList className="grid w-full grid-cols-6">
+      <TabsList className="grid w-full grid-cols-7">
         <TabsTrigger value="branding" className="flex items-center gap-2" data-testid="tab-branding">
           <Palette className="h-4 w-4" />
           <span className="hidden sm:inline">Branding</span>
+        </TabsTrigger>
+        <TabsTrigger value="menus" className="flex items-center gap-2" data-testid="tab-menus">
+          <Menu className="h-4 w-4" />
+          <span className="hidden sm:inline">Menus</span>
         </TabsTrigger>
         <TabsTrigger value="contact" className="flex items-center gap-2" data-testid="tab-contact">
           <Phone className="h-4 w-4" />
@@ -1062,6 +1081,83 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           </Button>
         </CardFooter>
       </Card>
+      </TabsContent>
+
+      <TabsContent value="menus" className="space-y-6">
+        <Card className="border-white border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Menu className="h-5 w-5" /> Navigation Menu Labels
+            </CardTitle>
+            <CardDescription>Customize the text displayed in your site's navigation menu</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="menuLabelHome">Home Page</Label>
+                <Input
+                  id="menuLabelHome"
+                  value={menuLabelHome}
+                  onChange={(e) => setMenuLabelHome(e.target.value)}
+                  placeholder="Home"
+                  data-testid="input-menu-label-home"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="menuLabelInventory">Inventory Page</Label>
+                <Input
+                  id="menuLabelInventory"
+                  value={menuLabelInventory}
+                  onChange={(e) => setMenuLabelInventory(e.target.value)}
+                  placeholder="Inventory"
+                  data-testid="input-menu-label-inventory"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="menuLabelConsign">Consignment Page</Label>
+                <Input
+                  id="menuLabelConsign"
+                  value={menuLabelConsign}
+                  onChange={(e) => setMenuLabelConsign(e.target.value)}
+                  placeholder="Consign"
+                  data-testid="input-menu-label-consign"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="menuLabelTradeIn">Trade-In Page</Label>
+                <Input
+                  id="menuLabelTradeIn"
+                  value={menuLabelTradeIn}
+                  onChange={(e) => setMenuLabelTradeIn(e.target.value)}
+                  placeholder="Trade-In"
+                  data-testid="input-menu-label-trade-in"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="menuLabelAppointments">Appointments Page</Label>
+                <Input
+                  id="menuLabelAppointments"
+                  value={menuLabelAppointments}
+                  onChange={(e) => setMenuLabelAppointments(e.target.value)}
+                  placeholder="Book Appointment"
+                  data-testid="input-menu-label-appointments"
+                />
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              These labels appear in the navigation bar at the top of your website.
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              onClick={() => updateMutation.mutate()} 
+              disabled={updateMutation.isPending}
+              data-testid="button-save-menus"
+            >
+              {updateMutation.isPending ? "Saving..." : "Save Menu Labels"}
+            </Button>
+          </CardFooter>
+        </Card>
       </TabsContent>
 
       <TabsContent value="contact" className="space-y-6">
