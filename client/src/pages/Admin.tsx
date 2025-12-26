@@ -280,6 +280,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [ghlApiToken, setGhlApiToken] = useState("");
   const [ghlLocationId, setGhlLocationId] = useState("");
   const [ghlConfigured, setGhlConfigured] = useState(false);
+  const [ghlTestStatus, setGhlTestStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
+  const [ghlTestMessage, setGhlTestMessage] = useState("");
   const [showGhlToken, setShowGhlToken] = useState(false);
   const [privacyPolicy, setPrivacyPolicy] = useState("");
   const [termsOfService, setTermsOfService] = useState("");
@@ -1491,15 +1493,26 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           <CardContent className="space-y-4">
             <div className="rounded-lg border p-4 bg-muted/50">
               <div className="flex items-center gap-3 mb-3">
-                <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center">
-                  <Plug className="h-5 w-5 text-orange-500" />
+                <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                  ghlTestStatus === "success" ? "bg-green-500/10" : 
+                  ghlConfigured ? "bg-green-500/10" : "bg-orange-500/10"
+                }`}>
+                  <Plug className={`h-5 w-5 ${
+                    ghlTestStatus === "success" ? "text-green-500" : 
+                    ghlConfigured ? "text-green-500" : "text-orange-500"
+                  }`} />
                 </div>
                 <div>
                   <h4 className="font-medium">GoHighLevel (GHL)</h4>
                   <p className="text-sm text-muted-foreground">CRM & Marketing Automation</p>
                 </div>
-                {ghlConfigured ? (
-                  <Badge variant="default" className="gap-1 ml-auto">
+                {ghlTestStatus === "success" ? (
+                  <Badge className="gap-1 ml-auto bg-green-600 hover:bg-green-700">
+                    <Check className="h-3 w-3" />
+                    Verified
+                  </Badge>
+                ) : ghlConfigured ? (
+                  <Badge className="gap-1 ml-auto bg-green-600 hover:bg-green-700">
                     <Check className="h-3 w-3" />
                     Connected
                   </Badge>
@@ -1510,6 +1523,11 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
                   </Badge>
                 )}
               </div>
+              {ghlTestMessage && (
+                <p className={`text-sm mt-2 ${ghlTestStatus === "success" ? "text-green-600" : "text-red-500"}`}>
+                  {ghlTestMessage}
+                </p>
+              )}
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
@@ -1549,13 +1567,48 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
               </div>
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex gap-2">
             <Button 
               onClick={() => updateMutation.mutate()} 
               disabled={updateMutation.isPending}
               data-testid="button-save-ghl"
             >
               {updateMutation.isPending ? "Saving..." : "Save GHL Settings"}
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={async () => {
+                setGhlTestStatus("testing");
+                setGhlTestMessage("");
+                try {
+                  const res = await fetch("/api/settings/test-ghl", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      apiToken: ghlApiToken || undefined,
+                      locationId: ghlLocationId || undefined
+                    })
+                  });
+                  const data = await res.json();
+                  if (res.ok && data.success) {
+                    setGhlTestStatus("success");
+                    setGhlTestMessage(data.message || "Connection verified!");
+                    toast({ title: "Connection Successful", description: data.message });
+                  } else {
+                    setGhlTestStatus("error");
+                    setGhlTestMessage(data.error || "Connection failed");
+                    toast({ title: "Connection Failed", description: data.error, variant: "destructive" });
+                  }
+                } catch (error) {
+                  setGhlTestStatus("error");
+                  setGhlTestMessage("Failed to test connection");
+                  toast({ title: "Error", description: "Failed to test connection", variant: "destructive" });
+                }
+              }}
+              disabled={ghlTestStatus === "testing"}
+              data-testid="button-test-ghl"
+            >
+              {ghlTestStatus === "testing" ? "Testing..." : "Test Connection"}
             </Button>
           </CardFooter>
         </Card>
