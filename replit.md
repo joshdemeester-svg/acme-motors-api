@@ -47,6 +47,10 @@ Key API endpoints:
 - `POST /api/auth/setup` - Create initial admin account
 - `GET /api/settings` - Get site settings (public)
 - `PATCH /api/settings` - Update site settings (admin only)
+- `POST /api/inquiries` - Submit buyer inquiry with pre-qualification data
+- `GET /api/inquiries` - List all buyer inquiries (admin)
+- `PATCH /api/inquiries/:id/status` - Update inquiry status (admin)
+- `GET /api/vehicles/:id/inquiries` - Get inquiries for a specific vehicle
 
 ### Authentication
 
@@ -79,6 +83,7 @@ PostgreSQL database with Drizzle ORM. Core tables:
 - `users` - Admin authentication (username, hashed password, isAdmin flag)
 - `consignment_submissions` - Vehicle submission data with status tracking
 - `inventory_cars` - Approved vehicles listed for sale
+- `buyer_inquiries` - Buyer interest tracking with pre-qualification data
 - `site_settings` - Customizable site branding and contact info:
   - Branding: primary color, logo URL, site name
   - Contact: address lines, phone, email
