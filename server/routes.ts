@@ -1323,37 +1323,47 @@ ${allPages.map(page => `  <url>
   app.get("/api/settings", async (req, res) => {
     try {
       const settings = await storage.getSiteSettings();
-      res.json(settings || { 
-        primaryColor: "#D4AF37", 
-        backgroundColor: "#000000",
-        mainMenuColor: "#D4AF37",
-        mainMenuHoverColor: "#B8960C",
-        contactButtonColor: "#D4AF37",
-        contactButtonHoverColor: "#B8960C",
-        menuFontSize: "14",
-        bodyFontSize: "16",
-        menuAllCaps: true,
-        vehicleTitleColor: "#FFFFFF",
-        vehiclePriceColor: "#FFFFFF",
-        stepBgColor: "#DC2626",
-        stepNumberColor: "#FFFFFF",
-        socialIconBgColor: "#D4AF37",
-        socialIconHoverColor: "#B8960C",
-        footerTagline: "Luxury automotive consignment services for discerning collectors and enthusiasts.",
-        siteName: "PRESTIGE", 
-        logoUrl: null,
-        logoWidth: "120",
-        faviconUrl: null,
-        contactAddress1: null,
-        contactAddress2: null,
-        contactPhone: null,
-        contactEmail: null,
-        facebookUrl: null,
-        instagramUrl: null,
-        twitterUrl: null,
-        youtubeUrl: null,
-        tiktokUrl: null
-      });
+      if (settings) {
+        const { ghlApiToken, ...safeSettings } = settings;
+        res.json({
+          ...safeSettings,
+          ghlConfigured: !!(ghlApiToken && settings.ghlLocationId)
+        });
+      } else {
+        res.json({ 
+          primaryColor: "#D4AF37", 
+          backgroundColor: "#000000",
+          mainMenuColor: "#D4AF37",
+          mainMenuHoverColor: "#B8960C",
+          contactButtonColor: "#D4AF37",
+          contactButtonHoverColor: "#B8960C",
+          menuFontSize: "14",
+          bodyFontSize: "16",
+          menuAllCaps: true,
+          vehicleTitleColor: "#FFFFFF",
+          vehiclePriceColor: "#FFFFFF",
+          stepBgColor: "#DC2626",
+          stepNumberColor: "#FFFFFF",
+          socialIconBgColor: "#D4AF37",
+          socialIconHoverColor: "#B8960C",
+          footerTagline: "Luxury automotive consignment services for discerning collectors and enthusiasts.",
+          siteName: "PRESTIGE", 
+          logoUrl: null,
+          logoWidth: "120",
+          faviconUrl: null,
+          contactAddress1: null,
+          contactAddress2: null,
+          contactPhone: null,
+          contactEmail: null,
+          facebookUrl: null,
+          instagramUrl: null,
+          twitterUrl: null,
+          youtubeUrl: null,
+          tiktokUrl: null,
+          ghlConfigured: false,
+          ghlLocationId: null
+        });
+      }
     } catch (error) {
       console.error("Error fetching settings:", error);
       res.status(500).json({ error: "Failed to fetch settings" });
@@ -1393,9 +1403,12 @@ ${allPages.map(page => `  <url>
         youtubeUrl,
         tiktokUrl,
         adminNotifyPhone1,
-        adminNotifyPhone2
+        adminNotifyPhone2,
+        ghlApiToken,
+        ghlLocationId
       } = req.body;
-      const settings = await storage.updateSiteSettings({ 
+      
+      const updateData: Record<string, any> = {
         primaryColor, 
         backgroundColor,
         mainMenuColor,
@@ -1426,9 +1439,20 @@ ${allPages.map(page => `  <url>
         youtubeUrl,
         tiktokUrl,
         adminNotifyPhone1,
-        adminNotifyPhone2
+        adminNotifyPhone2,
+        ghlLocationId
+      };
+      
+      if (ghlApiToken && ghlApiToken.trim().length > 0) {
+        updateData.ghlApiToken = ghlApiToken;
+      }
+      
+      const settings = await storage.updateSiteSettings(updateData);
+      const { ghlApiToken: _token, ...safeSettings } = settings;
+      res.json({
+        ...safeSettings,
+        ghlConfigured: !!(settings.ghlApiToken && settings.ghlLocationId)
       });
-      res.json(settings);
     } catch (error) {
       console.error("Error updating settings:", error);
       res.status(500).json({ error: "Failed to update settings" });

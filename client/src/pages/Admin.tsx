@@ -279,9 +279,10 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [adminNotifyPhone2, setAdminNotifyPhone2] = useState("");
   const [ghlApiToken, setGhlApiToken] = useState("");
   const [ghlLocationId, setGhlLocationId] = useState("");
+  const [ghlConfigured, setGhlConfigured] = useState(false);
   const [showGhlToken, setShowGhlToken] = useState(false);
 
-  const { data: settings, isLoading } = useQuery<SiteSettings>({
+  const { data: settings, isLoading } = useQuery<SiteSettings & { ghlConfigured?: boolean }>({
     queryKey: ["/api/settings"],
     queryFn: async () => {
       const res = await fetch("/api/settings");
@@ -325,8 +326,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setAvgDaysToSell(String(settings.avgDaysToSell || 45));
       setAdminNotifyPhone1(settings.adminNotifyPhone1 || "");
       setAdminNotifyPhone2(settings.adminNotifyPhone2 || "");
-      setGhlApiToken(settings.ghlApiToken || "");
       setGhlLocationId(settings.ghlLocationId || "");
+      setGhlConfigured(settings.ghlConfigured || false);
     }
   }, [settings]);
 
@@ -370,7 +371,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           avgDaysToSell: parseInt(avgDaysToSell) || 45,
           adminNotifyPhone1: adminNotifyPhone1 || null,
           adminNotifyPhone2: adminNotifyPhone2 || null,
-          ghlApiToken: ghlApiToken || null,
+          ...(ghlApiToken ? { ghlApiToken } : {}),
           ghlLocationId: ghlLocationId || null,
         }),
       });
@@ -1377,7 +1378,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
                   <h4 className="font-medium">GoHighLevel (GHL)</h4>
                   <p className="text-sm text-muted-foreground">CRM & Marketing Automation</p>
                 </div>
-                {ghlApiToken && ghlLocationId ? (
+                {ghlConfigured ? (
                   <Badge variant="default" className="gap-1 ml-auto">
                     <Check className="h-3 w-3" />
                     Connected
@@ -1392,7 +1393,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="ghlApiToken">API Token</Label>
+                <Label htmlFor="ghlApiToken">API Token {ghlConfigured && !ghlApiToken && <span className="text-green-600 text-xs">(configured)</span>}</Label>
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
                     <Input
@@ -1400,7 +1401,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
                       type={showGhlToken ? "text" : "password"}
                       value={ghlApiToken}
                       onChange={(e) => setGhlApiToken(e.target.value)}
-                      placeholder="Enter your GoHighLevel API token"
+                      placeholder={ghlConfigured ? "Enter new token to update" : "Enter your GoHighLevel API token"}
                       className="pr-10"
                       data-testid="input-ghl-api-token"
                     />
