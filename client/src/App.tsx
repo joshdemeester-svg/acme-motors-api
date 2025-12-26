@@ -12,6 +12,8 @@ import VehicleDetails from "@/pages/VehicleDetails";
 import Consign from "@/pages/Consign";
 import Admin from "@/pages/Admin";
 import SellerPortal from "@/pages/SellerPortal";
+import Privacy from "@/pages/Privacy";
+import Terms from "@/pages/Terms";
 
 function FaviconLoader() {
   useFavicon();
@@ -27,6 +29,8 @@ function Router() {
       <Route path="/consign" component={Consign} />
       <Route path="/admin" component={Admin} />
       <Route path="/seller-portal" component={SellerPortal} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/terms" component={Terms} />
       <Route component={NotFound} />
     </Switch>
   );
