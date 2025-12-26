@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare, Link, Bell, Plug, FileText, Download, ExternalLink, Eye, EyeOff, Users, Shield, UserPlus } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import type { ConsignmentSubmission, InventoryCar, SiteSettings } from "@shared/schema";
+import type { ConsignmentSubmission, InventoryCar, SiteSettings, BuyerInquiry } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { useUpload } from "@/hooks/use-upload";
@@ -1658,6 +1658,183 @@ function PasswordRequirement({ met, text }: { met: boolean; text: string }) {
   );
 }
 
+const interestLabels: Record<string, string> = {
+  test_drive: "Schedule Test Drive",
+  financing: "Financing Info",
+  make_offer: "Make an Offer",
+  more_photos: "More Photos/Video",
+  question: "Question",
+};
+
+const timelineLabels: Record<string, string> = {
+  this_week: "This Week",
+  this_month: "This Month",
+  just_browsing: "Browsing",
+};
+
+const financingLabels: Record<string, string> = {
+  cash: "Cash",
+  finance: "Finance",
+  undecided: "Undecided",
+};
+
+const contactLabels: Record<string, string> = {
+  call: "Call",
+  text: "Text",
+  email: "Email",
+};
+
+const timeLabels: Record<string, string> = {
+  morning: "Morning",
+  afternoon: "Afternoon",
+  evening: "Evening",
+};
+
+const inquiryStatusLabels: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
+  new: { label: "New", variant: "default" },
+  contacted: { label: "Contacted", variant: "secondary" },
+  qualified: { label: "Qualified", variant: "outline" },
+  closed: { label: "Closed", variant: "destructive" },
+};
+
+function InquiriesPanel({ inventory }: { inventory: InventoryCar[] }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: inquiries = [], isLoading } = useQuery<BuyerInquiry[]>({
+    queryKey: ["/api/inquiries"],
+    queryFn: async () => {
+      const res = await fetch("/api/inquiries");
+      if (!res.ok) throw new Error("Failed to fetch inquiries");
+      return res.json();
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const res = await fetch(`/api/inquiries/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Failed to update status");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inquiries"] });
+      toast({ title: "Status Updated", description: "Inquiry status has been updated." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const getVehicleInfo = (carId: string) => {
+    const car = inventory.find(c => c.id === carId);
+    return car ? `${car.year} ${car.make} ${car.model}` : "Unknown Vehicle";
+  };
+
+  const newInquiries = inquiries.filter(i => i.status === "new");
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Buyer Inquiries</h2>
+          <p className="text-muted-foreground">Track and manage leads from potential buyers.</p>
+        </div>
+        {newInquiries.length > 0 && (
+          <Badge variant="default" className="text-sm">{newInquiries.length} New</Badge>
+        )}
+      </div>
+
+      {isLoading ? (
+        <p>Loading inquiries...</p>
+      ) : inquiries.length === 0 ? (
+        <Card className="border-white border">
+          <CardContent className="py-12 text-center">
+            <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">No buyer inquiries yet.</p>
+            <p className="text-sm text-muted-foreground mt-1">Inquiries will appear here when potential buyers contact you about vehicles.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {inquiries.map((inquiry) => (
+            <Card key={inquiry.id} className="border-white border">
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Car className="h-4 w-4" />
+                      {getVehicleInfo(inquiry.inventoryCarId)}
+                    </CardTitle>
+                    <CardDescription>
+                      {inquiry.createdAt ? new Date(inquiry.createdAt).toLocaleDateString() + " at " + new Date(inquiry.createdAt).toLocaleTimeString() : "Unknown date"}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={inquiryStatusLabels[inquiry.status]?.variant || "secondary"}>
+                      {inquiryStatusLabels[inquiry.status]?.label || inquiry.status}
+                    </Badge>
+                    <select
+                      value={inquiry.status}
+                      onChange={(e) => updateStatusMutation.mutate({ id: inquiry.id, status: e.target.value })}
+                      className="text-xs border rounded px-2 py-1 bg-background"
+                      data-testid={`select-inquiry-status-${inquiry.id}`}
+                    >
+                      <option value="new">New</option>
+                      <option value="contacted">Contacted</option>
+                      <option value="qualified">Qualified</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">Contact Information</h4>
+                    <div className="text-sm space-y-1">
+                      <p><span className="text-muted-foreground">Name:</span> {inquiry.buyerName}</p>
+                      <p><span className="text-muted-foreground">Phone:</span> <a href={`tel:${inquiry.buyerPhone}`} className="text-primary hover:underline">{inquiry.buyerPhone}</a></p>
+                      <p><span className="text-muted-foreground">Email:</span> <a href={`mailto:${inquiry.buyerEmail}`} className="text-primary hover:underline">{inquiry.buyerEmail}</a></p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">Interest Details</h4>
+                    <div className="text-sm space-y-1">
+                      <p><span className="text-muted-foreground">Interest:</span> <Badge variant="outline" className="ml-1">{interestLabels[inquiry.interestType] || inquiry.interestType}</Badge></p>
+                      {inquiry.buyTimeline && <p><span className="text-muted-foreground">Timeline:</span> {timelineLabels[inquiry.buyTimeline] || inquiry.buyTimeline}</p>}
+                      {inquiry.hasTradeIn !== null && <p><span className="text-muted-foreground">Trade-In:</span> {inquiry.hasTradeIn ? "Yes" : "No"}</p>}
+                      {inquiry.financingPreference && <p><span className="text-muted-foreground">Financing:</span> {financingLabels[inquiry.financingPreference] || inquiry.financingPreference}</p>}
+                    </div>
+                  </div>
+                </div>
+                {(inquiry.contactPreference || inquiry.bestTimeToContact) && (
+                  <div className="border-t pt-3">
+                    <h4 className="font-medium text-sm mb-2">Contact Preferences</h4>
+                    <div className="flex gap-4 text-sm">
+                      {inquiry.contactPreference && <p><span className="text-muted-foreground">Preferred:</span> {contactLabels[inquiry.contactPreference] || inquiry.contactPreference}</p>}
+                      {inquiry.bestTimeToContact && <p><span className="text-muted-foreground">Best Time:</span> {timeLabels[inquiry.bestTimeToContact] || inquiry.bestTimeToContact}</p>}
+                    </div>
+                  </div>
+                )}
+                {inquiry.message && (
+                  <div className="border-t pt-3">
+                    <h4 className="font-medium text-sm mb-2">Message</h4>
+                    <p className="text-sm bg-muted/50 p-3 rounded-md">{inquiry.message}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 type AdminUser = {
   id: string;
   username: string;
@@ -2526,6 +2703,10 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                 <Badge variant="secondary" className="ml-1">{pendingSubmissions.length}</Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="inquiries" className="gap-2" data-testid="tab-inquiries">
+              <MessageSquare className="h-4 w-4" />
+              Inquiries
+            </TabsTrigger>
             <TabsTrigger value="inventory">Inventory ({inventory.length})</TabsTrigger>
             <TabsTrigger value="settings" className="gap-2">
               <Settings className="h-4 w-4" /> Settings
@@ -2666,6 +2847,10 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="inquiries" className="space-y-4">
+            <InquiriesPanel inventory={inventory} />
           </TabsContent>
 
           <TabsContent value="inventory" className="space-y-4">
