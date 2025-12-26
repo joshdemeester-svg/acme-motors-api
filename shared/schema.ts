@@ -139,6 +139,8 @@ export const siteSettings = pgTable("site_settings", {
   avgDaysToSell: integer("avg_days_to_sell").default(45),
   adminNotifyPhone1: text("admin_notify_phone_1"),
   adminNotifyPhone2: text("admin_notify_phone_2"),
+  ghlApiToken: text("ghl_api_token"),
+  ghlLocationId: text("ghl_location_id"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare, Link, Bell, Plug, FileText, Download, ExternalLink } from "lucide-react";
+import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare, Link, Bell, Plug, FileText, Download, ExternalLink, Eye, EyeOff } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import type { ConsignmentSubmission, InventoryCar, SiteSettings } from "@shared/schema";
@@ -277,6 +277,9 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [avgDaysToSell, setAvgDaysToSell] = useState("45");
   const [adminNotifyPhone1, setAdminNotifyPhone1] = useState("");
   const [adminNotifyPhone2, setAdminNotifyPhone2] = useState("");
+  const [ghlApiToken, setGhlApiToken] = useState("");
+  const [ghlLocationId, setGhlLocationId] = useState("");
+  const [showGhlToken, setShowGhlToken] = useState(false);
 
   const { data: settings, isLoading } = useQuery<SiteSettings>({
     queryKey: ["/api/settings"],
@@ -322,6 +325,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setAvgDaysToSell(String(settings.avgDaysToSell || 45));
       setAdminNotifyPhone1(settings.adminNotifyPhone1 || "");
       setAdminNotifyPhone2(settings.adminNotifyPhone2 || "");
+      setGhlApiToken(settings.ghlApiToken || "");
+      setGhlLocationId(settings.ghlLocationId || "");
     }
   }, [settings]);
 
@@ -365,6 +370,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           avgDaysToSell: parseInt(avgDaysToSell) || 45,
           adminNotifyPhone1: adminNotifyPhone1 || null,
           adminNotifyPhone2: adminNotifyPhone2 || null,
+          ghlApiToken: ghlApiToken || null,
+          ghlLocationId: ghlLocationId || null,
         }),
       });
       if (!res.ok) throw new Error("Failed to update settings");
@@ -1353,7 +1360,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       </TabsContent>
 
       <TabsContent value="integrations" className="space-y-6">
-        <Card>
+        <Card className="border-white border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plug className="h-5 w-5" /> GoHighLevel Integration
@@ -1370,33 +1377,66 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
                   <h4 className="font-medium">GoHighLevel (GHL)</h4>
                   <p className="text-sm text-muted-foreground">CRM & Marketing Automation</p>
                 </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="gap-1">
-                    <Clock className="h-3 w-3" />
-                    Configuration Required
+                {ghlApiToken && ghlLocationId ? (
+                  <Badge variant="default" className="gap-1 ml-auto">
+                    <Check className="h-3 w-3" />
+                    Connected
                   </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  To enable GoHighLevel integration, you need to configure the following secrets in the Replit Secrets panel:
-                </p>
-                <ul className="text-sm space-y-1 list-disc list-inside text-muted-foreground">
-                  <li><code className="bg-muted px-1.5 py-0.5 rounded text-xs">GHL_API_TOKEN</code> - Your GoHighLevel API token</li>
-                  <li><code className="bg-muted px-1.5 py-0.5 rounded text-xs">GHL_LOCATION_ID</code> - Your GoHighLevel location ID</li>
-                </ul>
+                ) : (
+                  <Badge variant="outline" className="gap-1 ml-auto">
+                    <Clock className="h-3 w-3" />
+                    Not Configured
+                  </Badge>
+                )}
               </div>
             </div>
-            <div className="rounded-lg border p-4">
-              <h4 className="font-medium mb-2">How to Configure Secrets</h4>
-              <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
-                <li>Open the Replit sidebar and click on the <strong>"Secrets"</strong> tool (lock icon)</li>
-                <li>Click "New Secret" and add <code className="bg-muted px-1.5 py-0.5 rounded text-xs">GHL_API_TOKEN</code></li>
-                <li>Add another secret for <code className="bg-muted px-1.5 py-0.5 rounded text-xs">GHL_LOCATION_ID</code></li>
-                <li>Restart the application to apply the changes</li>
-              </ol>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="ghlApiToken">API Token</Label>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      id="ghlApiToken"
+                      type={showGhlToken ? "text" : "password"}
+                      value={ghlApiToken}
+                      onChange={(e) => setGhlApiToken(e.target.value)}
+                      placeholder="Enter your GoHighLevel API token"
+                      className="pr-10"
+                      data-testid="input-ghl-api-token"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowGhlToken(!showGhlToken)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showGhlToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">Find this in your GHL Settings → Business Profile → API Keys</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ghlLocationId">Location ID</Label>
+                <Input
+                  id="ghlLocationId"
+                  value={ghlLocationId}
+                  onChange={(e) => setGhlLocationId(e.target.value)}
+                  placeholder="Enter your GoHighLevel location ID"
+                  data-testid="input-ghl-location-id"
+                />
+                <p className="text-xs text-muted-foreground">Find this in your GHL Settings → Business Profile</p>
+              </div>
             </div>
           </CardContent>
+          <CardFooter>
+            <Button 
+              onClick={() => updateMutation.mutate()} 
+              disabled={updateMutation.isPending}
+              data-testid="button-save-ghl"
+            >
+              {updateMutation.isPending ? "Saving..." : "Save GHL Settings"}
+            </Button>
+          </CardFooter>
         </Card>
         <Card>
           <CardHeader>
