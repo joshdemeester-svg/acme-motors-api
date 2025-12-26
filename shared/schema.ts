@@ -215,3 +215,36 @@ export const insertSellerDocumentSchema = createInsertSchema(sellerDocuments).om
 
 export type InsertSellerDocument = z.infer<typeof insertSellerDocumentSchema>;
 export type SellerDocument = typeof sellerDocuments.$inferSelect;
+
+export const buyerInquiries = pgTable("buyer_inquiries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  inventoryCarId: varchar("inventory_car_id").notNull().references(() => inventoryCars.id),
+  
+  buyerName: text("buyer_name").notNull(),
+  buyerPhone: text("buyer_phone").notNull(),
+  buyerEmail: text("buyer_email").notNull(),
+  message: text("message"),
+  
+  interestType: text("interest_type").notNull(),
+  
+  buyTimeline: text("buy_timeline"),
+  hasTradeIn: boolean("has_trade_in"),
+  financingPreference: text("financing_preference"),
+  
+  contactPreference: text("contact_preference"),
+  bestTimeToContact: text("best_time_to_contact"),
+  
+  status: text("status").notNull().default("new"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertBuyerInquirySchema = createInsertSchema(buyerInquiries).omit({
+  id: true,
+  createdAt: true,
+  status: true,
+});
+
+export type InsertBuyerInquiry = z.infer<typeof insertBuyerInquirySchema>;
+export type BuyerInquiry = typeof buyerInquiries.$inferSelect;

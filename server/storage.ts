@@ -7,6 +7,7 @@ import {
   statusHistory,
   sellerNotes,
   sellerDocuments,
+  buyerInquiries,
   type User, 
   type InsertUser,
   type ConsignmentSubmission,
@@ -20,7 +21,9 @@ import {
   type SellerNote,
   type InsertSellerNote,
   type SellerDocument,
-  type InsertSellerDocument
+  type InsertSellerDocument,
+  type BuyerInquiry,
+  type InsertBuyerInquiry
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt } from "drizzle-orm";
@@ -76,6 +79,12 @@ export interface IStorage {
   createSellerDocument(data: InsertSellerDocument): Promise<SellerDocument>;
   getSellerDocuments(consignmentId: string): Promise<SellerDocument[]>;
   updateDocumentStatus(id: string, status: string): Promise<SellerDocument | undefined>;
+  
+  createBuyerInquiry(data: InsertBuyerInquiry): Promise<BuyerInquiry>;
+  getAllBuyerInquiries(): Promise<BuyerInquiry[]>;
+  getBuyerInquiry(id: string): Promise<BuyerInquiry | undefined>;
+  updateBuyerInquiryStatus(id: string, status: string): Promise<BuyerInquiry | undefined>;
+  getInquiriesForCar(carId: string): Promise<BuyerInquiry[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -346,6 +355,37 @@ export class DatabaseStorage implements IStorage {
       .where(eq(sellerDocuments.id, id))
       .returning();
     return updated || undefined;
+  }
+
+  async createBuyerInquiry(data: InsertBuyerInquiry): Promise<BuyerInquiry> {
+    const [inquiry] = await db.insert(buyerInquiries).values(data).returning();
+    return inquiry;
+  }
+
+  async getAllBuyerInquiries(): Promise<BuyerInquiry[]> {
+    return db.select().from(buyerInquiries).orderBy(desc(buyerInquiries.createdAt));
+  }
+
+  async getBuyerInquiry(id: string): Promise<BuyerInquiry | undefined> {
+    const [inquiry] = await db.select().from(buyerInquiries).where(eq(buyerInquiries.id, id));
+    return inquiry || undefined;
+  }
+
+  async updateBuyerInquiryStatus(id: string, status: string): Promise<BuyerInquiry | undefined> {
+    const [updated] = await db
+      .update(buyerInquiries)
+      .set({ status })
+      .where(eq(buyerInquiries.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async getInquiriesForCar(carId: string): Promise<BuyerInquiry[]> {
+    return db
+      .select()
+      .from(buyerInquiries)
+      .where(eq(buyerInquiries.inventoryCarId, carId))
+      .orderBy(desc(buyerInquiries.createdAt));
   }
 }
 
