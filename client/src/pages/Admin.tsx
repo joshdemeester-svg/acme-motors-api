@@ -181,6 +181,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [commissionRate, setCommissionRate] = useState("10");
   const [avgDaysToFirstInquiry, setAvgDaysToFirstInquiry] = useState("5");
   const [avgDaysToSell, setAvgDaysToSell] = useState("45");
+  const [adminNotifyPhone1, setAdminNotifyPhone1] = useState("");
+  const [adminNotifyPhone2, setAdminNotifyPhone2] = useState("");
 
   const { data: settings, isLoading } = useQuery<SiteSettings>({
     queryKey: ["/api/settings"],
@@ -223,6 +225,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setCommissionRate(String(settings.commissionRate || 10));
       setAvgDaysToFirstInquiry(String(settings.avgDaysToFirstInquiry || 5));
       setAvgDaysToSell(String(settings.avgDaysToSell || 45));
+      setAdminNotifyPhone1(settings.adminNotifyPhone1 || "");
+      setAdminNotifyPhone2(settings.adminNotifyPhone2 || "");
     }
   }, [settings]);
 
@@ -263,6 +267,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           commissionRate: parseInt(commissionRate) || 10,
           avgDaysToFirstInquiry: parseInt(avgDaysToFirstInquiry) || 5,
           avgDaysToSell: parseInt(avgDaysToSell) || 45,
+          adminNotifyPhone1: adminNotifyPhone1 || null,
+          adminNotifyPhone2: adminNotifyPhone2 || null,
         }),
       });
       if (!res.ok) throw new Error("Failed to update settings");
@@ -1070,6 +1076,50 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
             data-testid="button-save-consignment"
           >
             {updateMutation.isPending ? "Saving..." : "Save Consignment Settings"}
+          </Button>
+        </CardFooter>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Admin Notifications</CardTitle>
+          <CardDescription>Get SMS notifications when new consignments are submitted</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="adminNotifyPhone1">Notification Phone #1</Label>
+              <Input
+                id="adminNotifyPhone1"
+                type="tel"
+                value={adminNotifyPhone1}
+                onChange={(e) => setAdminNotifyPhone1(e.target.value)}
+                placeholder="(555) 123-4567"
+                data-testid="input-admin-notify-phone-1"
+              />
+              <p className="text-xs text-muted-foreground">Primary phone for new consignment alerts</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="adminNotifyPhone2">Notification Phone #2</Label>
+              <Input
+                id="adminNotifyPhone2"
+                type="tel"
+                value={adminNotifyPhone2}
+                onChange={(e) => setAdminNotifyPhone2(e.target.value)}
+                placeholder="(555) 123-4567"
+                data-testid="input-admin-notify-phone-2"
+              />
+              <p className="text-xs text-muted-foreground">Secondary phone (optional)</p>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button 
+            onClick={() => updateMutation.mutate()} 
+            disabled={updateMutation.isPending}
+            data-testid="button-save-notifications"
+          >
+            {updateMutation.isPending ? "Saving..." : "Save Notification Settings"}
           </Button>
         </CardFooter>
       </Card>

@@ -1330,7 +1330,9 @@ ${allPages.map(page => `  <url>
         instagramUrl,
         twitterUrl,
         youtubeUrl,
-        tiktokUrl
+        tiktokUrl,
+        adminNotifyPhone1,
+        adminNotifyPhone2
       } = req.body;
       const settings = await storage.updateSiteSettings({ 
         primaryColor, 
@@ -1360,7 +1362,9 @@ ${allPages.map(page => `  <url>
         instagramUrl,
         twitterUrl,
         youtubeUrl,
-        tiktokUrl
+        tiktokUrl,
+        adminNotifyPhone1,
+        adminNotifyPhone2
       });
       res.json(settings);
     } catch (error) {
