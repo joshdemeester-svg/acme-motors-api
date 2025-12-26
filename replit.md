@@ -181,3 +181,5 @@ Automatic database seeding for consistent deployment between development and pro
 - Commission settings (rate, timeline estimates)
 
 **Note**: Inventory and consignments are NOT seeded - these are dynamic data that accumulate through normal operation. Only the base configuration is seeded to ensure the site is functional on first deployment.
+
+**Security Note**: The default admin password in seed-data.ts should be changed immediately after first login to production. Consider updating the password in the admin panel or updating the seed file with a new password before deployment.
