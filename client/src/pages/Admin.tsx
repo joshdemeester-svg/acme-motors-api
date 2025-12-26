@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare, Link, Bell, Plug, FileText, Download, ExternalLink, Eye, EyeOff } from "lucide-react";
+import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare, Link, Bell, Plug, FileText, Download, ExternalLink, Eye, EyeOff, Users, Shield, UserPlus } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import type { ConsignmentSubmission, InventoryCar, SiteSettings } from "@shared/schema";
@@ -1658,6 +1658,298 @@ function PasswordRequirement({ met, text }: { met: boolean; text: string }) {
   );
 }
 
+type AdminUser = {
+  id: string;
+  username: string;
+  role: string;
+  isAdmin: boolean;
+  createdAt: string | null;
+};
+
+function UsersPanel() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newRole, setNewRole] = useState<"master" | "admin">("admin");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
+
+  const { data: session } = useQuery<{ authenticated: boolean; userId?: string }>({
+    queryKey: ["/api/auth/session"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/session");
+      return res.json();
+    },
+  });
+
+  const currentUserId = session?.userId;
+
+  const { data: users = [], isLoading } = useQuery<AdminUser[]>({
+    queryKey: ["/api/users"],
+    queryFn: async () => {
+      const res = await fetch("/api/users");
+      if (!res.ok) throw new Error("Failed to fetch users");
+      return res.json();
+    },
+  });
+
+  const createUserMutation = useMutation({
+    mutationFn: async (data: { username: string; password: string; role: string }) => {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to create user");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({ title: "User Created", description: "The new user has been added." });
+      setAddDialogOpen(false);
+      setNewUsername("");
+      setNewPassword("");
+      setNewRole("admin");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to delete user");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({ title: "User Deleted", description: "The user has been removed." });
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ id, role }: { id: string; role: string }) => {
+      const res = await fetch(`/api/users/${id}/role`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update role");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({ title: "Role Updated", description: "User role has been updated." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">User Management</h2>
+          <p className="text-muted-foreground">Manage admin users and their access levels.</p>
+        </div>
+        <Button onClick={() => setAddDialogOpen(true)} className="gap-2" data-testid="button-add-user">
+          <UserPlus className="h-4 w-4" /> Add User
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <p>Loading users...</p>
+      ) : users.length === 0 ? (
+        <Card className="border-white border">
+          <CardContent className="py-12 text-center">
+            <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">No users found.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {users.map((user) => (
+            <Card key={user.id} className="border-white border">
+              <CardContent className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                    {user.role === "master" ? (
+                      <Shield className="h-5 w-5 text-primary" />
+                    ) : (
+                      <Users className="h-5 w-5 text-primary" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="font-medium">{user.username}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {user.role === "master" ? "Master Admin" : "Admin"} 
+                      {user.createdAt && ` • Created ${new Date(user.createdAt).toLocaleDateString()}`}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={user.role === "master" ? "default" : "secondary"} className="capitalize">
+                    {user.role === "master" ? "Master" : "Admin"}
+                  </Badge>
+                  {user.id === currentUserId && (
+                    <Badge variant="outline" className="text-xs">(You)</Badge>
+                  )}
+                  {user.role === "admin" && user.id !== currentUserId && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => updateRoleMutation.mutate({ id: user.id, role: "master" })}
+                      disabled={updateRoleMutation.isPending}
+                      data-testid={`button-promote-${user.id}`}
+                    >
+                      Promote to Master
+                    </Button>
+                  )}
+                  {user.role === "master" && user.id !== currentUserId && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => updateRoleMutation.mutate({ id: user.id, role: "admin" })}
+                      disabled={updateRoleMutation.isPending}
+                      data-testid={`button-demote-${user.id}`}
+                    >
+                      Demote to Admin
+                    </Button>
+                  )}
+                  {user.id !== currentUserId && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        setUserToDelete(user);
+                        setDeleteDialogOpen(true);
+                      }}
+                      data-testid={`button-delete-user-${user.id}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription>Create a new admin user with access to the dashboard.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-username">Username</Label>
+              <Input
+                id="new-username"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                placeholder="Enter username"
+                data-testid="input-new-username"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter password"
+                data-testid="input-new-password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="admin"
+                    checked={newRole === "admin"}
+                    onChange={() => setNewRole("admin")}
+                    className="h-4 w-4"
+                  />
+                  <span>Admin</span>
+                  <span className="text-xs text-muted-foreground">(CRM access only)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="master"
+                    checked={newRole === "master"}
+                    onChange={() => setNewRole("master")}
+                    className="h-4 w-4"
+                  />
+                  <span>Master Admin</span>
+                  <span className="text-xs text-muted-foreground">(Full access)</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={() => createUserMutation.mutate({ username: newUsername, password: newPassword, role: newRole })}
+              disabled={!newUsername || !newPassword || createUserMutation.isPending}
+              data-testid="button-confirm-add-user"
+            >
+              {createUserMutation.isPending ? "Creating..." : "Create User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {userToDelete?.username}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={() => userToDelete && deleteUserMutation.mutate(userToDelete.id)}
+              disabled={deleteUserMutation.isPending}
+              data-testid="button-confirm-delete-user"
+            >
+              {deleteUserMutation.isPending ? "Deleting..." : "Delete User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -1736,7 +2028,7 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-function AdminDashboard({ onLogout }: { onLogout: () => void }) {
+function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole: string }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("submissions");
@@ -2162,6 +2454,11 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             <TabsTrigger value="settings" className="gap-2">
               <Settings className="h-4 w-4" /> Settings
             </TabsTrigger>
+            {userRole === "master" && (
+              <TabsTrigger value="users" className="gap-2" data-testid="tab-users">
+                Users
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="submissions" className="space-y-4">
@@ -2390,6 +2687,12 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           <TabsContent value="settings">
             <SettingsPanel onRegisterSave={setSaveHandler} />
           </TabsContent>
+
+          {userRole === "master" && (
+            <TabsContent value="users">
+              <UsersPanel />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
 
@@ -3033,7 +3336,7 @@ export default function Admin() {
       <Navbar />
       
       {isAuthenticated ? (
-        <AdminDashboard onLogout={handleLogout} />
+        <AdminDashboard onLogout={handleLogout} userRole={session?.role || "admin"} />
       ) : (
         <div ref={loginRef}>
           <LoginForm onSuccess={handleLoginSuccess} />

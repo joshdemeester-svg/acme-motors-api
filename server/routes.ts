@@ -400,7 +400,7 @@ export async function registerRoutes(
 
   app.get("/api/auth/session", (req, res) => {
     if (req.session.userId && req.session.isAdmin) {
-      res.json({ authenticated: true, isAdmin: req.session.isAdmin, role: req.session.role || "admin" });
+      res.json({ authenticated: true, isAdmin: req.session.isAdmin, role: req.session.role || "admin", userId: req.session.userId });
     } else {
       res.json({ authenticated: false });
     }
@@ -480,7 +480,10 @@ export async function registerRoutes(
         }
       }
 
-      await storage.deleteUser(id);
+      const deleted = await storage.deleteUser(id);
+      if (!deleted) {
+        return res.status(500).json({ error: "Failed to delete user" });
+      }
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting user:", error);
