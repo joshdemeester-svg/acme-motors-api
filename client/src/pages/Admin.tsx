@@ -485,10 +485,10 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       {/* Mobile: Dropdown selector */}
       <div className="md:hidden">
         <Select value={settingsTab} onValueChange={setSettingsTab}>
-          <SelectTrigger className="w-full" data-testid="select-settings-tab-mobile">
+          <SelectTrigger className="w-full border-white" data-testid="select-settings-tab-mobile">
             <SelectValue placeholder="Select tab" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent side="bottom">
             {settingsTabOptions.map((tab) => (
               <SelectItem key={tab.value} value={tab.value}>
                 {tab.label}
@@ -3631,10 +3631,10 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
           {/* Mobile: Dropdown for main tabs */}
           <div className="md:hidden">
             <Select value={activeTab} onValueChange={setActiveTab}>
-              <SelectTrigger className="w-full" data-testid="select-admin-tab-mobile">
+              <SelectTrigger className="w-full border-white" data-testid="select-admin-tab-mobile">
                 <SelectValue placeholder="Select tab" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent side="bottom">
                 <SelectItem value="submissions">
                   Submissions {pendingSubmissions.length > 0 && `(${pendingSubmissions.length})`}
                 </SelectItem>
