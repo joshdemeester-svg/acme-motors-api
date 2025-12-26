@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare } from "lucide-react";
+import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare, Link, Bell, Plug, FileText, Download, ExternalLink } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import type { ConsignmentSubmission, InventoryCar, SiteSettings } from "@shared/schema";
@@ -242,6 +242,7 @@ function FaviconUploadCard({ faviconUrl, setFaviconUrl, saveMutation }: { favico
 function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: () => void; isPending: boolean } | null) => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [settingsTab, setSettingsTab] = useState("branding");
   const [siteName, setSiteName] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#D4AF37");
   const [backgroundColor, setBackgroundColor] = useState("#000000");
@@ -397,9 +398,33 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Logo Section - First */}
-      <Card className="border-white border">
+    <Tabs value={settingsTab} onValueChange={setSettingsTab} className="space-y-6">
+      <TabsList className="grid w-full grid-cols-5">
+        <TabsTrigger value="branding" className="flex items-center gap-2" data-testid="tab-branding">
+          <Palette className="h-4 w-4" />
+          <span className="hidden sm:inline">Branding</span>
+        </TabsTrigger>
+        <TabsTrigger value="contact" className="flex items-center gap-2" data-testid="tab-contact">
+          <Phone className="h-4 w-4" />
+          <span className="hidden sm:inline">Contact</span>
+        </TabsTrigger>
+        <TabsTrigger value="notifications" className="flex items-center gap-2" data-testid="tab-notifications">
+          <Bell className="h-4 w-4" />
+          <span className="hidden sm:inline">Notifications</span>
+        </TabsTrigger>
+        <TabsTrigger value="consignment" className="flex items-center gap-2" data-testid="tab-consignment">
+          <DollarSign className="h-4 w-4" />
+          <span className="hidden sm:inline">Consignment</span>
+        </TabsTrigger>
+        <TabsTrigger value="integrations" className="flex items-center gap-2" data-testid="tab-integrations">
+          <Plug className="h-4 w-4" />
+          <span className="hidden sm:inline">Integrations</span>
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="branding" className="space-y-6">
+        {/* Logo Section - First */}
+        <Card className="border-white border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Image className="h-5 w-5" /> Logo & Site Name
@@ -976,14 +1001,16 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           </Button>
         </CardFooter>
       </Card>
+      </TabsContent>
 
-      <Card className="border-white border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" /> Contact Information
-          </CardTitle>
-          <CardDescription>Update your footer contact details</CardDescription>
-        </CardHeader>
+      <TabsContent value="contact" className="space-y-6">
+        <Card className="border-white border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" /> Contact Information
+            </CardTitle>
+            <CardDescription>Update your footer contact details</CardDescription>
+          </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
@@ -1211,14 +1238,16 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           </Button>
         </CardFooter>
       </Card>
+      </TabsContent>
 
-      <Card className="border-white border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" /> Consignment Settings
-          </CardTitle>
-          <CardDescription>Configure commission rates and timeline estimates for the seller portal</CardDescription>
-        </CardHeader>
+      <TabsContent value="consignment" className="space-y-6">
+        <Card className="border-white border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" /> Consignment Settings
+            </CardTitle>
+            <CardDescription>Configure commission rates and timeline estimates for the seller portal</CardDescription>
+          </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
@@ -1273,52 +1302,105 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           </Button>
         </CardFooter>
       </Card>
+      </TabsContent>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Admin Notifications</CardTitle>
-          <CardDescription>Get SMS notifications when new consignments are submitted</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="adminNotifyPhone1">Notification Phone #1</Label>
-              <Input
-                id="adminNotifyPhone1"
-                type="tel"
-                value={adminNotifyPhone1}
-                onChange={(e) => setAdminNotifyPhone1(e.target.value)}
-                placeholder="(555) 123-4567"
-                data-testid="input-admin-notify-phone-1"
-              />
-              <p className="text-xs text-muted-foreground">Primary phone for new consignment alerts</p>
+      <TabsContent value="notifications" className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5" /> Admin Notifications
+            </CardTitle>
+            <CardDescription>Get SMS notifications when new consignments are submitted</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="adminNotifyPhone1">Notification Phone #1</Label>
+                <Input
+                  id="adminNotifyPhone1"
+                  type="tel"
+                  value={adminNotifyPhone1}
+                  onChange={(e) => setAdminNotifyPhone1(e.target.value)}
+                  placeholder="(555) 123-4567"
+                  data-testid="input-admin-notify-phone-1"
+                />
+                <p className="text-xs text-muted-foreground">Primary phone for new consignment alerts</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="adminNotifyPhone2">Notification Phone #2</Label>
+                <Input
+                  id="adminNotifyPhone2"
+                  type="tel"
+                  value={adminNotifyPhone2}
+                  onChange={(e) => setAdminNotifyPhone2(e.target.value)}
+                  placeholder="(555) 123-4567"
+                  data-testid="input-admin-notify-phone-2"
+                />
+                <p className="text-xs text-muted-foreground">Secondary phone (optional)</p>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="adminNotifyPhone2">Notification Phone #2</Label>
-              <Input
-                id="adminNotifyPhone2"
-                type="tel"
-                value={adminNotifyPhone2}
-                onChange={(e) => setAdminNotifyPhone2(e.target.value)}
-                placeholder="(555) 123-4567"
-                data-testid="input-admin-notify-phone-2"
-              />
-              <p className="text-xs text-muted-foreground">Secondary phone (optional)</p>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button 
-            onClick={() => updateMutation.mutate()} 
-            disabled={updateMutation.isPending}
-            data-testid="button-save-notifications"
-          >
-            {updateMutation.isPending ? "Saving..." : "Save Notification Settings"}
-          </Button>
-        </CardFooter>
-      </Card>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              onClick={() => updateMutation.mutate()} 
+              disabled={updateMutation.isPending}
+              data-testid="button-save-notifications"
+            >
+              {updateMutation.isPending ? "Saving..." : "Save Notification Settings"}
+            </Button>
+          </CardFooter>
+        </Card>
+      </TabsContent>
 
-    </div>
+      <TabsContent value="integrations" className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plug className="h-5 w-5" /> GoHighLevel Integration
+            </CardTitle>
+            <CardDescription>Connect your GoHighLevel CRM for lead management and automation</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg border p-4 bg-muted/50">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center">
+                  <Plug className="h-5 w-5 text-orange-500" />
+                </div>
+                <div>
+                  <h4 className="font-medium">GoHighLevel (GHL)</h4>
+                  <p className="text-sm text-muted-foreground">CRM & Marketing Automation</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="gap-1">
+                    <Clock className="h-3 w-3" />
+                    Configuration Required
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  To enable GoHighLevel integration, you need to configure the following secrets in the Replit Secrets panel:
+                </p>
+                <ul className="text-sm space-y-1 list-disc list-inside text-muted-foreground">
+                  <li><code className="bg-muted px-1.5 py-0.5 rounded text-xs">GHL_API_TOKEN</code> - Your GoHighLevel API token</li>
+                  <li><code className="bg-muted px-1.5 py-0.5 rounded text-xs">GHL_LOCATION_ID</code> - Your GoHighLevel location ID</li>
+                </ul>
+              </div>
+            </div>
+            <div className="rounded-lg border p-4">
+              <h4 className="font-medium mb-2">How to Configure Secrets</h4>
+              <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
+                <li>Open the Replit sidebar and click on the <strong>"Secrets"</strong> tool (lock icon)</li>
+                <li>Click "New Secret" and add <code className="bg-muted px-1.5 py-0.5 rounded text-xs">GHL_API_TOKEN</code></li>
+                <li>Add another secret for <code className="bg-muted px-1.5 py-0.5 rounded text-xs">GHL_LOCATION_ID</code></li>
+                <li>Restart the application to apply the changes</li>
+              </ol>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+    </Tabs>
   );
 }
 
@@ -1441,6 +1523,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [quickAddDialogOpen, setQuickAddDialogOpen] = useState(false);
   const [quickAddVin, setQuickAddVin] = useState("");
   const [quickAddYear, setQuickAddYear] = useState("");
+  const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
+  const [selectedDocumentsId, setSelectedDocumentsId] = useState<string | null>(null);
   const [quickAddMake, setQuickAddMake] = useState("");
   const [quickAddModel, setQuickAddModel] = useState("");
   const [quickAddColor, setQuickAddColor] = useState("");
@@ -1466,6 +1550,17 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       if (!res.ok) throw new Error("Failed to fetch inventory");
       return res.json();
     },
+  });
+
+  const { data: documents = [], isLoading: loadingDocuments } = useQuery<Array<{ id: string; consignmentId: string; documentType: string; fileName: string; fileUrl: string; status: string; createdAt: string }>>({
+    queryKey: ["/api/consignments", selectedDocumentsId, "documents"],
+    queryFn: async () => {
+      if (!selectedDocumentsId) return [];
+      const res = await fetch(`/api/consignments/${selectedDocumentsId}/documents`);
+      if (!res.ok) throw new Error("Failed to fetch documents");
+      return res.json();
+    },
+    enabled: !!selectedDocumentsId && documentsDialogOpen,
   });
 
   const approveMutation = useMutation({
@@ -1935,6 +2030,18 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         >
                           <Settings className="h-4 w-4" /> Overrides
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedSubmission(sub);
+                            setSelectedDocumentsId(sub.id);
+                            setDocumentsDialogOpen(true);
+                          }}
+                          className="gap-1"
+                        >
+                          <FileText className="h-4 w-4" /> Documents
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -2200,6 +2307,59 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               disabled={updateOverridesMutation.isPending}
             >
               {updateOverridesMutation.isPending ? "Saving..." : "Save Overrides"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={documentsDialogOpen} onOpenChange={setDocumentsDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Seller Documents</DialogTitle>
+            <DialogDescription>
+              Documents uploaded by {selectedSubmission?.firstName} {selectedSubmission?.lastName} for {selectedSubmission?.year} {selectedSubmission?.make} {selectedSubmission?.model}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {loadingDocuments ? (
+              <p className="text-muted-foreground text-center py-8">Loading documents...</p>
+            ) : documents.length === 0 ? (
+              <div className="text-center py-8 border border-dashed rounded-lg">
+                <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                <p className="text-muted-foreground">No documents uploaded yet</p>
+                <p className="text-xs text-muted-foreground mt-1">The seller can upload documents from their portal</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {documents.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium text-sm">{doc.fileName}</p>
+                        <p className="text-xs text-muted-foreground capitalize">{doc.documentType.replace(/_/g, ' ')}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={doc.status === 'approved' ? 'default' : doc.status === 'rejected' ? 'destructive' : 'secondary'}>
+                        {doc.status}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => window.open(doc.fileUrl, '_blank')}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDocumentsDialogOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
