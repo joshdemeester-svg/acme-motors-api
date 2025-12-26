@@ -85,6 +85,9 @@ function applyCSSVariables(settings: Partial<SiteSettings>) {
   if (settings.calculatorTextColor) {
     document.documentElement.style.setProperty("--calculator-text-color", settings.calculatorTextColor);
   }
+  if (settings.calculatorSliderColor) {
+    document.documentElement.style.setProperty("--calculator-slider-color", settings.calculatorSliderColor);
+  }
 }
 
 function loadCachedSettings(): Partial<SiteSettings> | null {
@@ -118,6 +121,7 @@ function saveCachedSettings(settings: SiteSettings) {
       calculatorAccentColor: settings.calculatorAccentColor,
       calculatorBgColor: settings.calculatorBgColor,
       calculatorTextColor: settings.calculatorTextColor,
+      calculatorSliderColor: settings.calculatorSliderColor,
     };
     localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(colorSettings));
   } catch {}
