@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare, Link, Bell, Plug, FileText, Download, ExternalLink, Eye, EyeOff, Users, Shield, UserPlus, Calculator, BarChart3, ChevronsUpDown, Loader2, Menu } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
@@ -469,36 +470,62 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
     { name: "Purple", value: "#9333EA" },
   ];
 
+  const settingsTabOptions = [
+    { value: "branding", label: "Branding", icon: Palette },
+    { value: "menus", label: "Menus", icon: Menu },
+    { value: "contact", label: "Contact", icon: Phone },
+    { value: "notifications", label: "Notifications", icon: Bell },
+    { value: "consignment", label: "Consignment", icon: DollarSign },
+    { value: "legal", label: "Legal", icon: FileText },
+    { value: "integrations", label: "Integrations", icon: Plug },
+  ];
+
   return (
     <Tabs value={settingsTab} onValueChange={setSettingsTab} className="space-y-6">
-      <TabsList className="grid w-full grid-cols-7">
+      {/* Mobile: Dropdown selector */}
+      <div className="md:hidden">
+        <Select value={settingsTab} onValueChange={setSettingsTab}>
+          <SelectTrigger className="w-full" data-testid="select-settings-tab-mobile">
+            <SelectValue placeholder="Select tab" />
+          </SelectTrigger>
+          <SelectContent>
+            {settingsTabOptions.map((tab) => (
+              <SelectItem key={tab.value} value={tab.value}>
+                {tab.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {/* Desktop: Tab list */}
+      <TabsList className="hidden md:grid w-full grid-cols-7">
         <TabsTrigger value="branding" className="flex items-center gap-2" data-testid="tab-branding">
           <Palette className="h-4 w-4" />
-          <span className="hidden sm:inline">Branding</span>
+          <span>Branding</span>
         </TabsTrigger>
         <TabsTrigger value="menus" className="flex items-center gap-2" data-testid="tab-menus">
           <Menu className="h-4 w-4" />
-          <span className="hidden sm:inline">Menus</span>
+          <span>Menus</span>
         </TabsTrigger>
         <TabsTrigger value="contact" className="flex items-center gap-2" data-testid="tab-contact">
           <Phone className="h-4 w-4" />
-          <span className="hidden sm:inline">Contact</span>
+          <span>Contact</span>
         </TabsTrigger>
         <TabsTrigger value="notifications" className="flex items-center gap-2" data-testid="tab-notifications">
           <Bell className="h-4 w-4" />
-          <span className="hidden sm:inline">Notifications</span>
+          <span>Notifications</span>
         </TabsTrigger>
         <TabsTrigger value="consignment" className="flex items-center gap-2" data-testid="tab-consignment">
           <DollarSign className="h-4 w-4" />
-          <span className="hidden sm:inline">Consignment</span>
+          <span>Consignment</span>
         </TabsTrigger>
         <TabsTrigger value="legal" className="flex items-center gap-2" data-testid="tab-legal">
           <FileText className="h-4 w-4" />
-          <span className="hidden sm:inline">Legal</span>
+          <span>Legal</span>
         </TabsTrigger>
         <TabsTrigger value="integrations" className="flex items-center gap-2" data-testid="tab-integrations">
           <Plug className="h-4 w-4" />
-          <span className="hidden sm:inline">Integrations</span>
+          <span>Integrations</span>
         </TabsTrigger>
       </TabsList>
 
@@ -1597,7 +1624,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
             <CardDescription>Get SMS notifications when new consignments are submitted</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="adminNotifyPhone1">Notification Phone #1</Label>
                 <Input
@@ -3601,7 +3628,31 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="flex-wrap">
+          {/* Mobile: Dropdown for main tabs */}
+          <div className="md:hidden">
+            <Select value={activeTab} onValueChange={setActiveTab}>
+              <SelectTrigger className="w-full" data-testid="select-admin-tab-mobile">
+                <SelectValue placeholder="Select tab" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="submissions">
+                  Submissions {pendingSubmissions.length > 0 && `(${pendingSubmissions.length})`}
+                </SelectItem>
+                <SelectItem value="inquiries">Inquiries</SelectItem>
+                <SelectItem value="inventory">Inventory ({inventory.length})</SelectItem>
+                <SelectItem value="alerts">Alerts</SelectItem>
+                <SelectItem value="testimonials">Reviews</SelectItem>
+                <SelectItem value="analytics">Analytics</SelectItem>
+                <SelectItem value="messaging">Messaging</SelectItem>
+                <SelectItem value="settings">Settings</SelectItem>
+                {userRole === "master" && (
+                  <SelectItem value="users">Users</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Desktop: Tab list */}
+          <TabsList className="hidden md:flex flex-wrap">
             <TabsTrigger value="submissions" className="gap-2">
               Submissions
               {pendingSubmissions.length > 0 && (
@@ -3983,7 +4034,7 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
       </Dialog>
 
       <Dialog open={overrideDialogOpen} onOpenChange={setOverrideDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Listing Overrides</DialogTitle>
             <DialogDescription>
@@ -4019,7 +4070,7 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                 Custom commission % for this vehicle only
               </p>
             </div>
-            <div className="grid gap-4 grid-cols-2">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="overrideDaysInquiry">Days to First Inquiry</Label>
                 <Input
@@ -4071,7 +4122,7 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
       </Dialog>
 
       <Dialog open={documentsDialogOpen} onOpenChange={setDocumentsDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Seller Documents</DialogTitle>
             <DialogDescription>
@@ -4375,7 +4426,7 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
               </div>
               
               {editPhotos.length > 0 ? (
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {editPhotos.map((photo, index) => (
                     <div key={index} className="relative group aspect-square rounded-md overflow-hidden border">
                       <img 
@@ -4431,7 +4482,7 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
       </Dialog>
 
       <Dialog open={docsDialogOpen} onOpenChange={setDocsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               Documents - {selectedVehicleForDocs?.year} {selectedVehicleForDocs?.make} {selectedVehicleForDocs?.model}
@@ -4475,7 +4526,7 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
             )}
             <div className="border-t pt-4 space-y-3">
               <p className="font-medium text-sm">Add New Document</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label>Document Type</Label>
                   <select
