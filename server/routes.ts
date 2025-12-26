@@ -274,7 +274,7 @@ export async function registerRoutes(
     }
   });
 
-  // Temporary secured endpoint to create admin in production (POST version for CDN bypass)
+  // Temporary secured endpoint to create/reset admin in production (POST version for CDN bypass)
   app.post("/api/create-admin-now", async (req, res) => {
     const secretKey = req.body?.key || req.query.key;
     if (secretKey !== "SETUP-PRESTIGE-2024-SECURE") {
@@ -282,13 +282,14 @@ export async function registerRoutes(
     }
     try {
       console.log("[admin-setup] POST: Checking for existing admin...");
+      const hashedPassword = "d7da12f7f0b51ba5ab3e7bb2617161d7:a5d33d043a5bfc73921e861303f31e6a9a6909740dc0368989809ddec3b64526e3f4cab9bd1569dd166d2f4043dc441645c821b0e1582b6547a0ebebeed9e00d";
       const existingAdmin = await storage.getUserByUsername("Josh");
       if (existingAdmin) {
-        console.log("[admin-setup] Admin already exists");
-        return res.json({ success: true, message: "Admin user 'Josh' already exists. You can login now!" });
+        console.log("[admin-setup] Admin exists, resetting password...");
+        await storage.updateUserPassword(existingAdmin.id, hashedPassword);
+        return res.json({ success: true, message: "Admin password reset! Login with username 'Josh' and password 'Sunshine2024!'" });
       }
       console.log("[admin-setup] Creating new admin...");
-      const hashedPassword = "d7da12f7f0b51ba5ab3e7bb2617161d7:a5d33d043a5bfc73921e861303f31e6a9a6909740dc0368989809ddec3b64526e3f4cab9bd1569dd166d2f4043dc441645c821b0e1582b6547a0ebebeed9e00d";
       await storage.createUser({
         username: "Josh",
         password: hashedPassword,
