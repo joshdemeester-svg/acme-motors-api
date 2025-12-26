@@ -152,6 +152,11 @@ export const siteSettings = pgTable("site_settings", {
   privacyPolicy: text("privacy_policy"),
   termsOfService: text("terms_of_service"),
   sellerConfirmationSms: text("seller_confirmation_sms").default("Thank you for submitting your {year} {make} {model} to {siteName}! We'll review your submission and contact you within 24 hours."),
+  menuLabelHome: text("menu_label_home").default("Home"),
+  menuLabelInventory: text("menu_label_inventory").default("Inventory"),
+  menuLabelConsign: text("menu_label_consign").default("Consign"),
+  menuLabelTradeIn: text("menu_label_trade_in").default("Trade-In"),
+  menuLabelAppointments: text("menu_label_appointments").default("Book Appointment"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
