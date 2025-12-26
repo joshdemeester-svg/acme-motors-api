@@ -158,3 +158,26 @@ Comprehensive SEO implementation for search engine visibility:
 - Inventory: Collection listing description
 - Vehicle Details: Vehicle schema with full specs, first photo as OG image
 - Consign: Lead generation focused description
+
+### Database Seeding
+
+Automatic database seeding for consistent deployment between development and production:
+
+**Configuration** (`server/seed-data.ts`):
+- Contains all site settings (colors, logo, contact info, commission rates)
+- Admin credentials for initial setup
+- Centralized configuration that can be updated for new deployments
+
+**How It Works**:
+- On server startup, checks if the database needs seeding
+- Seeds if site name is empty or set to default value
+- Creates admin user and applies all site settings
+- Skips seeding if configuration already exists (won't overwrite production data)
+
+**What Gets Seeded**:
+- Admin user (Josh with configured password)
+- Site branding (logo, colors, fonts)
+- Contact information (address, phone, email)
+- Commission settings (rate, timeline estimates)
+
+**Note**: Inventory and consignments are NOT seeded - these are dynamic data that accumulate through normal operation. Only the base configuration is seeded to ensure the site is functional on first deployment.
