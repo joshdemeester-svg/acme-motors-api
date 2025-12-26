@@ -1938,12 +1938,19 @@ export async function initializeDefaultAdmin(): Promise<void> {
     const existingAdmin = await storage.getUserByUsername("Josh");
     if (existingAdmin) {
       console.log("[auth] Default admin user 'Josh' already exists");
+      // Ensure Josh has master role (migration for existing deployments)
+      if (existingAdmin.role !== "master") {
+        console.log("[auth] Upgrading 'Josh' to master role...");
+        await storage.updateUserRole(existingAdmin.id, "master");
+        console.log("[auth] 'Josh' upgraded to master role");
+      }
     } else {
       const hashedPassword = "d7da12f7f0b51ba5ab3e7bb2617161d7:a5d33d043a5bfc73921e861303f31e6a9a6909740dc0368989809ddec3b64526e3f4cab9bd1569dd166d2f4043dc441645c821b0e1582b6547a0ebebeed9e00d";
       await storage.createUser({
         username: "Josh",
         password: hashedPassword,
         isAdmin: true,
+        role: "master",
       });
       console.log("[auth] Default admin user 'Josh' created successfully");
     }
@@ -1971,6 +1978,7 @@ export async function seedDatabaseFromConfig(): Promise<void> {
           username: seedAdmin.username,
           password: hashedPassword,
           isAdmin: true,
+          role: "master",
         });
         console.log(`[seed] Admin user '${seedAdmin.username}' created`);
       }
