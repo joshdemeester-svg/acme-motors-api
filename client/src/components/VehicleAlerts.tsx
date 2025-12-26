@@ -82,14 +82,14 @@ export function VehicleAlerts() {
           Get Vehicle Alerts
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
             Vehicle Alerts
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 pb-2">
           <p className="text-sm text-muted-foreground">
             Get notified when vehicles matching your preferences become available.
           </p>
@@ -144,7 +144,7 @@ export function VehicleAlerts() {
               <p className="text-xs text-muted-foreground">Comma-separated, leave blank for all</p>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="alert-min-price">Min Price</Label>
                 <Input
@@ -153,6 +153,7 @@ export function VehicleAlerts() {
                   value={minPrice}
                   onChange={(e) => setMinPrice(e.target.value)}
                   placeholder="$50,000"
+                  className="w-full"
                   data-testid="input-alert-min-price"
                 />
               </div>
@@ -164,12 +165,13 @@ export function VehicleAlerts() {
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
                   placeholder="$200,000"
+                  className="w-full"
                   data-testid="input-alert-max-price"
                 />
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="alert-min-year">Min Year</Label>
                 <Input
@@ -178,6 +180,7 @@ export function VehicleAlerts() {
                   value={minYear}
                   onChange={(e) => setMinYear(e.target.value)}
                   placeholder="2018"
+                  className="w-full"
                   data-testid="input-alert-min-year"
                 />
               </div>
@@ -189,6 +192,7 @@ export function VehicleAlerts() {
                   value={maxYear}
                   onChange={(e) => setMaxYear(e.target.value)}
                   placeholder="2024"
+                  className="w-full"
                   data-testid="input-alert-max-year"
                 />
               </div>

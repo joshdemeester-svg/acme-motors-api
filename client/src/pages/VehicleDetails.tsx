@@ -1179,7 +1179,7 @@ export default function VehicleDetails({ id }: { id: string }) {
               <div className="rounded-md border border-border/50 bg-muted/30 p-3 space-y-3">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Help us serve you better (optional)</p>
                 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label htmlFor="buyTimeline" className="text-xs">Buying Timeline</Label>
                     <select
