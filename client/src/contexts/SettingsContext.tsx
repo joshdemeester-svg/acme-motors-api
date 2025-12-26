@@ -82,6 +82,9 @@ function applyCSSVariables(settings: Partial<SiteSettings>) {
   if (settings.calculatorBgColor) {
     document.documentElement.style.setProperty("--calculator-bg-color", settings.calculatorBgColor);
   }
+  if (settings.calculatorTextColor) {
+    document.documentElement.style.setProperty("--calculator-text-color", settings.calculatorTextColor);
+  }
 }
 
 function loadCachedSettings(): Partial<SiteSettings> | null {
@@ -114,6 +117,7 @@ function saveCachedSettings(settings: SiteSettings) {
       socialIconHoverColor: settings.socialIconHoverColor,
       calculatorAccentColor: settings.calculatorAccentColor,
       calculatorBgColor: settings.calculatorBgColor,
+      calculatorTextColor: settings.calculatorTextColor,
     };
     localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(colorSettings));
   } catch {}

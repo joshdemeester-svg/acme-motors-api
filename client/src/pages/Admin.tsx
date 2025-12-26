@@ -261,6 +261,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [socialIconHoverColor, setSocialIconHoverColor] = useState("#B8960C");
   const [calculatorAccentColor, setCalculatorAccentColor] = useState("#3B82F6");
   const [calculatorBgColor, setCalculatorBgColor] = useState("#1E3A5F");
+  const [calculatorTextColor, setCalculatorTextColor] = useState("#FFFFFF");
   const [footerTagline, setFooterTagline] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [logoWidth, setLogoWidth] = useState("120");
@@ -317,6 +318,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setSocialIconHoverColor(settings.socialIconHoverColor || "#B8960C");
       setCalculatorAccentColor(settings.calculatorAccentColor || "#3B82F6");
       setCalculatorBgColor(settings.calculatorBgColor || "#1E3A5F");
+      setCalculatorTextColor(settings.calculatorTextColor || "#FFFFFF");
       setFooterTagline(settings.footerTagline || "");
       setLogoUrl(settings.logoUrl || "");
       setLogoWidth(settings.logoWidth || "120");
@@ -367,6 +369,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           socialIconHoverColor,
           calculatorAccentColor,
           calculatorBgColor,
+          calculatorTextColor,
           footerTagline: footerTagline || null,
           logoUrl: logoUrl || null,
           logoWidth: logoWidth || "120",
@@ -1188,9 +1191,9 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           <CardDescription>Customize the financing calculator appearance on vehicle pages</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
-              <Label>Accent Color (Numbers)</Label>
+              <Label>Payment Amount Color</Label>
               <div className="flex items-center gap-2">
                 <Input
                   type="color"
@@ -1207,7 +1210,28 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
                   data-testid="input-calculator-accent-color-hex"
                 />
               </div>
-              <p className="text-xs text-muted-foreground">Color for the monthly payment number</p>
+              <p className="text-xs text-muted-foreground">Color for the payment number</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Label Text Color</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={calculatorTextColor}
+                  onChange={(e) => setCalculatorTextColor(e.target.value)}
+                  className="h-10 w-14 p-1 cursor-pointer"
+                  data-testid="input-calculator-text-color-picker"
+                />
+                <Input
+                  value={calculatorTextColor}
+                  onChange={(e) => setCalculatorTextColor(e.target.value)}
+                  placeholder="#FFFFFF"
+                  className="flex-1"
+                  data-testid="input-calculator-text-color-hex"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Color for "Estimated Monthly Payment"</p>
             </div>
 
             <div className="space-y-2">
@@ -1228,7 +1252,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
                   data-testid="input-calculator-bg-color-hex"
                 />
               </div>
-              <p className="text-xs text-muted-foreground">Background color for the payment display</p>
+              <p className="text-xs text-muted-foreground">Background color for the display</p>
             </div>
           </div>
 
@@ -1239,7 +1263,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
               className="text-center p-4 rounded-lg"
               style={{ backgroundColor: calculatorBgColor }}
             >
-              <p className="text-sm text-muted-foreground">Estimated Monthly Payment</p>
+              <p className="text-sm" style={{ color: calculatorTextColor, opacity: 0.8 }}>Estimated Monthly Payment</p>
               <p 
                 className="text-3xl font-bold"
                 style={{ color: calculatorAccentColor }}
