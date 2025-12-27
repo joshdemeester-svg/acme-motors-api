@@ -22,9 +22,17 @@ Preferred communication style: Simple, everyday language.
 - **Form Handling**: React Hook Form with Zod validation
 
 The frontend follows a component-based architecture with:
-- `/pages` - Route-level components (Home, Inventory, Consign, Admin)
+- `/pages` - Route-level components (Home, Inventory, Consign, VehicleDetails, etc.)
+- `/pages/admin` - New modular admin pages with sidebar layout:
+  - `Dashboard.tsx` - Overview with stats, recent activity, upcoming appointments
+  - `Inventory.tsx` - Vehicle inventory management with search/filtering
+  - `Leads.tsx` - Tabbed view for inquiries, trade-ins, and appointments
+  - `Consignments.tsx` - Seller consignment submissions management
+  - `Settings.tsx` - Multi-tab settings (branding, contact, notifications, legal, integrations, users)
 - `/components/ui` - Reusable shadcn/ui primitives
 - `/components/layout` - Navbar and Footer
+- `/components/admin` - Admin-specific components:
+  - `AdminLayout.tsx` - Sidebar navigation with auth protection
 - `/components/home` - Hero section
 - `/components/consignment` - Multi-step consignment form
 

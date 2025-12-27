@@ -11,6 +11,11 @@ import Inventory from "@/pages/Inventory";
 import VehicleDetails from "@/pages/VehicleDetails";
 import Consign from "@/pages/Consign";
 import Admin from "@/pages/Admin";
+import AdminDashboard from "@/pages/admin/Dashboard";
+import AdminInventory from "@/pages/admin/Inventory";
+import AdminLeads from "@/pages/admin/Leads";
+import AdminConsignments from "@/pages/admin/Consignments";
+import AdminSettings from "@/pages/admin/Settings";
 import SellerPortal from "@/pages/SellerPortal";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
@@ -30,7 +35,12 @@ function Router() {
       <Route path="/inventory" component={Inventory} />
       <Route path="/vehicle/:id">{(params) => <VehicleDetails id={params.id} />}</Route>
       <Route path="/consign" component={Consign} />
-      <Route path="/admin" component={Admin} />
+      <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/inventory" component={AdminInventory} />
+      <Route path="/admin/leads" component={AdminLeads} />
+      <Route path="/admin/consignments" component={AdminConsignments} />
+      <Route path="/admin/settings" component={AdminSettings} />
+      <Route path="/admin-legacy" component={Admin} />
       <Route path="/seller-portal" component={SellerPortal} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/terms" component={Terms} />
