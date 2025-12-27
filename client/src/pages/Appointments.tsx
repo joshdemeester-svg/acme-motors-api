@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Calendar, CheckCircle, Clock, Loader2, Car } from "lucide-react";
+import { Calendar, CheckCircle, Clock, Loader2, Car, Phone } from "lucide-react";
 import { useSEO } from "@/hooks/use-seo";
+import { useToast } from "@/hooks/use-toast";
 import type { InventoryCar } from "@shared/schema";
 
 const timeSlots = [
@@ -39,6 +40,20 @@ export default function Appointments() {
     alternateTime: "",
     notes: "",
   });
+  const [verificationCode, setVerificationCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [verifiedPhone, setVerifiedPhone] = useState("");
+  const { toast } = useToast();
+
+  // Reset verification when phone changes
+  useEffect(() => {
+    if (formData.phone !== verifiedPhone) {
+      setPhoneVerified(false);
+      setCodeSent(false);
+      setVerificationCode("");
+    }
+  }, [formData.phone, verifiedPhone]);
 
   useSEO({
     title: "Schedule Appointment",
@@ -51,6 +66,65 @@ export default function Appointments() {
       const res = await fetch("/api/inventory");
       if (!res.ok) return [];
       return res.json();
+    },
+  });
+
+  const sendCodeMutation = useMutation({
+    mutationFn: async (data: { phone: string; firstName: string }) => {
+      const res = await fetch("/api/verification/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to send code");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setCodeSent(true);
+      toast({
+        title: "Code Sent",
+        description: "A verification code has been sent to your phone.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Send Code",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const verifyCodeMutation = useMutation({
+    mutationFn: async (data: { phone: string; code: string }) => {
+      const res = await fetch("/api/verification/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Invalid code");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setPhoneVerified(true);
+      setVerifiedPhone(formData.phone);
+      toast({
+        title: "Phone Verified",
+        description: "Your phone number has been verified successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Verification Failed",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -74,6 +148,14 @@ export default function Appointments() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!phoneVerified) {
+      toast({
+        title: "Phone Verification Required",
+        description: "Please verify your phone number before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
     submitMutation.mutate(formData);
   };
 
@@ -165,14 +247,83 @@ export default function Appointments() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone *</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      required
-                      data-testid="input-appt-phone"
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                        required
+                        disabled={phoneVerified}
+                        className={phoneVerified ? "bg-green-50 border-green-300" : ""}
+                        data-testid="input-appt-phone"
+                      />
+                      {phoneVerified ? (
+                        <div className="flex items-center gap-1 text-green-600 px-3 shrink-0">
+                          <CheckCircle className="h-5 w-5" />
+                          <span className="text-sm font-medium">Verified</span>
+                        </div>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            if (formData.phone.replace(/\D/g, "").length >= 10 && formData.firstName.trim()) {
+                              sendCodeMutation.mutate({ phone: formData.phone, firstName: formData.firstName });
+                            } else {
+                              toast({
+                                title: "Missing Information",
+                                description: "Please enter your first name and a valid phone number first.",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          disabled={sendCodeMutation.isPending || codeSent}
+                          className="shrink-0"
+                          data-testid="button-send-code"
+                        >
+                          <Phone className="h-4 w-4 mr-1" />
+                          {sendCodeMutation.isPending ? "Sending..." : codeSent ? "Code Sent" : "Send Code"}
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {codeSent && !phoneVerified && (
+                      <div className="space-y-2 mt-3 p-3 bg-muted rounded-lg">
+                        <Label htmlFor="verificationCode">Enter Verification Code</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="verificationCode"
+                            value={verificationCode}
+                            onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                            placeholder="6-digit code"
+                            maxLength={6}
+                            className="flex-1"
+                            data-testid="input-verification-code"
+                          />
+                          <Button
+                            type="button"
+                            onClick={() => verifyCodeMutation.mutate({ phone: formData.phone, code: verificationCode })}
+                            disabled={verificationCode.length !== 6 || verifyCodeMutation.isPending}
+                            data-testid="button-verify-code"
+                          >
+                            {verifyCodeMutation.isPending ? "Verifying..." : "Verify"}
+                          </Button>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="link"
+                          onClick={() => {
+                            setCodeSent(false);
+                            setVerificationCode("");
+                          }}
+                          className="text-xs h-auto p-0"
+                          data-testid="button-resend-code"
+                        >
+                          Didn't receive it? Send again
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -308,7 +459,7 @@ export default function Appointments() {
                   type="submit" 
                   className="w-full" 
                   size="lg"
-                  disabled={submitMutation.isPending || !formData.appointmentType || !formData.preferredDate || !formData.preferredTime}
+                  disabled={submitMutation.isPending || !phoneVerified || !formData.appointmentType || !formData.preferredDate || !formData.preferredTime}
                   data-testid="button-submit-appointment"
                 >
                   {submitMutation.isPending ? (
