@@ -13,6 +13,8 @@ import {
   vehicleViews,
   vehicleDocuments,
   creditApplications,
+  leadNotes,
+  activityLog,
   type User, 
   type InsertUser,
   type ConsignmentSubmission,
@@ -37,7 +39,11 @@ import {
   type VehicleDocument,
   type InsertVehicleDocument,
   type CreditApplication,
-  type InsertCreditApplication
+  type InsertCreditApplication,
+  type LeadNote,
+  type InsertLeadNote,
+  type ActivityLog,
+  type InsertActivityLog
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt } from "drizzle-orm";
@@ -128,6 +134,18 @@ export interface IStorage {
   getCreditApplication(id: string): Promise<CreditApplication | undefined>;
   updateCreditApplicationStatus(id: string, status: string): Promise<CreditApplication | undefined>;
   updateCreditApplicationNotes(id: string, notes: string): Promise<CreditApplication | undefined>;
+  
+  createLeadNote(data: InsertLeadNote): Promise<LeadNote>;
+  getLeadNotes(leadType: string, leadId: string): Promise<LeadNote[]>;
+  updateLeadNote(id: string, content: string): Promise<LeadNote | undefined>;
+  deleteLeadNote(id: string): Promise<boolean>;
+  
+  createActivityLog(data: InsertActivityLog): Promise<ActivityLog>;
+  getActivityLogs(leadType: string, leadId: string): Promise<ActivityLog[]>;
+  
+  updateBuyerInquiryPipeline(id: string, pipelineStage: string): Promise<BuyerInquiry | undefined>;
+  updateBuyerInquiryAssignment(id: string, assignedTo: string | null): Promise<BuyerInquiry | undefined>;
+  updateCreditApplicationAssignment(id: string, assignedTo: string | null): Promise<CreditApplication | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -568,6 +586,69 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db
       .update(creditApplications)
       .set({ notes })
+      .where(eq(creditApplications.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async createLeadNote(data: InsertLeadNote): Promise<LeadNote> {
+    const [note] = await db.insert(leadNotes).values(data).returning();
+    return note;
+  }
+
+  async getLeadNotes(leadType: string, leadId: string): Promise<LeadNote[]> {
+    return db.select().from(leadNotes)
+      .where(and(eq(leadNotes.leadType, leadType), eq(leadNotes.leadId, leadId)))
+      .orderBy(desc(leadNotes.createdAt));
+  }
+
+  async updateLeadNote(id: string, content: string): Promise<LeadNote | undefined> {
+    const [updated] = await db
+      .update(leadNotes)
+      .set({ content })
+      .where(eq(leadNotes.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteLeadNote(id: string): Promise<boolean> {
+    await db.delete(leadNotes).where(eq(leadNotes.id, id));
+    return true;
+  }
+
+  async createActivityLog(data: InsertActivityLog): Promise<ActivityLog> {
+    const [activity] = await db.insert(activityLog).values(data).returning();
+    return activity;
+  }
+
+  async getActivityLogs(leadType: string, leadId: string): Promise<ActivityLog[]> {
+    return db.select().from(activityLog)
+      .where(and(eq(activityLog.leadType, leadType), eq(activityLog.leadId, leadId)))
+      .orderBy(desc(activityLog.createdAt));
+  }
+
+  async updateBuyerInquiryPipeline(id: string, pipelineStage: string): Promise<BuyerInquiry | undefined> {
+    const [updated] = await db
+      .update(buyerInquiries)
+      .set({ pipelineStage })
+      .where(eq(buyerInquiries.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async updateBuyerInquiryAssignment(id: string, assignedTo: string | null): Promise<BuyerInquiry | undefined> {
+    const [updated] = await db
+      .update(buyerInquiries)
+      .set({ assignedTo })
+      .where(eq(buyerInquiries.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async updateCreditApplicationAssignment(id: string, assignedTo: string | null): Promise<CreditApplication | undefined> {
+    const [updated] = await db
+      .update(creditApplications)
+      .set({ assignedTo })
       .where(eq(creditApplications.id, id))
       .returning();
     return updated || undefined;

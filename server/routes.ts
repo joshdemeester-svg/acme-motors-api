@@ -1898,6 +1898,169 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/credit-applications/:id/assignment", requireAdmin, async (req, res) => {
+    try {
+      const { assignedTo } = req.body;
+      const updated = await storage.updateCreditApplicationAssignment(req.params.id, assignedTo || null);
+      if (!updated) {
+        return res.status(404).json({ error: "Credit application not found" });
+      }
+      
+      await storage.createActivityLog({
+        leadType: "credit_application",
+        leadId: req.params.id,
+        activityType: "assignment",
+        description: assignedTo ? `Assigned to salesperson` : `Unassigned`,
+        createdBy: (req.user as any)?.id,
+      });
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating credit application assignment:", error);
+      res.status(500).json({ error: "Failed to update assignment" });
+    }
+  });
+
+  app.post("/api/leads/:type/:id/notes", requireAdmin, async (req, res) => {
+    try {
+      const { type, id } = req.params;
+      const { content } = req.body;
+      
+      if (!["inquiry", "credit_application"].includes(type)) {
+        return res.status(400).json({ error: "Invalid lead type" });
+      }
+      if (!content?.trim()) {
+        return res.status(400).json({ error: "Note content is required" });
+      }
+      
+      const note = await storage.createLeadNote({
+        leadType: type,
+        leadId: id,
+        content: content.trim(),
+        createdBy: (req.user as any)?.id,
+      });
+      
+      await storage.createActivityLog({
+        leadType: type,
+        leadId: id,
+        activityType: "note_added",
+        description: `Note added: ${content.substring(0, 100)}${content.length > 100 ? "..." : ""}`,
+        createdBy: (req.user as any)?.id,
+      });
+      
+      res.status(201).json(note);
+    } catch (error) {
+      console.error("Error creating lead note:", error);
+      res.status(500).json({ error: "Failed to create note" });
+    }
+  });
+
+  app.get("/api/leads/:type/:id/notes", requireAdmin, async (req, res) => {
+    try {
+      const { type, id } = req.params;
+      if (!["inquiry", "credit_application"].includes(type)) {
+        return res.status(400).json({ error: "Invalid lead type" });
+      }
+      const notes = await storage.getLeadNotes(type, id);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching lead notes:", error);
+      res.status(500).json({ error: "Failed to fetch notes" });
+    }
+  });
+
+  app.patch("/api/leads/notes/:noteId", requireAdmin, async (req, res) => {
+    try {
+      const { content } = req.body;
+      if (!content?.trim()) {
+        return res.status(400).json({ error: "Note content is required" });
+      }
+      const updated = await storage.updateLeadNote(req.params.noteId, content.trim());
+      if (!updated) {
+        return res.status(404).json({ error: "Note not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating lead note:", error);
+      res.status(500).json({ error: "Failed to update note" });
+    }
+  });
+
+  app.delete("/api/leads/notes/:noteId", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteLeadNote(req.params.noteId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting lead note:", error);
+      res.status(500).json({ error: "Failed to delete note" });
+    }
+  });
+
+  app.get("/api/leads/:type/:id/activity", requireAdmin, async (req, res) => {
+    try {
+      const { type, id } = req.params;
+      if (!["inquiry", "credit_application"].includes(type)) {
+        return res.status(400).json({ error: "Invalid lead type" });
+      }
+      const activities = await storage.getActivityLogs(type, id);
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching activity log:", error);
+      res.status(500).json({ error: "Failed to fetch activity log" });
+    }
+  });
+
+  app.patch("/api/inquiries/:id/pipeline", requireAdmin, async (req, res) => {
+    try {
+      const { pipelineStage } = req.body;
+      const validStages = ["new", "contacted", "qualified", "negotiating", "sold", "lost"];
+      if (!pipelineStage || !validStages.includes(pipelineStage)) {
+        return res.status(400).json({ error: "Invalid pipeline stage" });
+      }
+      
+      const updated = await storage.updateBuyerInquiryPipeline(req.params.id, pipelineStage);
+      if (!updated) {
+        return res.status(404).json({ error: "Inquiry not found" });
+      }
+      
+      await storage.createActivityLog({
+        leadType: "inquiry",
+        leadId: req.params.id,
+        activityType: "pipeline_change",
+        description: `Pipeline stage changed to ${pipelineStage}`,
+        createdBy: (req.user as any)?.id,
+      });
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating inquiry pipeline:", error);
+      res.status(500).json({ error: "Failed to update pipeline stage" });
+    }
+  });
+
+  app.patch("/api/inquiries/:id/assignment", requireAdmin, async (req, res) => {
+    try {
+      const { assignedTo } = req.body;
+      const updated = await storage.updateBuyerInquiryAssignment(req.params.id, assignedTo || null);
+      if (!updated) {
+        return res.status(404).json({ error: "Inquiry not found" });
+      }
+      
+      await storage.createActivityLog({
+        leadType: "inquiry",
+        leadId: req.params.id,
+        activityType: "assignment",
+        description: assignedTo ? `Assigned to salesperson` : `Unassigned`,
+        createdBy: (req.user as any)?.id,
+      });
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating inquiry assignment:", error);
+      res.status(500).json({ error: "Failed to update assignment" });
+    }
+  });
+
   app.get("/api/inventory/all", async (req, res) => {
     try {
       const cars = await storage.getAllInventoryCars();
