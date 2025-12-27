@@ -317,6 +317,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [privacyPolicy, setPrivacyPolicy] = useState("");
   const [termsOfService, setTermsOfService] = useState("");
   const [sellerConfirmationSms, setSellerConfirmationSms] = useState("Thank you for submitting your {year} {make} {model} to {siteName}! We'll review your submission and contact you within 24 hours.");
+  const [inquiryConfirmationSms, setInquiryConfirmationSms] = useState("Thank you for your inquiry about the {year} {make} {model}! We'll be in touch soon.");
+  const [tradeInConfirmationSms, setTradeInConfirmationSms] = useState("Thank you for submitting your {year} {make} {model} for trade-in valuation! We'll contact you within 24 hours.");
   const [menuLabelHome, setMenuLabelHome] = useState("Home");
   const [menuLabelInventory, setMenuLabelInventory] = useState("Inventory");
   const [menuLabelConsign, setMenuLabelConsign] = useState("Consign");
@@ -376,6 +378,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setPrivacyPolicy(settings.privacyPolicy || "");
       setTermsOfService(settings.termsOfService || "");
       setSellerConfirmationSms(settings.sellerConfirmationSms || "Thank you for submitting your {year} {make} {model} to {siteName}! We'll review your submission and contact you within 24 hours.");
+      setInquiryConfirmationSms(settings.inquiryConfirmationSms || "Thank you for your inquiry about the {year} {make} {model}! We'll be in touch soon.");
+      setTradeInConfirmationSms(settings.tradeInConfirmationSms || "Thank you for submitting your {year} {make} {model} for trade-in valuation! We'll contact you within 24 hours.");
       setMenuLabelHome(settings.menuLabelHome || "Home");
       setMenuLabelInventory(settings.menuLabelInventory || "Inventory");
       setMenuLabelConsign(settings.menuLabelConsign || "Consign");
@@ -433,6 +437,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           privacyPolicy: privacyPolicy || null,
           termsOfService: termsOfService || null,
           sellerConfirmationSms: sellerConfirmationSms || null,
+          inquiryConfirmationSms: inquiryConfirmationSms || null,
+          tradeInConfirmationSms: tradeInConfirmationSms || null,
           menuLabelHome: menuLabelHome || "Home",
           menuLabelInventory: menuLabelInventory || "Inventory",
           menuLabelConsign: menuLabelConsign || "Consign",
@@ -1697,6 +1703,88 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
               onClick={() => updateMutation.mutate()} 
               disabled={updateMutation.isPending}
               data-testid="button-save-seller-sms"
+            >
+              {updateMutation.isPending ? "Saving..." : "Save SMS Template"}
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card className="border-white border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" /> Buyer Inquiry Confirmation SMS
+            </CardTitle>
+            <CardDescription>Customize the SMS message sent to buyers when they submit an inquiry</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="inquiryConfirmationSms">Message Template</Label>
+              <Textarea
+                id="inquiryConfirmationSms"
+                value={inquiryConfirmationSms}
+                onChange={(e) => setInquiryConfirmationSms(e.target.value)}
+                placeholder="Thank you for your inquiry about the {year} {make} {model}..."
+                className="min-h-[100px]"
+                data-testid="input-inquiry-confirmation-sms"
+              />
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p className="font-medium">Available placeholders:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  <li><code className="bg-muted px-1 rounded">{"{year}"}</code> - Vehicle year</li>
+                  <li><code className="bg-muted px-1 rounded">{"{make}"}</code> - Vehicle make</li>
+                  <li><code className="bg-muted px-1 rounded">{"{model}"}</code> - Vehicle model</li>
+                  <li><code className="bg-muted px-1 rounded">{"{siteName}"}</code> - Your business name</li>
+                  <li><code className="bg-muted px-1 rounded">{"{firstName}"}</code> - Buyer's first name</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              onClick={() => updateMutation.mutate()} 
+              disabled={updateMutation.isPending}
+              data-testid="button-save-inquiry-sms"
+            >
+              {updateMutation.isPending ? "Saving..." : "Save SMS Template"}
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card className="border-white border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" /> Trade-In Confirmation SMS
+            </CardTitle>
+            <CardDescription>Customize the SMS message sent when someone submits a trade-in valuation request</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="tradeInConfirmationSms">Message Template</Label>
+              <Textarea
+                id="tradeInConfirmationSms"
+                value={tradeInConfirmationSms}
+                onChange={(e) => setTradeInConfirmationSms(e.target.value)}
+                placeholder="Thank you for submitting your {year} {make} {model} for trade-in valuation..."
+                className="min-h-[100px]"
+                data-testid="input-tradein-confirmation-sms"
+              />
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p className="font-medium">Available placeholders:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  <li><code className="bg-muted px-1 rounded">{"{year}"}</code> - Vehicle year</li>
+                  <li><code className="bg-muted px-1 rounded">{"{make}"}</code> - Vehicle make</li>
+                  <li><code className="bg-muted px-1 rounded">{"{model}"}</code> - Vehicle model</li>
+                  <li><code className="bg-muted px-1 rounded">{"{siteName}"}</code> - Your business name</li>
+                  <li><code className="bg-muted px-1 rounded">{"{firstName}"}</code> - Owner's first name</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              onClick={() => updateMutation.mutate()} 
+              disabled={updateMutation.isPending}
+              data-testid="button-save-tradein-sms"
             >
               {updateMutation.isPending ? "Saving..." : "Save SMS Template"}
             </Button>
