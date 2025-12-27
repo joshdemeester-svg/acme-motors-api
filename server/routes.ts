@@ -355,6 +355,114 @@ async function sendSellerConfirmationSMS(consignmentData: {
   }
 }
 
+async function sendInquiryConfirmationSMS(inquiryData: {
+  phone: string;
+  firstName: string;
+  year: string | number;
+  make: string;
+  model: string;
+}): Promise<void> {
+  try {
+    if (!inquiryData.phone) {
+      console.log("[Notify] No phone provided, skipping inquiry confirmation SMS");
+      return;
+    }
+
+    const normalizedPhone = normalizePhoneNumber(inquiryData.phone);
+    const digitsOnly = normalizedPhone.replace(/\D/g, "");
+    if (!normalizedPhone || normalizedPhone === "+" || digitsOnly.length < 10) {
+      console.log("[Notify] Invalid phone number, skipping inquiry confirmation SMS");
+      return;
+    }
+
+    const settings = await storage.getSiteSettings();
+    if (!settings) return;
+
+    const template = settings.inquiryConfirmationSms || 
+      "Thank you for your inquiry about the {year} {make} {model}! We'll be in touch soon.";
+    
+    const message = template
+      .replace(/\{year\}/g, String(inquiryData.year))
+      .replace(/\{make\}/g, inquiryData.make)
+      .replace(/\{model\}/g, inquiryData.model)
+      .replace(/\{siteName\}/g, settings.siteName || "our dealership")
+      .replace(/\{firstName\}/g, inquiryData.firstName);
+
+    const contactId = await getOrCreateGHLContactByPhone(
+      normalizedPhone, 
+      inquiryData.firstName, 
+      "Buyer Inquiry"
+    );
+    
+    if (contactId) {
+      const result = await sendGHLSMS(contactId, message);
+      if (result.success) {
+        console.log(`[Notify] Inquiry confirmation SMS sent to ${normalizedPhone}`);
+      } else {
+        console.error(`[Notify] Failed to send inquiry SMS to ${normalizedPhone}:`, result.error);
+      }
+    } else {
+      console.error(`[Notify] Could not create/get contact for ${normalizedPhone}`);
+    }
+  } catch (error) {
+    console.error("[Notify] Failed to send inquiry confirmation:", error);
+  }
+}
+
+async function sendTradeInConfirmationSMS(tradeInData: {
+  phone: string;
+  firstName: string;
+  year: string;
+  make: string;
+  model: string;
+}): Promise<void> {
+  try {
+    if (!tradeInData.phone) {
+      console.log("[Notify] No phone provided, skipping trade-in confirmation SMS");
+      return;
+    }
+
+    const normalizedPhone = normalizePhoneNumber(tradeInData.phone);
+    const digitsOnly = normalizedPhone.replace(/\D/g, "");
+    if (!normalizedPhone || normalizedPhone === "+" || digitsOnly.length < 10) {
+      console.log("[Notify] Invalid phone number, skipping trade-in confirmation SMS");
+      return;
+    }
+
+    const settings = await storage.getSiteSettings();
+    if (!settings) return;
+
+    const template = settings.tradeInConfirmationSms || 
+      "Thank you for submitting your {year} {make} {model} for trade-in valuation! We'll contact you within 24 hours.";
+    
+    const message = template
+      .replace(/\{year\}/g, tradeInData.year)
+      .replace(/\{make\}/g, tradeInData.make)
+      .replace(/\{model\}/g, tradeInData.model)
+      .replace(/\{siteName\}/g, settings.siteName || "our dealership")
+      .replace(/\{firstName\}/g, tradeInData.firstName);
+
+    const contactId = await getOrCreateGHLContactByPhone(
+      normalizedPhone, 
+      tradeInData.firstName, 
+      "Trade-In Request"
+    );
+    
+    if (contactId) {
+      const result = await sendGHLSMS(contactId, message);
+      if (result.success) {
+        console.log(`[Notify] Trade-in confirmation SMS sent to ${normalizedPhone}`);
+      } else {
+        console.error(`[Notify] Failed to send trade-in SMS to ${normalizedPhone}:`, result.error);
+      }
+    } else {
+      console.error(`[Notify] Could not create/get contact for ${normalizedPhone}`);
+    }
+  } catch (error) {
+    console.error("[Notify] Failed to send trade-in confirmation:", error);
+  }
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -1450,6 +1558,18 @@ export async function registerRoutes(
       sendAdminNotificationSMS(smsMessage).catch((err) => {
         console.error("Admin notification SMS failed:", err);
       });
+
+      // Send confirmation SMS to buyer
+      const firstName = data.buyerName.split(" ")[0];
+      sendInquiryConfirmationSMS({
+        phone: data.buyerPhone,
+        firstName,
+        year: data.year,
+        make: data.make,
+        model: data.model,
+      }).catch((err) => {
+        console.error("Inquiry confirmation SMS failed:", err);
+      });
       
       res.json({ success: true, message: "Your inquiry has been sent! We'll be in touch soon." });
     } catch (error) {
@@ -1551,6 +1671,17 @@ export async function registerRoutes(
         const smsMessage = `NEW TRADE-IN REQUEST\n\nVehicle: ${data.year} ${data.make} ${data.model}\nCondition: ${data.condition}\nMileage: ${data.mileage}\n\nCustomer: ${data.firstName} ${data.lastName}\nPhone: ${data.phone}\nEmail: ${data.email}`;
         sendAdminNotificationSMS(smsMessage).catch((err) => {
           console.error("Admin notification SMS failed:", err);
+        });
+
+        // Send confirmation SMS to customer
+        sendTradeInConfirmationSMS({
+          phone: data.phone,
+          firstName: data.firstName,
+          year: data.year,
+          make: data.make,
+          model: data.model,
+        }).catch((err) => {
+          console.error("Trade-in confirmation SMS failed:", err);
         });
       }
 
@@ -1930,6 +2061,9 @@ ${allPages.map(page => `  <url>
         adminNotifyPhone2,
         ghlApiToken,
         ghlLocationId,
+        sellerConfirmationSms,
+        inquiryConfirmationSms,
+        tradeInConfirmationSms,
         menuLabelHome,
         menuLabelInventory,
         menuLabelConsign,
@@ -1970,6 +2104,9 @@ ${allPages.map(page => `  <url>
         adminNotifyPhone1,
         adminNotifyPhone2,
         ghlLocationId,
+        sellerConfirmationSms,
+        inquiryConfirmationSms,
+        tradeInConfirmationSms,
         menuLabelHome,
         menuLabelInventory,
         menuLabelConsign,
