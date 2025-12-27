@@ -1,0 +1,180 @@
+Below is a cleaned, corrected, and finalized priority checklist, aligned to dealer value vs build complexity, and structured so it can be dropped directly into your internal roadmap, sprint board, or product spec.
+
+I’ve preserved your priorities and tightened the language so each item clearly states why it matters and what “done” looks like.
+
+⸻
+
+HIGH PRIORITY (Quick Wins – Build These First)
+
+These features deliver immediate dealer value, are easy to explain in demos, and reduce sales friction.
+
+1. Credit Application Form
+
+Purpose
+Captures serious buyers and drives backend profit, especially critical for BHPH and subprime dealers.
+
+Implementation checklist
+☐ Mobile-first credit app form
+☐ TCPA and consent language
+☐ Secure submission and storage
+☐ Lead tagged as “Credit App”
+☐ Notification to dealer
+
+⸻
+
+2. CSV Bulk Inventory Upload
+
+Purpose
+Saves dealers hours of manual entry and removes onboarding friction.
+
+Implementation checklist
+☐ CSV template download
+☐ VIN-based auto-fill on upload
+☐ Photo URL support (optional)
+☐ Error validation and feedback
+☐ Bulk status updates
+
+⸻
+
+3. Days-on-Lot Tracking
+
+Purpose
+Directly impacts pricing decisions and inventory turn speed.
+
+Implementation checklist
+☐ Auto-start counter on publish
+☐ Visible on inventory list and vehicle detail
+☐ Filter by aging ranges (0–30, 31–60, 60+)
+☐ Exportable report
+
+⸻
+
+4. Click-to-Call and Click-to-Text Buttons
+
+Purpose
+Immediate revenue impact. Removes friction between browsing and contact.
+
+Implementation checklist
+☐ Sticky mobile buttons
+☐ Vehicle-specific tracking
+☐ Click events logged as leads
+☐ Business phone and SMS routing
+
+⸻
+
+MEDIUM PRIORITY (Revenue Boosters)
+
+These features increase dealer confidence, improve follow-up quality, and justify higher monthly pricing.
+
+5. Leads Per Vehicle Report
+
+Purpose
+Shows which vehicles attract interest and which ones stall.
+
+Implementation checklist
+☐ Lead count per VIN
+☐ Filter by date range
+☐ Sort highest to lowest interest
+☐ Export CSV
+
+⸻
+
+6. Lead Source Attribution
+
+Purpose
+Lets dealers see what marketing actually works.
+
+Implementation checklist
+☐ Track source (Google, Facebook, Direct, Referral)
+☐ Associate source with vehicle and lead
+☐ Display in lead record
+☐ Summary report by source
+
+⸻
+
+7. Auto-Response Email
+
+Purpose
+Ensures every lead gets immediate professional follow-up.
+
+Implementation checklist
+☐ Customizable email template
+☐ Trigger on form submission
+☐ Vehicle-specific merge fields
+☐ Timestamp logged in lead history
+
+⸻
+
+8. Down Payment Estimator
+
+Purpose
+Pre-qualifies buyers and reduces wasted conversations.
+
+Implementation checklist
+☐ Adjustable down payment slider
+☐ Estimated monthly payment output
+☐ Disclaimer language
+☐ Lead capture tied to results
+
+⸻
+
+LOWER PRIORITY (Stickiness and Professionalism)
+
+These features improve retention and perceived polish, but are not required for early revenue.
+
+9. E-Signature Consignment Agreement
+
+Purpose
+Professionalizes consignment workflows and reduces paperwork.
+
+Implementation checklist
+☐ Upload dealer agreement template
+☐ Customer e-sign flow
+☐ Signed PDF storage
+☐ Agreement linked to vehicle record
+
+⸻
+
+10. Website Chat Widget
+
+Purpose
+Improves engagement, especially after hours.
+
+Implementation checklist
+☐ Vehicle-aware chat context
+☐ After-hours auto responses
+☐ Lead capture fallback
+☐ Optional live takeover
+
+⸻
+
+11. Inventory Aging Alerts
+
+Purpose
+Encourages proactive pricing decisions.
+
+Implementation checklist
+☐ Alert thresholds (30, 60, 90 days)
+☐ Email or dashboard notification
+☐ Quick link to price edit
+☐ Snooze or dismiss option
+
+⸻
+
+FINAL BUILD GUIDANCE (Important)
+
+If you ship Items 1–4, you have a sellable product.
+If you ship 1–8, you have a competitive product.
+If you ship 1–11, you have a high-retention SaaS.
+
+The mistake most platforms make is building “cool features” too early. You are doing this correctly by anchoring on dealer money and time saved.
+
+⸻
+
+If you want next, I can:
+• Merge this into your existing master checklist
+• Turn this into a product backlog with effort estimates
+• Convert this into dealer-facing value bullets for sales pages
+• Help you define pricing tiers tied directly to these features
+
+Tell me the next step you want to take.

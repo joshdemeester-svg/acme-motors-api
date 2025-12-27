@@ -1,0 +1,193 @@
+Below is a clean, implementation-ready feature checklist you can use internally to build and track your used-car dealer website/app. This is organized in build order, from MVP to premium, so it doubles as both a development roadmap and a sales enablement asset.
+
+No fluff. These are the features that create real dealer value.
+
+⸻
+
+PHASE 1: CORE MVP (Must Have)
+
+Inventory Management
+
+☐ VIN-based inventory intake
+☐ Manual vehicle entry
+☐ CSV bulk upload
+☐ Automatic VIN decoding
+☐ Vehicle photo upload and ordering
+☐ Vehicle detail pages
+☐ Status tags (Available, Sold, Pending)
+☐ Price display and update control
+☐ Days-on-lot tracking
+
+⸻
+
+Website & UX
+
+☐ Mobile-first responsive design
+☐ Fast page load optimization
+☐ Vehicle search and filters
+☐ Vehicle comparison tool
+☐ Sticky CTA (Call / Text / Get Approved)
+☐ Click-to-call and click-to-text
+
+⸻
+
+Lead Capture
+
+☐ Vehicle-specific lead forms
+☐ General contact form
+☐ Lead source attribution
+☐ SMS opt-in checkbox
+☐ Auto-response email
+☐ Auto-response SMS
+☐ Missed-call text reply
+
+⸻
+
+Finance Tools
+
+☐ Credit application form
+☐ Payment calculator
+☐ Down payment estimator
+☐ Trade-in value request form
+☐ Soft-pull pre-qualification positioning
+
+⸻
+
+PHASE 2: HIGH-VALUE FEATURES (Revenue & Retention)
+
+Consignment & Seller Intake
+
+☐ Private seller submission portal
+☐ VIN + photo intake
+☐ Desired price input
+☐ Dealer approval workflow
+☐ E-signature consignment agreement
+☐ Revenue split tracking
+☐ Auto-remove after sale
+
+⸻
+
+SEO & Local Visibility
+
+☐ SEO-friendly inventory URLs
+☐ Vehicle schema markup
+☐ Auto-generated city landing pages
+☐ Google indexing for new inventory
+☐ Meta titles and descriptions control
+
+⸻
+
+Dealer Dashboard
+
+☐ Leads per vehicle report
+☐ Conversion rate tracking
+☐ Inventory aging alerts
+☐ Cost per lead tracking
+☐ Monthly performance summary
+
+⸻
+
+Chat & Automation
+
+☐ Website chat widget
+☐ Vehicle-aware chat responses
+☐ After-hours automation
+☐ Appointment scheduling
+☐ CRM lead handoff
+
+⸻
+
+PHASE 3: OPERATIONS & COMPLIANCE
+
+CRM / Lead Management
+
+☐ Lead timeline view
+☐ Notes and follow-ups
+☐ Salesperson assignment
+☐ Email and SMS history
+☐ Export to external CRM
+
+⸻
+
+Compliance & Risk Reduction
+
+☐ TCPA consent logging
+☐ Privacy policy enforcement
+☐ FTC Buyers Guide generator
+☐ Disclosure block management
+☐ Dealer license display
+
+⸻
+
+Team & Multi-Location
+
+☐ Role-based permissions
+☐ Location-based inventory
+☐ Multi-location admin dashboard
+☐ Shared inventory pools
+
+⸻
+
+PHASE 4: PREMIUM / SCALE FEATURES
+
+Advanced Automation
+
+☐ AI vehicle descriptions
+☐ Price optimization suggestions
+☐ SMS drip campaigns per vehicle
+☐ Abandoned lead reactivation
+
+⸻
+
+Marketplace & Distribution
+
+☐ Facebook Marketplace feed
+☐ Third-party listing feeds
+☐ Dealer-to-dealer listings
+☐ Wholesale inventory option
+
+⸻
+
+Platform & API
+
+☐ API access for inventory
+☐ API access for leads
+☐ Webhooks for automation
+
+⸻
+
+OPTIONAL BUT HIGH-LEVERAGE ADD-ONS
+
+☐ Hosting and security management
+☐ Backup and uptime monitoring
+☐ Performance analytics
+☐ White-label branding
+☐ Domain and DNS management
+
+⸻
+
+INTERNAL BUILD NOTES (Highly Recommended)
+
+☐ Feature flag system for tiered plans
+☐ Modular pricing controls
+☐ Demo account toggle
+☐ Audit logs for admin actions
+☐ Scalable multi-tenant architecture
+
+⸻
+
+Final Advice
+
+If you ship Phase 1 + Consignment + Dashboard, you already have a product dealers will pay for.
+
+Everything beyond that increases:
+• Monthly price ceiling
+• Dealer stickiness
+• Long-term enterprise value
+
+If you want next:
+• I can reduce this to a 30-day MVP build checklist
+• Or convert this into a client-facing feature matrix
+• Or map features directly to pricing tiers
+
+Tell me which you want next.
