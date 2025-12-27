@@ -218,36 +218,57 @@ export default function Inventory() {
     },
   });
 
-  const parseCsvLine = (line: string): string[] => {
-    const result: string[] = [];
-    let current = "";
+  const parseCsv = (text: string): CsvVehicle[] => {
+    const records: string[][] = [];
+    let currentRow: string[] = [];
+    let currentField = "";
     let inQuotes = false;
     
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      if (char === '"') {
-        if (inQuotes && line[i + 1] === '"') {
-          current += '"';
-          i++;
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      const nextChar = text[i + 1];
+      
+      if (inQuotes) {
+        if (char === '"') {
+          if (nextChar === '"') {
+            currentField += '"';
+            i++;
+          } else {
+            inQuotes = false;
+          }
         } else {
-          inQuotes = !inQuotes;
+          currentField += char;
         }
-      } else if (char === ',' && !inQuotes) {
-        result.push(current.trim());
-        current = "";
       } else {
-        current += char;
+        if (char === '"') {
+          inQuotes = true;
+        } else if (char === ',') {
+          currentRow.push(currentField);
+          currentField = "";
+        } else if (char === '\n' || (char === '\r' && nextChar === '\n')) {
+          if (char === '\r') i++;
+          currentRow.push(currentField);
+          if (currentRow.some(f => f.trim().length > 0)) {
+            records.push(currentRow);
+          }
+          currentRow = [];
+          currentField = "";
+        } else if (char !== '\r') {
+          currentField += char;
+        }
       }
     }
-    result.push(current.trim());
-    return result;
-  };
-
-  const parseCsv = (text: string): CsvVehicle[] => {
-    const lines = text.trim().split("\n").map(l => l.trim()).filter(l => l.length > 0);
-    if (lines.length < 2) throw new Error("CSV must have a header row and at least one data row");
     
-    const headers = parseCsvLine(lines[0]).map(h => h.toLowerCase().replace(/['"]/g, ""));
+    if (currentField.length > 0 || currentRow.length > 0) {
+      currentRow.push(currentField);
+      if (currentRow.some(f => f.trim().length > 0)) {
+        records.push(currentRow);
+      }
+    }
+    
+    if (records.length < 2) throw new Error("CSV must have a header row and at least one data row");
+    
+    const headers = records[0].map(h => h.trim().toLowerCase());
     const requiredHeaders = ["vin", "year", "make", "model", "mileage", "color", "price", "condition"];
     const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
     
@@ -257,8 +278,8 @@ export default function Inventory() {
     
     const vehicles: CsvVehicle[] = [];
     
-    for (let i = 1; i < lines.length; i++) {
-      const values = parseCsvLine(lines[i]);
+    for (let i = 1; i < records.length; i++) {
+      const values = records[i];
       if (values.length < requiredHeaders.length) continue;
       
       const row: Record<string, string> = {};
@@ -266,18 +287,23 @@ export default function Inventory() {
         row[header] = values[index] || "";
       });
       
-      if (!row.vin || !row.year || !row.make || !row.model) continue;
+      const vin = row.vin?.trim();
+      const year = row.year?.trim();
+      const make = row.make?.trim();
+      const model = row.model?.trim();
+      
+      if (!vin || !year || !make || !model) continue;
       
       vehicles.push({
-        vin: row.vin.replace(/['"]/g, ""),
-        year: parseInt(row.year) || 0,
-        make: row.make.replace(/['"]/g, ""),
-        model: row.model.replace(/['"]/g, ""),
-        mileage: parseInt(row.mileage) || 0,
-        color: row.color?.replace(/['"]/g, "") || "Unknown",
-        price: parseInt(row.price) || 0,
-        condition: row.condition?.replace(/['"]/g, "") || "Good",
-        description: row.description?.replace(/['"]/g, ""),
+        vin,
+        year: parseInt(year) || 0,
+        make,
+        model,
+        mileage: parseInt(row.mileage?.trim()) || 0,
+        color: row.color?.trim() || "Unknown",
+        price: parseInt(row.price?.trim()) || 0,
+        condition: row.condition?.trim() || "Good",
+        description: row.description,
       });
     }
     
