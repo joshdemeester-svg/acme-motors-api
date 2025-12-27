@@ -8,9 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Users, MessageSquare, Car, Calendar, Phone, Mail, Loader2, Clock, Check, X, ExternalLink, CreditCard, DollarSign, Briefcase, Eye } from "lucide-react";
+import { Search, Users, MessageSquare, Car, Calendar, Phone, Mail, Loader2, Clock, Check, X, ExternalLink, CreditCard, DollarSign, Briefcase, Eye, LayoutGrid, List } from "lucide-react";
 import type { BuyerInquiry, CreditApplication } from "@shared/schema";
 import { LeadDetailDialog } from "@/components/admin/LeadDetailDialog";
+import { PipelineBoard } from "@/components/admin/PipelineBoard";
 
 interface TradeInSubmission {
   id: string;
@@ -82,6 +83,7 @@ function StatusBadge({ status }: { status: string | null | undefined }) {
 export default function Leads() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("inquiries");
+  const [viewMode, setViewMode] = useState<"list" | "pipeline">("pipeline");
   const [selectedLead, setSelectedLead] = useState<BuyerInquiry | CreditApplication | null>(null);
   const [selectedLeadType, setSelectedLeadType] = useState<"inquiry" | "credit_application">("inquiry");
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -187,6 +189,21 @@ export default function Leads() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/credit-applications"] });
       toast({ title: "Status updated" });
+    },
+  });
+
+  const updatePipelineStageMutation = useMutation({
+    mutationFn: async ({ id, pipelineStage }: { id: string; pipelineStage: string }) => {
+      const res = await fetch(`/api/inquiries/${id}/pipeline`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pipelineStage }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inquiries"] });
+      toast({ title: "Pipeline stage updated" });
     },
   });
 
@@ -302,7 +319,40 @@ export default function Leads() {
           </TabsList>
 
           <TabsContent value="inquiries" className="mt-6">
-            {loadingInquiries ? (
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-muted-foreground">
+                {inquiries.length} total inquiries
+              </p>
+              <div className="flex items-center gap-1 border rounded-lg p-1">
+                <Button
+                  variant={viewMode === "pipeline" ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("pipeline")}
+                  data-testid="button-view-pipeline"
+                >
+                  <LayoutGrid className="h-4 w-4 mr-1" />
+                  Pipeline
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                  data-testid="button-view-list"
+                >
+                  <List className="h-4 w-4 mr-1" />
+                  List
+                </Button>
+              </div>
+            </div>
+
+            {viewMode === "pipeline" ? (
+              <PipelineBoard
+                inquiries={filterInquiries(inquiries)}
+                onStageChange={(id, stage) => updatePipelineStageMutation.mutate({ id, pipelineStage: stage })}
+                onViewDetails={(inquiry) => openLeadDetail(inquiry, "inquiry")}
+                isLoading={loadingInquiries}
+              />
+            ) : loadingInquiries ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
