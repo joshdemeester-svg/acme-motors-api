@@ -251,6 +251,8 @@ export const buyerInquiries = pgTable("buyer_inquiries", {
   bestTimeToContact: text("best_time_to_contact"),
   
   status: text("status").notNull().default("new"),
+  pipelineStage: text("pipeline_stage").notNull().default("new"),
+  assignedTo: varchar("assigned_to").references(() => users.id),
   
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -407,3 +409,42 @@ export const insertCreditApplicationSchema = createInsertSchema(creditApplicatio
 
 export type InsertCreditApplication = z.infer<typeof insertCreditApplicationSchema>;
 export type CreditApplication = typeof creditApplications.$inferSelect;
+
+export const leadNotes = pgTable("lead_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  leadType: text("lead_type").notNull(),
+  leadId: varchar("lead_id").notNull(),
+  content: text("content").notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertLeadNoteSchema = createInsertSchema(leadNotes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertLeadNote = z.infer<typeof insertLeadNoteSchema>;
+export type LeadNote = typeof leadNotes.$inferSelect;
+
+export const activityLog = pgTable("activity_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  leadType: text("lead_type").notNull(),
+  leadId: varchar("lead_id").notNull(),
+  activityType: text("activity_type").notNull(),
+  description: text("description").notNull(),
+  metadata: text("metadata"),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertActivityLogSchema = createInsertSchema(activityLog).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+export type ActivityLog = typeof activityLog.$inferSelect;
+
+export const leadPipelineStages = ["new", "contacted", "qualified", "negotiating", "sold", "lost"] as const;
+export type LeadPipelineStage = typeof leadPipelineStages[number];

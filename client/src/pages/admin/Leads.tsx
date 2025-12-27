@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Users, MessageSquare, Car, Calendar, Phone, Mail, Loader2, Clock, Check, X, ExternalLink, CreditCard, DollarSign, Briefcase } from "lucide-react";
+import { Search, Users, MessageSquare, Car, Calendar, Phone, Mail, Loader2, Clock, Check, X, ExternalLink, CreditCard, DollarSign, Briefcase, Eye } from "lucide-react";
 import type { BuyerInquiry, CreditApplication } from "@shared/schema";
+import { LeadDetailDialog } from "@/components/admin/LeadDetailDialog";
 
 interface TradeInSubmission {
   id: string;
@@ -81,8 +82,17 @@ function StatusBadge({ status }: { status: string | null | undefined }) {
 export default function Leads() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("inquiries");
+  const [selectedLead, setSelectedLead] = useState<BuyerInquiry | CreditApplication | null>(null);
+  const [selectedLeadType, setSelectedLeadType] = useState<"inquiry" | "credit_application">("inquiry");
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const openLeadDetail = (lead: BuyerInquiry | CreditApplication, type: "inquiry" | "credit_application") => {
+    setSelectedLead(lead);
+    setSelectedLeadType(type);
+    setDetailDialogOpen(true);
+  };
 
   const { data: inquiries = [], isLoading: loadingInquiries } = useQuery<BuyerInquiry[]>({
     queryKey: ["/api/inquiries"],
@@ -334,6 +344,15 @@ export default function Leads() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openLeadDetail(inquiry, "inquiry")}
+                            data-testid={`button-view-inquiry-${inquiry.id}`}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Details
+                          </Button>
                           <Select
                             value={inquiry.status}
                             onValueChange={(status) => updateInquiryMutation.mutate({ id: inquiry.id, status })}
@@ -558,6 +577,15 @@ export default function Leads() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openLeadDetail(app, "credit_application")}
+                            data-testid={`button-view-credit-app-${app.id}`}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Details
+                          </Button>
                           <Select
                             value={app.status || "new"}
                             onValueChange={(status) => updateCreditAppMutation.mutate({ id: app.id, status })}
@@ -583,6 +611,13 @@ export default function Leads() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <LeadDetailDialog
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        leadType={selectedLeadType}
+        lead={selectedLead}
+      />
     </AdminLayout>
   );
 }
