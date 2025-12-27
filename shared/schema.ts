@@ -106,6 +106,10 @@ export const insertInventoryCarSchema = createInsertSchema(inventoryCars).omit({
 
 export type InsertInventoryCar = z.infer<typeof insertInventoryCarSchema>;
 export type InventoryCar = typeof inventoryCars.$inferSelect;
+export type InventoryCarWithMetrics = InventoryCar & {
+  daysOnLot: number;
+  inquiryCount: number;
+};
 
 export const siteSettings = pgTable("site_settings", {
   id: varchar("id").primaryKey().default(sql`'default'`),

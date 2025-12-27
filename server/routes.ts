@@ -1901,7 +1901,22 @@ export async function registerRoutes(
   app.get("/api/inventory/all", async (req, res) => {
     try {
       const cars = await storage.getAllInventoryCars();
-      res.json(cars);
+      const inquiries = await storage.getAllBuyerInquiries();
+      
+      const carsWithMetrics = cars.map(car => {
+        const carInquiries = inquiries.filter(i => i.inventoryCarId === car.id);
+        const daysOnLot = car.createdAt 
+          ? Math.floor((Date.now() - new Date(car.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+          : 0;
+        
+        return {
+          ...car,
+          daysOnLot,
+          inquiryCount: carInquiries.length,
+        };
+      });
+      
+      res.json(carsWithMetrics);
     } catch (error) {
       console.error("Error fetching all inventory:", error);
       res.status(500).json({ error: "Failed to fetch inventory" });
@@ -1932,6 +1947,50 @@ export async function registerRoutes(
       }
       console.error("Error creating inventory car:", error);
       res.status(500).json({ error: "Failed to create inventory car" });
+    }
+  });
+
+  app.post("/api/inventory/bulk", requireAdmin, async (req, res) => {
+    try {
+      const { vehicles } = req.body;
+      if (!Array.isArray(vehicles) || vehicles.length === 0) {
+        return res.status(400).json({ error: "No vehicles provided" });
+      }
+      
+      const createdCars = [];
+      const errors = [];
+      
+      for (const vehicle of vehicles) {
+        try {
+          const validatedData = insertInventoryCarSchema.parse({
+            vin: vehicle.vin,
+            year: vehicle.year,
+            make: vehicle.make,
+            model: vehicle.model,
+            mileage: vehicle.mileage,
+            color: vehicle.color,
+            price: vehicle.price,
+            condition: vehicle.condition,
+            description: vehicle.description || null,
+            photos: [],
+            status: "available",
+            featured: false,
+          });
+          const car = await storage.createInventoryCar(validatedData);
+          createdCars.push(car);
+        } catch (error) {
+          errors.push({ vehicle, error: error instanceof Error ? error.message : "Unknown error" });
+        }
+      }
+      
+      res.status(201).json({ 
+        count: createdCars.length, 
+        cars: createdCars,
+        errors: errors.length > 0 ? errors : undefined
+      });
+    } catch (error) {
+      console.error("Error bulk creating inventory:", error);
+      res.status(500).json({ error: "Failed to bulk create inventory" });
     }
   });
 

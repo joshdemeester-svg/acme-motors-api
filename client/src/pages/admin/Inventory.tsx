@@ -14,8 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Plus, Search, Car, DollarSign, Pencil, Trash2, Eye, Loader2, Check, X, Clock, ChevronsUpDown, Upload, Star } from "lucide-react";
-import type { InventoryCar } from "@shared/schema";
+import { Plus, Search, Car, DollarSign, Pencil, Trash2, Eye, Loader2, Check, X, Clock, ChevronsUpDown, Upload, Star, CalendarDays, MessageSquare } from "lucide-react";
+import type { InventoryCar, InventoryCarWithMetrics } from "@shared/schema";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
 
@@ -58,9 +58,24 @@ function StatusBadge({ status }: { status: string | null | undefined }) {
   );
 }
 
+interface CsvVehicle {
+  vin: string;
+  year: number;
+  make: string;
+  model: string;
+  mileage: number;
+  color: string;
+  price: number;
+  condition: string;
+  description?: string;
+}
+
 export default function Inventory() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showCsvDialog, setShowCsvDialog] = useState(false);
+  const [csvPreview, setCsvPreview] = useState<CsvVehicle[]>([]);
+  const [csvError, setCsvError] = useState<string | null>(null);
   const [editingVehicle, setEditingVehicle] = useState<InventoryCar | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -97,10 +112,10 @@ export default function Inventory() {
   const [editModelOpen, setEditModelOpen] = useState(false);
   const [editVinLoading, setEditVinLoading] = useState(false);
 
-  const { data: inventory = [], isLoading } = useQuery<InventoryCar[]>({
-    queryKey: ["/api/inventory"],
+  const { data: inventory = [], isLoading } = useQuery<InventoryCarWithMetrics[]>({
+    queryKey: ["/api/inventory/all"],
     queryFn: async () => {
-      const res = await fetch("/api/inventory");
+      const res = await fetch("/api/inventory/all");
       if (!res.ok) throw new Error("Failed to fetch inventory");
       return res.json();
     },
@@ -137,7 +152,7 @@ export default function Inventory() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/all"] });
       toast({ title: "Vehicle added successfully" });
       setShowAddDialog(false);
       resetForm();
@@ -158,7 +173,7 @@ export default function Inventory() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/all"] });
       toast({ title: "Vehicle updated successfully" });
       setEditingVehicle(null);
     },
@@ -173,10 +188,123 @@ export default function Inventory() {
       if (!res.ok) throw new Error("Failed to delete vehicle");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/all"] });
       toast({ title: "Vehicle deleted successfully" });
     },
   });
+
+  const bulkUploadMutation = useMutation({
+    mutationFn: async (vehicles: CsvVehicle[]) => {
+      const res = await fetch("/api/inventory/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vehicles }),
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || "Failed to upload vehicles");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/all"] });
+      toast({ title: `Successfully added ${data.count} vehicles` });
+      setShowCsvDialog(false);
+      setCsvPreview([]);
+      setCsvError(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const parseCsvLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = "";
+      } else {
+        current += char;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
+  const parseCsv = (text: string): CsvVehicle[] => {
+    const lines = text.trim().split("\n").map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length < 2) throw new Error("CSV must have a header row and at least one data row");
+    
+    const headers = parseCsvLine(lines[0]).map(h => h.toLowerCase().replace(/['"]/g, ""));
+    const requiredHeaders = ["vin", "year", "make", "model", "mileage", "color", "price", "condition"];
+    const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+    
+    if (missingHeaders.length > 0) {
+      throw new Error(`Missing required columns: ${missingHeaders.join(", ")}`);
+    }
+    
+    const vehicles: CsvVehicle[] = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCsvLine(lines[i]);
+      if (values.length < requiredHeaders.length) continue;
+      
+      const row: Record<string, string> = {};
+      headers.forEach((header, index) => {
+        row[header] = values[index] || "";
+      });
+      
+      if (!row.vin || !row.year || !row.make || !row.model) continue;
+      
+      vehicles.push({
+        vin: row.vin.replace(/['"]/g, ""),
+        year: parseInt(row.year) || 0,
+        make: row.make.replace(/['"]/g, ""),
+        model: row.model.replace(/['"]/g, ""),
+        mileage: parseInt(row.mileage) || 0,
+        color: row.color?.replace(/['"]/g, "") || "Unknown",
+        price: parseInt(row.price) || 0,
+        condition: row.condition?.replace(/['"]/g, "") || "Good",
+        description: row.description?.replace(/['"]/g, ""),
+      });
+    }
+    
+    return vehicles;
+  };
+
+  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setCsvError(null);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const vehicles = parseCsv(text);
+        if (vehicles.length === 0) {
+          setCsvError("No valid vehicles found in the CSV file");
+          return;
+        }
+        setCsvPreview(vehicles);
+      } catch (error) {
+        setCsvError(error instanceof Error ? error.message : "Failed to parse CSV");
+      }
+    };
+    reader.readAsText(file);
+  };
 
   const resetForm = () => {
     setVin("");
@@ -394,10 +522,16 @@ export default function Inventory() {
               {availableCount} available, {soldCount} sold
             </p>
           </div>
-          <Button onClick={() => setShowAddDialog(true)} data-testid="button-add-vehicle">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Vehicle
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowCsvDialog(true)} data-testid="button-csv-upload">
+              <Upload className="h-4 w-4 mr-2" />
+              Import CSV
+            </Button>
+            <Button onClick={() => setShowAddDialog(true)} data-testid="button-add-vehicle">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Vehicle
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center gap-4">
@@ -458,6 +592,16 @@ export default function Inventory() {
                           {car.mileage.toLocaleString()} miles
                         </p>
                       )}
+                      <div className="flex gap-3 mt-2 text-xs">
+                        <span className="flex items-center gap-1 text-muted-foreground" title="Days on lot">
+                          <CalendarDays className="h-3 w-3" />
+                          {car.createdAt ? `${car.daysOnLot || 0} days` : "—"}
+                        </span>
+                        <span className="flex items-center gap-1 text-muted-foreground" title="Inquiries">
+                          <MessageSquare className="h-3 w-3" />
+                          {car.inquiryCount || 0} {car.inquiryCount === 1 ? "lead" : "leads"}
+                        </span>
+                      </div>
                     </div>
                     <div className="flex gap-1">
                       <Button
@@ -1154,6 +1298,120 @@ export default function Inventory() {
               className="w-full sm:w-auto"
             >
               {updateMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCsvDialog} onOpenChange={(open) => {
+        if (!open) {
+          setCsvPreview([]);
+          setCsvError(null);
+        }
+        setShowCsvDialog(open);
+      }}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Import Vehicles from CSV</DialogTitle>
+            <DialogDescription>
+              Upload a CSV file with vehicle data. Required columns: VIN, Year, Make, Model, Mileage, Color, Price, Condition
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-4 py-4">
+            {csvPreview.length === 0 ? (
+              <div className="space-y-4">
+                <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                  <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+                  <Label htmlFor="csv-upload" className="cursor-pointer">
+                    <span className="text-primary hover:underline">Click to upload CSV file</span>
+                    <Input
+                      id="csv-upload"
+                      type="file"
+                      accept=".csv"
+                      className="hidden"
+                      onChange={handleCsvUpload}
+                      data-testid="input-csv-file"
+                    />
+                  </Label>
+                </div>
+                {csvError && (
+                  <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm">
+                    {csvError}
+                  </div>
+                )}
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p className="font-medium">CSV Format Example:</p>
+                  <code className="block bg-muted p-2 rounded text-xs overflow-x-auto">
+                    VIN,Year,Make,Model,Mileage,Color,Price,Condition<br/>
+                    1HGBH41JXMN109186,2021,Honda,Accord,15000,White,28500,Excellent<br/>
+                    5YJSA1E26HF123456,2020,Tesla,Model S,22000,Red,65000,Good
+                  </code>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="font-medium">{csvPreview.length} vehicles ready to import</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setCsvPreview([]);
+                      setCsvError(null);
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </div>
+                <div className="border rounded-md overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Year</th>
+                        <th className="px-3 py-2 text-left">Make</th>
+                        <th className="px-3 py-2 text-left">Model</th>
+                        <th className="px-3 py-2 text-left">Mileage</th>
+                        <th className="px-3 py-2 text-left">Price</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {csvPreview.slice(0, 10).map((vehicle, index) => (
+                        <tr key={index} className="border-t">
+                          <td className="px-3 py-2">{vehicle.year}</td>
+                          <td className="px-3 py-2">{vehicle.make}</td>
+                          <td className="px-3 py-2">{vehicle.model}</td>
+                          <td className="px-3 py-2">{vehicle.mileage.toLocaleString()}</td>
+                          <td className="px-3 py-2">${vehicle.price.toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {csvPreview.length > 10 && (
+                    <p className="p-2 text-center text-muted-foreground text-sm">
+                      And {csvPreview.length - 10} more...
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCsvDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => bulkUploadMutation.mutate(csvPreview)}
+              disabled={csvPreview.length === 0 || bulkUploadMutation.isPending}
+              data-testid="button-confirm-csv-upload"
+            >
+              {bulkUploadMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Importing...
+                </>
+              ) : (
+                `Import ${csvPreview.length} Vehicles`
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
