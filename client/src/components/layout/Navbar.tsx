@@ -31,6 +31,7 @@ export function Navbar() {
     { href: "/inventory", label: settings?.menuLabelInventory || "Inventory" },
     { href: "/consign", label: settings?.menuLabelConsign || "Consign" },
     { href: "/trade-in", label: settings?.menuLabelTradeIn || "Trade-In" },
+    { href: "/get-approved", label: "Get Approved" },
     { href: "/appointments", label: settings?.menuLabelAppointments || "Book Appointment" },
   ];
 

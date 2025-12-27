@@ -22,6 +22,7 @@ import Terms from "@/pages/Terms";
 import TradeIn from "@/pages/TradeIn";
 import Compare from "@/pages/Compare";
 import Appointments from "@/pages/Appointments";
+import CreditApp from "@/pages/CreditApp";
 
 function FaviconLoader() {
   useFavicon();
@@ -47,6 +48,7 @@ function Router() {
       <Route path="/trade-in" component={TradeIn} />
       <Route path="/compare" component={Compare} />
       <Route path="/appointments" component={Appointments} />
+      <Route path="/get-approved" component={CreditApp} />
       <Route component={NotFound} />
     </Switch>
   );

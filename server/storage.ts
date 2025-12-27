@@ -12,6 +12,7 @@ import {
   testimonials,
   vehicleViews,
   vehicleDocuments,
+  creditApplications,
   type User, 
   type InsertUser,
   type ConsignmentSubmission,
@@ -34,7 +35,9 @@ import {
   type InsertTestimonial,
   type VehicleView,
   type VehicleDocument,
-  type InsertVehicleDocument
+  type InsertVehicleDocument,
+  type CreditApplication,
+  type InsertCreditApplication
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt } from "drizzle-orm";
@@ -119,6 +122,12 @@ export interface IStorage {
   createVehicleDocument(data: InsertVehicleDocument): Promise<VehicleDocument>;
   getVehicleDocuments(vehicleId: string): Promise<VehicleDocument[]>;
   deleteVehicleDocument(id: string): Promise<boolean>;
+  
+  createCreditApplication(data: InsertCreditApplication): Promise<CreditApplication>;
+  getAllCreditApplications(): Promise<CreditApplication[]>;
+  getCreditApplication(id: string): Promise<CreditApplication | undefined>;
+  updateCreditApplicationStatus(id: string, status: string): Promise<CreditApplication | undefined>;
+  updateCreditApplicationNotes(id: string, notes: string): Promise<CreditApplication | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -530,6 +539,38 @@ export class DatabaseStorage implements IStorage {
   async deleteVehicleDocument(id: string): Promise<boolean> {
     await db.delete(vehicleDocuments).where(eq(vehicleDocuments.id, id));
     return true;
+  }
+
+  async createCreditApplication(data: InsertCreditApplication): Promise<CreditApplication> {
+    const [application] = await db.insert(creditApplications).values(data).returning();
+    return application;
+  }
+
+  async getAllCreditApplications(): Promise<CreditApplication[]> {
+    return db.select().from(creditApplications).orderBy(desc(creditApplications.createdAt));
+  }
+
+  async getCreditApplication(id: string): Promise<CreditApplication | undefined> {
+    const [application] = await db.select().from(creditApplications).where(eq(creditApplications.id, id));
+    return application || undefined;
+  }
+
+  async updateCreditApplicationStatus(id: string, status: string): Promise<CreditApplication | undefined> {
+    const [updated] = await db
+      .update(creditApplications)
+      .set({ status })
+      .where(eq(creditApplications.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async updateCreditApplicationNotes(id: string, notes: string): Promise<CreditApplication | undefined> {
+    const [updated] = await db
+      .update(creditApplications)
+      .set({ notes })
+      .where(eq(creditApplications.id, id))
+      .returning();
+    return updated || undefined;
   }
 }
 
