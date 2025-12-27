@@ -345,3 +345,61 @@ export const insertVehicleDocumentSchema = createInsertSchema(vehicleDocuments).
 
 export type InsertVehicleDocument = z.infer<typeof insertVehicleDocumentSchema>;
 export type VehicleDocument = typeof vehicleDocuments.$inferSelect;
+
+export const creditApplications = pgTable("credit_applications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  dateOfBirth: text("date_of_birth").notNull(),
+  phone: text("phone").notNull(),
+  email: text("email").notNull(),
+  
+  currentAddress: text("current_address").notNull(),
+  currentCity: text("current_city").notNull(),
+  currentState: text("current_state").notNull(),
+  currentZip: text("current_zip").notNull(),
+  currentHowLong: text("current_how_long").notNull(),
+  housingStatus: text("housing_status").notNull(),
+  monthlyPayment: integer("monthly_payment"),
+  
+  previousAddress: text("previous_address"),
+  previousCity: text("previous_city"),
+  previousState: text("previous_state"),
+  previousZip: text("previous_zip"),
+  previousHowLong: text("previous_how_long"),
+  
+  employerName: text("employer_name").notNull(),
+  employerPhone: text("employer_phone"),
+  jobTitle: text("job_title").notNull(),
+  employmentLength: text("employment_length").notNull(),
+  monthlyIncome: integer("monthly_income").notNull(),
+  
+  previousEmployer: text("previous_employer"),
+  previousJobTitle: text("previous_job_title"),
+  previousEmploymentLength: text("previous_employment_length"),
+  
+  additionalIncome: integer("additional_income"),
+  additionalIncomeSource: text("additional_income_source"),
+  
+  vehicleInterest: text("vehicle_interest"),
+  
+  tcpaConsent: boolean("tcpa_consent").notNull().default(false),
+  
+  status: text("status").notNull().default("new"),
+  notes: text("notes"),
+  assignedTo: varchar("assigned_to").references(() => users.id),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCreditApplicationSchema = createInsertSchema(creditApplications).omit({
+  id: true,
+  createdAt: true,
+  status: true,
+  notes: true,
+  assignedTo: true,
+});
+
+export type InsertCreditApplication = z.infer<typeof insertCreditApplicationSchema>;
+export type CreditApplication = typeof creditApplications.$inferSelect;

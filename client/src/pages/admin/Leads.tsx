@@ -8,8 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Users, MessageSquare, Car, Calendar, Phone, Mail, Loader2, Clock, Check, X, ExternalLink } from "lucide-react";
-import type { BuyerInquiry } from "@shared/schema";
+import { Search, Users, MessageSquare, Car, Calendar, Phone, Mail, Loader2, Clock, Check, X, ExternalLink, CreditCard, DollarSign, Briefcase } from "lucide-react";
+import type { BuyerInquiry, CreditApplication } from "@shared/schema";
 
 interface TradeInSubmission {
   id: string;
@@ -40,6 +40,20 @@ interface Appointment {
   createdAt: string;
 }
 
+const HOUSING_LABELS: Record<string, string> = {
+  own: "Owns Home",
+  rent: "Renting",
+  live_with_family: "With Family",
+  other: "Other",
+};
+
+const TIME_LABELS: Record<string, string> = {
+  less_than_1: "< 1 year",
+  "1_to_2": "1-2 years",
+  "2_to_5": "2-5 years",
+  "5_plus": "5+ years",
+};
+
 function StatusBadge({ status }: { status: string | null | undefined }) {
   const statusValue = status || "pending";
   const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -53,6 +67,8 @@ function StatusBadge({ status }: { status: string | null | undefined }) {
     completed: "secondary",
     cancelled: "destructive",
     rejected: "destructive",
+    approved: "default",
+    declined: "destructive",
   };
   
   return (
@@ -90,6 +106,15 @@ export default function Leads() {
     queryKey: ["/api/appointments"],
     queryFn: async () => {
       const res = await fetch("/api/appointments");
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const { data: creditApps = [], isLoading: loadingCreditApps } = useQuery<CreditApplication[]>({
+    queryKey: ["/api/credit-applications"],
+    queryFn: async () => {
+      const res = await fetch("/api/credit-applications");
       if (!res.ok) return [];
       return res.json();
     },
@@ -140,7 +165,23 @@ export default function Leads() {
     },
   });
 
+  const updateCreditAppMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const res = await fetch(`/api/credit-applications/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/credit-applications"] });
+      toast({ title: "Status updated" });
+    },
+  });
+
   const newInquiriesCount = inquiries.filter(i => i.status === "new").length;
+  const newCreditAppsCount = creditApps.filter(c => c.status === "new").length;
   const pendingTradeInsCount = tradeIns.filter(t => t.status === "pending").length;
   const upcomingAppointmentsCount = appointments.filter(a => a.status === "pending" || a.status === "confirmed").length;
 
@@ -176,6 +217,17 @@ export default function Leads() {
     );
   };
 
+  const filterCreditApps = (items: CreditApplication[]) => {
+    if (!searchQuery) return items;
+    const query = searchQuery.toLowerCase();
+    return items.filter(item =>
+      item.firstName.toLowerCase().includes(query) ||
+      item.lastName.toLowerCase().includes(query) ||
+      item.email.toLowerCase().includes(query) ||
+      item.phone.includes(query)
+    );
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -200,7 +252,7 @@ export default function Leads() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
             <TabsTrigger value="inquiries" className="gap-2">
               <MessageSquare className="h-4 w-4" />
               <span className="hidden sm:inline">Inquiries</span>
@@ -225,6 +277,15 @@ export default function Leads() {
               {upcomingAppointmentsCount > 0 && (
                 <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
                   {upcomingAppointmentsCount}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="credit-apps" className="gap-2">
+              <CreditCard className="h-4 w-4" />
+              <span className="hidden sm:inline">Credit</span>
+              {newCreditAppsCount > 0 && (
+                <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {newCreditAppsCount}
                 </Badge>
               )}
             </TabsTrigger>
@@ -418,6 +479,98 @@ export default function Leads() {
                               <SelectItem value="confirmed">Confirmed</SelectItem>
                               <SelectItem value="completed">Completed</SelectItem>
                               <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="credit-apps" className="mt-6">
+            {loadingCreditApps ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : filterCreditApps(creditApps).length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-lg font-medium">No credit applications found</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {filterCreditApps(creditApps).map((app) => (
+                  <Card key={app.id}>
+                    <CardContent className="p-4">
+                      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold">{app.firstName} {app.lastName}</h3>
+                            <StatusBadge status={app.status} />
+                          </div>
+                          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
+                              {app.email}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {app.phone}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3 text-sm">
+                            <div>
+                              <span className="text-muted-foreground flex items-center gap-1">
+                                <DollarSign className="h-3 w-3" />
+                                Income
+                              </span>
+                              <span className="font-medium">${app.monthlyIncome?.toLocaleString() || 0}/mo</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground flex items-center gap-1">
+                                <Briefcase className="h-3 w-3" />
+                                Employer
+                              </span>
+                              <span className="font-medium">{app.employerName || "N/A"}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Housing</span>
+                              <span className="font-medium block">{HOUSING_LABELS[app.housingStatus || ""] || app.housingStatus}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Job Tenure</span>
+                              <span className="font-medium block">{TIME_LABELS[app.employmentLength || ""] || app.employmentLength}</span>
+                            </div>
+                          </div>
+                          {app.vehicleInterest && (
+                            <p className="text-sm mt-2">
+                              <span className="text-muted-foreground">Interested in: </span>
+                              <span className="font-medium">{app.vehicleInterest}</span>
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {app.createdAt ? new Date(app.createdAt).toLocaleDateString() : ""}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={app.status || "new"}
+                            onValueChange={(status) => updateCreditAppMutation.mutate({ id: app.id, status })}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="new">New</SelectItem>
+                              <SelectItem value="contacted">Contacted</SelectItem>
+                              <SelectItem value="qualified">Qualified</SelectItem>
+                              <SelectItem value="approved">Approved</SelectItem>
+                              <SelectItem value="declined">Declined</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>

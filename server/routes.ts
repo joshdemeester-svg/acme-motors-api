@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertConsignmentSchema, insertInventoryCarSchema, type InsertConsignment } from "@shared/schema";
+import { insertConsignmentSchema, insertInventoryCarSchema, insertCreditApplicationSchema, type InsertConsignment } from "@shared/schema";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { z } from "zod";
 import crypto from "crypto";
@@ -1780,6 +1780,121 @@ export async function registerRoutes(
       }
       console.error("Error submitting appointment:", error);
       res.status(500).json({ error: "Failed to submit appointment request" });
+    }
+  });
+
+  // Credit Application Routes
+  app.post("/api/credit-applications", async (req, res) => {
+    try {
+      const validatedData = insertCreditApplicationSchema.parse(req.body);
+      const application = await storage.createCreditApplication(validatedData);
+
+      // Get site settings for GHL integration
+      const settings = await storage.getSiteSettings();
+      const locationId = settings?.ghlLocationId || process.env.GHL_LOCATION_ID;
+      const apiToken = settings?.ghlApiToken || process.env.GHL_API_TOKEN;
+
+      if (locationId && apiToken) {
+        // Create contact in GoHighLevel tagged as Credit Interest
+        const response = await fetch(`${GHL_API_BASE}/contacts/upsert`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiToken}`,
+            "Version": "2021-07-28",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({
+            firstName: validatedData.firstName,
+            lastName: validatedData.lastName,
+            email: validatedData.email,
+            phone: validatedData.phone,
+            locationId: locationId,
+            tags: ["Credit Interest", "Pre-Qualification Lead"],
+            source: "Website - Credit Application",
+            customFields: [
+              { key: "housing_status", field_value: validatedData.housingStatus },
+              { key: "monthly_income", field_value: String(validatedData.monthlyIncome) },
+              { key: "employer", field_value: validatedData.employerName },
+            ],
+          }),
+        });
+
+        if (!response.ok) {
+          console.error("[GHL] Failed to create credit app contact:", await response.text());
+        } else {
+          console.log("[GHL] Credit application contact created successfully");
+        }
+
+        // Send admin SMS notification
+        const smsMessage = `NEW CREDIT APPLICATION\n\nApplicant: ${validatedData.firstName} ${validatedData.lastName}\nPhone: ${validatedData.phone}\nEmail: ${validatedData.email}\nMonthly Income: $${validatedData.monthlyIncome}\nHousing: ${validatedData.housingStatus}`;
+        
+        sendAdminNotificationSMS(smsMessage).catch((err) => {
+          console.error("Admin notification SMS failed:", err);
+        });
+      }
+
+      res.status(201).json({ success: true, id: application.id });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      console.error("Error creating credit application:", error);
+      res.status(500).json({ error: "Failed to submit credit application" });
+    }
+  });
+
+  app.get("/api/credit-applications", requireAdmin, async (req, res) => {
+    try {
+      const applications = await storage.getAllCreditApplications();
+      res.json(applications);
+    } catch (error) {
+      console.error("Error fetching credit applications:", error);
+      res.status(500).json({ error: "Failed to fetch credit applications" });
+    }
+  });
+
+  app.get("/api/credit-applications/:id", requireAdmin, async (req, res) => {
+    try {
+      const application = await storage.getCreditApplication(req.params.id);
+      if (!application) {
+        return res.status(404).json({ error: "Credit application not found" });
+      }
+      res.json(application);
+    } catch (error) {
+      console.error("Error fetching credit application:", error);
+      res.status(500).json({ error: "Failed to fetch credit application" });
+    }
+  });
+
+  app.patch("/api/credit-applications/:id/status", requireAdmin, async (req, res) => {
+    try {
+      const { status } = req.body;
+      if (!status || !["new", "contacted", "qualified", "approved", "declined"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+      const updated = await storage.updateCreditApplicationStatus(req.params.id, status);
+      if (!updated) {
+        return res.status(404).json({ error: "Credit application not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating credit application status:", error);
+      res.status(500).json({ error: "Failed to update credit application status" });
+    }
+  });
+
+  app.patch("/api/credit-applications/:id/notes", requireAdmin, async (req, res) => {
+    try {
+      const { notes } = req.body;
+      const updated = await storage.updateCreditApplicationNotes(req.params.id, notes || "");
+      if (!updated) {
+        return res.status(404).json({ error: "Credit application not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating credit application notes:", error);
+      res.status(500).json({ error: "Failed to update notes" });
     }
   });
 
