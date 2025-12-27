@@ -1446,23 +1446,10 @@ export async function registerRoutes(
         smsMessage += `\n\nMessage: ${data.message}`;
       }
 
-      // Try to send SMS if configured
-      if (settings?.contactPhone) {
-        const ownerPhone = normalizePhoneNumber(settings.contactPhone);
-        const contactId = await getOrCreateGHLContactByPhone(ownerPhone, "Owner");
-
-        if (contactId) {
-          const smsResult = await sendGHLSMS(contactId, smsMessage);
-          if (!smsResult.success) {
-            console.error("Failed to send inquiry SMS:", smsResult.error);
-          }
-        }
-        
-        // Also send notification to admin phones
-        sendAdminNotificationSMS(smsMessage).catch((err) => {
-          console.error("Admin notification SMS failed:", err);
-        });
-      }
+      // Send notification to admin phones only (avoids duplicate if contactPhone matches admin phone)
+      sendAdminNotificationSMS(smsMessage).catch((err) => {
+        console.error("Admin notification SMS failed:", err);
+      });
       
       res.json({ success: true, message: "Your inquiry has been sent! We'll be in touch soon." });
     } catch (error) {
