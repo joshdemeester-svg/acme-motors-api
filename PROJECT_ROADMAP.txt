@@ -1,0 +1,202 @@
+================================================================================
+                    PRESTIGE AUTO CONSIGNMENT - PROJECT ROADMAP
+                              Last Updated: December 27, 2025
+================================================================================
+
+================================================================================
+                              COMPLETED FEATURES (PHASE 1)
+================================================================================
+
+ADMIN UI RESTRUCTURE
+--------------------
+✅ Sidebar navigation layout with collapsible mobile menu
+✅ Dashboard page with stats overview (inventory count, leads, consignments)
+✅ Inventory page with vehicle listing, search, and filtering
+✅ Leads page with tabbed view (inquiries, trade-ins, appointments)
+✅ Consignments page for seller submission management
+✅ Settings page with multi-tab layout:
+   - Branding (colors, logo, fonts)
+   - Contact info
+   - Notifications (admin SMS)
+   - Legal (privacy policy, terms)
+   - Integrations (GoHighLevel)
+   - Users
+
+INVENTORY MANAGEMENT
+--------------------
+✅ VIN-based inventory intake with auto-decode (NHTSA API)
+✅ Manual vehicle entry with searchable make/model dropdowns
+✅ Vehicle photo upload (up to 10 photos per vehicle)
+✅ Vehicle detail pages
+✅ Status tags (Available, Pending, Sold)
+✅ Price display and update control
+✅ Featured vehicle toggle
+✅ Full add/edit dialogs with feature parity
+
+WEBSITE & UX
+------------
+✅ Mobile-first responsive design
+✅ Vehicle search and filters
+✅ Vehicle comparison tool
+✅ Sticky CTA buttons
+✅ Click-to-call functionality
+
+LEAD CAPTURE
+------------
+✅ Vehicle-specific inquiry forms with pre-qualification data
+✅ General contact form
+✅ Trade-in value request form
+✅ Appointment scheduling
+✅ SMS opt-in checkbox
+✅ Phone verification via GoHighLevel SMS
+
+CONSIGNMENT SYSTEM
+------------------
+✅ Private seller submission portal
+✅ VIN + photo intake
+✅ Dealer approval workflow
+✅ Commission rate and timeline estimates
+✅ Seller portal for tracking submissions
+
+FINANCE TOOLS
+-------------
+✅ Payment calculator with adjustable down payment, interest, term
+✅ Trade-in value request form
+
+INTEGRATIONS
+------------
+✅ GoHighLevel CRM (contacts, leads, SMS)
+✅ Phone verification via SMS
+✅ Admin SMS notifications
+✅ Vehicle alerts system
+
+SEO
+---
+✅ Dynamic meta tags per page
+✅ Vehicle schema markup (Schema.org)
+✅ Dynamic robots.txt
+✅ Dynamic sitemap.xml
+
+================================================================================
+                              REMAINING BUILD PHASES
+================================================================================
+
+--------------------------------------------------------------------------------
+PHASE A: PRE-QUALIFICATION CREDIT APPLICATION
+--------------------------------------------------------------------------------
+Priority: HIGH
+Purpose: Capture serious buyers and drive backend profit
+
+FEATURES TO BUILD:
+☐ Credit application form (NO SSN - avoids FTC Safeguards Rule)
+   - Collects: name, DOB, address history (2 years), employment, income, housing
+   - Mobile-first design
+   - TCPA and consent language
+   - Secure submission and storage
+   - Lead tagged as "Credit Interest" in GoHighLevel
+   - Notification to dealer
+☐ Lead scoring based on income/housing stability (optional)
+
+--------------------------------------------------------------------------------
+PHASE B: DEALER DASHBOARD ENHANCEMENTS
+--------------------------------------------------------------------------------
+Priority: HIGH
+Purpose: Help dealers manage inventory and make data-driven decisions
+
+FEATURES TO BUILD:
+☐ Days-on-lot tracking
+   - Auto-start counter on publish (createdAt already exists in schema)
+   - Visible on inventory list and vehicle detail
+   - Filter by aging ranges (0-30, 31-60, 60+)
+   - Exportable report
+☐ CSV bulk inventory upload
+   - CSV template download
+   - VIN-based auto-fill on upload
+   - Photo URL support (optional)
+   - Error validation and feedback
+   - Bulk status updates
+☐ Leads per vehicle report
+   - Lead count per VIN
+   - Filter by date range
+   - Sort by highest to lowest interest
+   - Export CSV
+
+--------------------------------------------------------------------------------
+PHASE C: BUILT-IN CRM
+--------------------------------------------------------------------------------
+Priority: MEDIUM
+Purpose: Keep dealers organized and improve follow-up quality
+
+FEATURES TO BUILD:
+☐ Lead timeline view (all interactions in one place)
+☐ Notes and follow-up reminders
+☐ Status pipeline (New → Contacted → Qualified → Sold)
+☐ Salesperson assignment
+☐ Email and SMS history view
+
+--------------------------------------------------------------------------------
+PHASE D: LEAD TRACKING & ATTRIBUTION
+--------------------------------------------------------------------------------
+Priority: MEDIUM
+Purpose: Let dealers see what marketing actually works
+
+FEATURES TO BUILD:
+☐ Source attribution (Google, Facebook, Direct, Referral)
+☐ UTM parameter capture on all forms
+☐ Associate source with vehicle and lead
+☐ Leads-by-source report
+☐ Summary analytics by source
+
+================================================================================
+                              FEATURES NOT IN SCOPE
+================================================================================
+
+❌ OFAC compliance check (removed per user request)
+❌ SSN collection (compliance burden too high)
+❌ Full credit pull integration (dealer handles in-person)
+
+================================================================================
+                              QUICK REFERENCE: WHAT EXISTS
+================================================================================
+
+Database Schema (shared/schema.ts):
+- consignmentSubmissions: seller vehicle submissions
+- inventoryCars: approved vehicles for sale (has createdAt for days-on-lot)
+- buyerInquiries: inquiry tracking with inventoryCarId link
+- siteSettings: branding, contact, commission, GHL config
+- users: admin authentication
+- vehicleAlerts: customer notification preferences
+- appointments: scheduled appointments
+- tradeInRequests: trade-in submissions
+- statusHistory: consignment status changes
+
+Key API Routes (server/routes.ts):
+- /api/inventory (GET, POST, PATCH, DELETE)
+- /api/consignments (GET, POST, PATCH status)
+- /api/inquiries (GET, POST, PATCH status)
+- /api/settings (GET, PATCH)
+- /api/auth/* (login, logout, session, setup)
+- /api/seller/* (portal auth)
+- /api/vin-decode/:vin
+- /api/vehicle-makes, /api/vehicle-models
+
+Admin Pages (client/src/pages/admin/):
+- Dashboard.tsx
+- Inventory.tsx
+- Leads.tsx
+- Consignments.tsx
+- Settings.tsx
+
+================================================================================
+                              BUILD ORDER RECOMMENDATION
+================================================================================
+
+If you ship Phase A + B, you have a competitive product dealers will pay for.
+Phase C + D add stickiness and justify premium pricing.
+
+Recommended next step: Start with Phase A (Credit Application Form)
+- Immediate dealer value
+- Easy to demo
+- Drives backend profit for BHPH/subprime dealers
+
+================================================================================
