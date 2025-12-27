@@ -107,10 +107,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               Log In
             </Button>
             <div className="pt-4">
-              <Link href="/">
-                <a className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  ← Back to Homepage
-                </a>
+              <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                ← Back to Homepage
               </Link>
             </div>
           </div>
