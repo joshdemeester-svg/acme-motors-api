@@ -11,10 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Palette, 
-  Image, 
   Phone, 
-  Mail, 
-  MapPin, 
   Facebook, 
   Instagram, 
   Twitter, 
@@ -25,17 +22,19 @@ import {
   Users,
   Shield,
   Loader2,
-  Upload,
-  Trash2,
-  Plus
+  Check,
+  Eye,
+  EyeOff
 } from "lucide-react";
-import type { SiteSettings, User } from "@shared/schema";
-import { ObjectUploader } from "@/components/ObjectUploader";
-import { useUpload } from "@/hooks/use-upload";
-import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
+import { Badge } from "@/components/ui/badge";
+import type { SiteSettings } from "@shared/schema";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("branding");
+  const [ghlApiToken, setGhlApiToken] = useState("");
+  const [showGhlToken, setShowGhlToken] = useState(false);
+  const [ghlTestStatus, setGhlTestStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
+  const [ghlTestMessage, setGhlTestMessage] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -111,34 +110,36 @@ export default function Settings() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:w-auto lg:inline-grid lg:grid-cols-6">
-            <TabsTrigger value="branding" className="gap-2">
-              <Palette className="h-4 w-4" />
-              <span className="hidden sm:inline">Branding</span>
-            </TabsTrigger>
-            <TabsTrigger value="contact" className="gap-2">
-              <Phone className="h-4 w-4" />
-              <span className="hidden sm:inline">Contact</span>
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="gap-2">
-              <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">Notifications</span>
-            </TabsTrigger>
-            <TabsTrigger value="legal" className="gap-2">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Legal</span>
-            </TabsTrigger>
-            <TabsTrigger value="integrations" className="gap-2">
-              <Plug className="h-4 w-4" />
-              <span className="hidden sm:inline">Integrations</span>
-            </TabsTrigger>
-            {isMasterAdmin && (
-              <TabsTrigger value="users" className="gap-2">
-                <Users className="h-4 w-4" />
-                <span className="hidden sm:inline">Users</span>
+          <div className="overflow-x-auto -mx-4 px-4 pb-2">
+            <TabsList className="inline-flex w-max min-w-full sm:w-auto gap-1">
+              <TabsTrigger value="branding" className="gap-1.5 px-3 whitespace-nowrap">
+                <Palette className="h-4 w-4" />
+                <span>Branding</span>
               </TabsTrigger>
-            )}
-          </TabsList>
+              <TabsTrigger value="contact" className="gap-1.5 px-3 whitespace-nowrap">
+                <Phone className="h-4 w-4" />
+                <span>Contact</span>
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="gap-1.5 px-3 whitespace-nowrap">
+                <Bell className="h-4 w-4" />
+                <span>Alerts</span>
+              </TabsTrigger>
+              <TabsTrigger value="legal" className="gap-1.5 px-3 whitespace-nowrap">
+                <FileText className="h-4 w-4" />
+                <span>Legal</span>
+              </TabsTrigger>
+              <TabsTrigger value="integrations" className="gap-1.5 px-3 whitespace-nowrap">
+                <Plug className="h-4 w-4" />
+                <span>Integrations</span>
+              </TabsTrigger>
+              {isMasterAdmin && (
+                <TabsTrigger value="users" className="gap-1.5 px-3 whitespace-nowrap">
+                  <Users className="h-4 w-4" />
+                  <span>Users</span>
+                </TabsTrigger>
+              )}
+            </TabsList>
+          </div>
 
           <TabsContent value="branding" className="mt-6 space-y-6">
             <Card>
@@ -384,35 +385,135 @@ export default function Settings() {
           <TabsContent value="integrations" className="mt-6 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>GoHighLevel CRM</CardTitle>
-                <CardDescription>Connect to GoHighLevel for lead management</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <Plug className="h-5 w-5" /> GoHighLevel Integration
+                </CardTitle>
+                <CardDescription>Connect your GoHighLevel CRM for lead management and automation</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="rounded-lg border p-4 bg-muted/50">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                      ghlTestStatus === "success" ? "bg-green-500/10" : 
+                      settings?.ghlApiToken ? "bg-green-500/10" : "bg-orange-500/10"
+                    }`}>
+                      <Plug className={`h-5 w-5 ${
+                        ghlTestStatus === "success" ? "text-green-500" : 
+                        settings?.ghlApiToken ? "text-green-500" : "text-orange-500"
+                      }`} />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">GoHighLevel (GHL)</h4>
+                      <p className="text-sm text-muted-foreground">CRM & Marketing Automation</p>
+                    </div>
+                    {ghlTestStatus === "success" ? (
+                      <Badge className="gap-1 ml-auto bg-green-600 hover:bg-green-700">
+                        <Check className="h-3 w-3" />
+                        Verified
+                      </Badge>
+                    ) : settings?.ghlApiToken ? (
+                      <Badge className="gap-1 ml-auto bg-green-600 hover:bg-green-700">
+                        <Check className="h-3 w-3" />
+                        Connected
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="ml-auto">
+                        Not Configured
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="ghlApiToken">
+                    API Token {settings?.ghlApiToken && !ghlApiToken && <span className="text-green-600 text-xs">(configured)</span>}
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        id="ghlApiToken"
+                        type={showGhlToken ? "text" : "password"}
+                        value={ghlApiToken}
+                        onChange={(e) => setGhlApiToken(e.target.value)}
+                        placeholder={settings?.ghlApiToken ? "Enter new token to update" : "Enter your GoHighLevel API token"}
+                        className="pr-10"
+                        data-testid="input-ghl-api-token"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowGhlToken(!showGhlToken)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showGhlToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
                 <div className="space-y-2">
                   <Label htmlFor="ghlLocationId">Location ID</Label>
                   <Input
                     id="ghlLocationId"
                     value={formData.ghlLocationId || ""}
                     onChange={(e) => setFormData({ ...formData, ghlLocationId: e.target.value })}
-                    placeholder="Enter your GoHighLevel Location ID"
+                    placeholder="Enter your GoHighLevel location ID"
+                    data-testid="input-ghl-location-id"
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ghlApiToken">API Token</Label>
-                  <Input
-                    id="ghlApiToken"
-                    type="password"
-                    placeholder="Enter your GoHighLevel API Token"
-                    onChange={(e) => setFormData({ ...formData, ghlApiToken: e.target.value })}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Token is encrypted and never displayed after saving
-                  </p>
+                  <p className="text-xs text-muted-foreground">Find this in your GHL Settings → Business Profile</p>
                 </div>
               </CardContent>
-              <CardFooter>
-                <Button onClick={handleSave} disabled={saveMutation.isPending}>
+              <CardFooter className="flex flex-wrap gap-2">
+                <Button 
+                  onClick={() => {
+                    const dataToSave = { ...formData };
+                    if (ghlApiToken) {
+                      (dataToSave as any).ghlApiToken = ghlApiToken;
+                    }
+                    saveMutation.mutate(dataToSave);
+                  }} 
+                  disabled={saveMutation.isPending}
+                >
                   {saveMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={ghlTestStatus === "testing"}
+                  onClick={async () => {
+                    setGhlTestStatus("testing");
+                    try {
+                      const res = await fetch("/api/ghl/test", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          apiToken: ghlApiToken || undefined,
+                          locationId: formData.ghlLocationId || undefined
+                        })
+                      });
+                      const data = await res.json();
+                      if (res.ok && data.success) {
+                        setGhlTestStatus("success");
+                        setGhlTestMessage(data.message || "Connection verified!");
+                        toast({ title: "Connection Successful", description: data.message });
+                      } else {
+                        setGhlTestStatus("error");
+                        setGhlTestMessage(data.error || "Connection failed");
+                        toast({ title: "Connection Failed", description: data.error, variant: "destructive" });
+                      }
+                    } catch (error) {
+                      setGhlTestStatus("error");
+                      setGhlTestMessage("Failed to test connection");
+                      toast({ title: "Error", description: "Failed to test connection", variant: "destructive" });
+                    }
+                  }}
+                  data-testid="button-test-ghl-connection"
+                >
+                  {ghlTestStatus === "testing" ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Testing...</>
+                  ) : ghlTestStatus === "success" ? (
+                    <><Check className="h-4 w-4 mr-2 text-green-500" /> Connected</>
+                  ) : (
+                    "Test Connection"
+                  )}
                 </Button>
               </CardFooter>
             </Card>

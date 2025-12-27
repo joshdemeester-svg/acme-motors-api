@@ -122,13 +122,24 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <button
-        className="fixed top-4 left-4 z-50 md:hidden rounded-lg bg-background border p-2 shadow-lg"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        data-testid="button-toggle-sidebar"
-      >
-        {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-      </button>
+      <div className="fixed top-0 left-0 right-0 z-30 md:hidden bg-background border-b px-4 py-3 flex items-center gap-3">
+        <button
+          className="rounded-lg bg-muted p-2"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          data-testid="button-toggle-sidebar"
+        >
+          {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+        {settings?.logoUrl ? (
+          <img 
+            src={settings.logoUrl} 
+            alt={settings?.siteName || "Logo"} 
+            className="h-8 w-auto"
+          />
+        ) : (
+          <span className="font-serif font-bold truncate">{settings?.siteName || "Admin"}</span>
+        )}
+      </div>
 
       {sidebarOpen && (
         <div 
@@ -150,10 +161,21 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               <ChevronLeft className="h-4 w-4" />
               <span className="text-sm">Back to Site</span>
             </Link>
-            <h1 className="mt-3 font-serif text-xl font-bold truncate">
-              {settings?.siteName || "Admin Panel"}
-            </h1>
-            <p className="text-xs text-muted-foreground mt-1">Administration</p>
+            <div className="mt-3 flex items-center gap-3">
+              {settings?.logoUrl && (
+                <img 
+                  src={settings.logoUrl} 
+                  alt={settings?.siteName || "Logo"} 
+                  className="h-10 w-auto"
+                />
+              )}
+              <div>
+                <h1 className="font-serif text-xl font-bold truncate">
+                  {settings?.siteName || "Admin Panel"}
+                </h1>
+                <p className="text-xs text-muted-foreground">Administration</p>
+              </div>
+            </div>
           </div>
 
           <nav className="flex-1 p-4 space-y-1">
@@ -191,7 +213,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <main className="md:ml-64 min-h-screen">
+      <main className="md:ml-64 min-h-screen pt-16 md:pt-0">
         <div className="p-4 md:p-6 lg:p-8">
           {children}
         </div>
