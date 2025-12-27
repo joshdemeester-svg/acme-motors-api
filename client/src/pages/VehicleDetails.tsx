@@ -11,12 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, Car, Fuel, Gauge, Calendar, Palette, FileText, Settings, MapPin, Shield, Zap, Users, Factory, Cog, DollarSign, Weight, CircleDot, Lightbulb, Battery, Loader2, CheckCircle, MessageSquare, Search, Calculator } from "lucide-react";
+import { ArrowLeft, Car, Fuel, Gauge, Calendar, Palette, FileText, Settings, MapPin, Shield, Zap, Users, Factory, Cog, DollarSign, Weight, CircleDot, Lightbulb, Battery, Loader2, CheckCircle, MessageSquare, Search, Calculator, Phone } from "lucide-react";
 import { Link } from "wouter";
 import type { InventoryCar } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
 import { useSEO, generateVehicleSchema } from "@/hooks/use-seo";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface VinData {
   Make?: string;
@@ -344,7 +345,12 @@ export default function VehicleDetails({ id }: { id: string }) {
     contactPreference: "",
     bestTimeToContact: "",
   });
+  const [verificationCode, setVerificationCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [verifiedPhone, setVerifiedPhone] = useState("");
   const { settings } = useSettings();
+  const { toast } = useToast();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -416,6 +422,73 @@ export default function VehicleDetails({ id }: { id: string }) {
     }, settings || undefined) : undefined,
   });
 
+  useEffect(() => {
+    if (formData.buyerPhone !== verifiedPhone) {
+      setPhoneVerified(false);
+      setCodeSent(false);
+      setVerificationCode("");
+    }
+  }, [formData.buyerPhone, verifiedPhone]);
+
+  const sendCodeMutation = useMutation({
+    mutationFn: async ({ phone, firstName }: { phone: string; firstName: string }) => {
+      const res = await fetch("/api/verify/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, firstName }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to send code");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setCodeSent(true);
+      toast({
+        title: "Verification Code Sent",
+        description: "Please check your phone for the verification code.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Send Code",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const verifyCodeMutation = useMutation({
+    mutationFn: async ({ phone, code }: { phone: string; code: string }) => {
+      const res = await fetch("/api/verify/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, code }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Invalid code");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setPhoneVerified(true);
+      setVerifiedPhone(formData.buyerPhone);
+      toast({
+        title: "Phone Verified",
+        description: "Your phone number has been verified successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Verification Failed",
+        description: error.message || "Please check your code and try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const inquiryMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       if (!car) throw new Error("No vehicle data");
@@ -451,11 +524,23 @@ export default function VehicleDetails({ id }: { id: string }) {
         contactPreference: "",
         bestTimeToContact: "",
       });
+      setPhoneVerified(false);
+      setCodeSent(false);
+      setVerificationCode("");
+      setVerifiedPhone("");
     },
   });
 
   const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!phoneVerified) {
+      toast({
+        title: "Phone Verification Required",
+        description: "Please verify your phone number before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
@@ -1152,15 +1237,84 @@ export default function VehicleDetails({ id }: { id: string }) {
 
               <div className="space-y-2">
                 <Label htmlFor="buyerPhone">Phone Number *</Label>
-                <Input
-                  id="buyerPhone"
-                  type="tel"
-                  data-testid="input-buyer-phone"
-                  value={formData.buyerPhone}
-                  onChange={(e) => setFormData({ ...formData, buyerPhone: e.target.value })}
-                  placeholder="(555) 123-4567"
-                  required
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="buyerPhone"
+                    type="tel"
+                    data-testid="input-buyer-phone"
+                    value={formData.buyerPhone}
+                    onChange={(e) => setFormData({ ...formData, buyerPhone: e.target.value })}
+                    placeholder="(555) 123-4567"
+                    required
+                    disabled={phoneVerified}
+                    className={phoneVerified ? "bg-green-50 border-green-300" : ""}
+                  />
+                  {phoneVerified ? (
+                    <div className="flex items-center gap-1 text-green-600 px-3 shrink-0">
+                      <CheckCircle className="h-5 w-5" />
+                      <span className="text-sm font-medium">Verified</span>
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        if (formData.buyerPhone.replace(/\D/g, "").length >= 10 && formData.buyerName.trim()) {
+                          sendCodeMutation.mutate({ phone: formData.buyerPhone, firstName: formData.buyerName.split(" ")[0] });
+                        } else {
+                          toast({
+                            title: "Missing Information",
+                            description: "Please enter your name and a valid phone number first.",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                      disabled={sendCodeMutation.isPending || codeSent}
+                      className="shrink-0"
+                      data-testid="button-send-code"
+                    >
+                      <Phone className="h-4 w-4 mr-1" />
+                      {sendCodeMutation.isPending ? "Sending..." : codeSent ? "Code Sent" : "Send Code"}
+                    </Button>
+                  )}
+                </div>
+                
+                {codeSent && !phoneVerified && (
+                  <div className="space-y-2 mt-3 p-3 bg-muted rounded-lg">
+                    <Label htmlFor="verificationCode">Enter Verification Code</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="verificationCode"
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        placeholder="6-digit code"
+                        maxLength={6}
+                        className="flex-1"
+                        data-testid="input-verification-code"
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => verifyCodeMutation.mutate({ phone: formData.buyerPhone, code: verificationCode })}
+                        disabled={verificationCode.length !== 6 || verifyCodeMutation.isPending}
+                        data-testid="button-verify-code"
+                      >
+                        {verifyCodeMutation.isPending ? "Verifying..." : "Verify"}
+                      </Button>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="link"
+                      onClick={() => {
+                        setCodeSent(false);
+                        setVerificationCode("");
+                      }}
+                      className="text-xs h-auto p-0"
+                      data-testid="button-resend-code"
+                    >
+                      Didn't receive it? Send again
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
