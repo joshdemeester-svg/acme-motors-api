@@ -32,11 +32,24 @@ import {
   Trash2,
   Edit2,
   DollarSign,
-  Image
+  Image,
+  UserPlus,
+  Key,
+  Crown
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import type { SiteSettings, Testimonial } from "@shared/schema";
+
+type AdminUser = {
+  id: string;
+  username: string;
+  role: string;
+  isAdmin: boolean;
+  createdAt: string;
+};
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("branding");
@@ -54,6 +67,14 @@ export default function Settings() {
     content: "",
     featured: false,
   });
+  const [userDialogOpen, setUserDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [userForm, setUserForm] = useState({ username: "", password: "", role: "admin" });
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [resetPasswordUser, setResetPasswordUser] = useState<AdminUser | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -76,6 +97,104 @@ export default function Settings() {
   });
 
   const isMasterAdmin = session?.role === "master";
+
+  const { data: adminUsers = [], isLoading: usersLoading } = useQuery<AdminUser[]>({
+    queryKey: ["/api/users"],
+    queryFn: async () => {
+      const res = await fetch("/api/users");
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: isMasterAdmin,
+  });
+
+  const createUserMutation = useMutation({
+    mutationFn: async (data: { username: string; password: string; role: string }) => {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to create user");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setUserDialogOpen(false);
+      setUserForm({ username: "", password: "", role: "admin" });
+      toast({ title: "User created successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateUserRoleMutation = useMutation({
+    mutationFn: async ({ id, role }: { id: string; role: string }) => {
+      const res = await fetch(`/api/users/${id}/role`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) throw new Error("Failed to update user role");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setUserDialogOpen(false);
+      setEditingUser(null);
+      setUserForm({ username: "", password: "", role: "admin" });
+      toast({ title: "User role updated" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update user role", variant: "destructive" });
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ id, password }: { id: string; password: string }) => {
+      const res = await fetch(`/api/users/${id}/password`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (!res.ok) throw new Error("Failed to reset password");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setResetPasswordDialogOpen(false);
+      setResetPasswordUser(null);
+      setNewPassword("");
+      toast({ title: "Password reset successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to reset password", variant: "destructive" });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to delete user");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setDeleteUserDialogOpen(false);
+      setUserToDelete(null);
+      toast({ title: "User deleted" });
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message, variant: "destructive" });
+    },
+  });
 
   const { data: testimonials = [] } = useQuery<Testimonial[]>({
     queryKey: ["/api/testimonials/all"],
@@ -1477,18 +1596,116 @@ export default function Settings() {
             <TabsContent value="users" className="mt-6 space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5" />
-                    User Management
-                  </CardTitle>
-                  <CardDescription>
-                    Manage admin users (Master Admin only)
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Shield className="h-5 w-5" />
+                        User Management
+                      </CardTitle>
+                      <CardDescription>
+                        Manage admin users (Master Admin only)
+                      </CardDescription>
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        setEditingUser(null);
+                        setUserForm({ username: "", password: "", role: "admin" });
+                        setUserDialogOpen(true);
+                      }}
+                      className="gap-2"
+                      data-testid="button-add-user"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Add User
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    User management will be migrated here from the legacy admin panel.
-                  </p>
+                  {usersLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : adminUsers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      No admin users found.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {adminUsers.map((user) => (
+                        <div 
+                          key={user.id} 
+                          className="flex items-center justify-between p-4 border rounded-lg"
+                          data-testid={`user-row-${user.id}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                              {user.role === "master" ? (
+                                <Crown className="h-5 w-5 text-yellow-600" />
+                              ) : (
+                                <Users className="h-5 w-5 text-muted-foreground" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{user.username}</p>
+                                <Badge variant={user.role === "master" ? "default" : "secondary"}>
+                                  {user.role === "master" ? "Master Admin" : "Admin"}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Created: {new Date(user.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {user.role !== "master" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingUser(user);
+                                  setUserForm({ username: user.username, password: "", role: user.role });
+                                  setUserDialogOpen(true);
+                                }}
+                                className="gap-1"
+                                data-testid={`button-edit-user-${user.id}`}
+                              >
+                                <Edit2 className="h-3.5 w-3.5" />
+                                Edit
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setResetPasswordUser(user);
+                                setNewPassword("");
+                                setResetPasswordDialogOpen(true);
+                              }}
+                              className="gap-1"
+                              data-testid={`button-reset-password-${user.id}`}
+                            >
+                              <Key className="h-3.5 w-3.5" />
+                              Reset Password
+                            </Button>
+                            {user.role !== "master" && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  setUserToDelete(user);
+                                  setDeleteUserDialogOpen(true);
+                                }}
+                                data-testid={`button-delete-user-${user.id}`}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -1596,6 +1813,162 @@ export default function Settings() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={userDialogOpen} onOpenChange={(open) => {
+        setUserDialogOpen(open);
+        if (!open) {
+          setEditingUser(null);
+          setUserForm({ username: "", password: "", role: "admin" });
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingUser ? "Edit User" : "Add New Admin User"}</DialogTitle>
+            <DialogDescription>
+              {editingUser 
+                ? `Update role for ${editingUser.username}.`
+                : "Create a new admin account for staff members."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {!editingUser && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="newUsername">Username *</Label>
+                  <Input
+                    id="newUsername"
+                    value={userForm.username}
+                    onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
+                    placeholder="Enter username"
+                    data-testid="input-new-username"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Password *</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={userForm.password}
+                    onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                    placeholder="Enter password"
+                    data-testid="input-new-password"
+                  />
+                </div>
+              </>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="newRole">Role</Label>
+              <Select
+                value={userForm.role}
+                onValueChange={(value) => setUserForm({ ...userForm, role: value })}
+              >
+                <SelectTrigger data-testid="select-new-role">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="master">Master Admin</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Master admins can manage other users and access all settings.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setUserDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            {editingUser ? (
+              <Button
+                onClick={() => updateUserRoleMutation.mutate({ id: editingUser.id, role: userForm.role })}
+                disabled={updateUserRoleMutation.isPending}
+                data-testid="button-update-user"
+              >
+                {updateUserRoleMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            ) : (
+              <Button
+                onClick={() => createUserMutation.mutate(userForm)}
+                disabled={!userForm.username || !userForm.password || createUserMutation.isPending}
+                data-testid="button-create-user"
+              >
+                {createUserMutation.isPending ? "Creating..." : "Create User"}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={resetPasswordDialogOpen} onOpenChange={(open) => {
+        setResetPasswordDialogOpen(open);
+        if (!open) {
+          setResetPasswordUser(null);
+          setNewPassword("");
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Set a new password for {resetPasswordUser?.username}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="resetPassword">New Password *</Label>
+              <Input
+                id="resetPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                data-testid="input-reset-password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setResetPasswordDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => resetPasswordUser && resetPasswordMutation.mutate({ id: resetPasswordUser.id, password: newPassword })}
+              disabled={!newPassword || resetPasswordMutation.isPending}
+              data-testid="button-confirm-reset-password"
+            >
+              {resetPasswordMutation.isPending ? "Resetting..." : "Reset Password"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={deleteUserDialogOpen} onOpenChange={setDeleteUserDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the user "{userToDelete?.username}"? 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => userToDelete && deleteUserMutation.mutate(userToDelete.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete-user"
+            >
+              {deleteUserMutation.isPending ? "Deleting..." : "Delete User"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }
