@@ -113,7 +113,7 @@ export function Navbar() {
                   <img 
                     src={settings.logoUrl} 
                     alt={siteName} 
-                    style={{ width: `${Math.min(parseInt(settings.logoWidth || '120'), 150)}px`, height: 'auto' }}
+                    style={{ width: `${settings.mobileLogoWidth || settings.logoWidth || '100'}px`, height: 'auto' }}
                   />
                 ) : (
                   <>

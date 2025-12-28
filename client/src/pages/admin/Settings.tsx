@@ -76,9 +76,6 @@ export default function Settings() {
   });
 
   const isMasterAdmin = session?.role === "master";
-  
-  // Debug: log session data
-  console.log("[Settings] Session data:", session, "isMasterAdmin:", isMasterAdmin);
 
   const { data: testimonials = [] } = useQuery<Testimonial[]>({
     queryKey: ["/api/testimonials/all"],
@@ -338,7 +335,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="logoWidth">Logo Width (px)</Label>
+                  <Label htmlFor="logoWidth">Desktop Logo Width (px)</Label>
                   <div className="flex items-center gap-4">
                     <Input
                       id="logoWidth"
@@ -354,12 +351,39 @@ export default function Settings() {
                   </div>
                   {formData.logoUrl && (
                     <div className="mt-2 p-4 bg-muted rounded-lg">
-                      <p className="text-xs text-muted-foreground mb-2">Preview:</p>
+                      <p className="text-xs text-muted-foreground mb-2">Desktop Preview:</p>
                       <img 
                         src={formData.logoUrl} 
                         alt="Logo preview" 
                         style={{ width: `${formData.logoWidth || 120}px` }}
                         className="max-h-20 object-contain"
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mobileLogoWidth">Mobile Logo Width (px)</Label>
+                  <div className="flex items-center gap-4">
+                    <Input
+                      id="mobileLogoWidth"
+                      type="range"
+                      min="40"
+                      max="200"
+                      value={formData.mobileLogoWidth || "100"}
+                      onChange={(e) => setFormData({ ...formData, mobileLogoWidth: e.target.value })}
+                      className="flex-1"
+                      data-testid="input-mobile-logo-width"
+                    />
+                    <span className="text-sm font-medium w-16">{formData.mobileLogoWidth || "100"}px</span>
+                  </div>
+                  {formData.logoUrl && (
+                    <div className="mt-2 p-4 bg-muted rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-2">Mobile Preview:</p>
+                      <img 
+                        src={formData.logoUrl} 
+                        alt="Mobile logo preview" 
+                        style={{ width: `${formData.mobileLogoWidth || 100}px` }}
+                        className="max-h-16 object-contain"
                       />
                     </div>
                   )}
