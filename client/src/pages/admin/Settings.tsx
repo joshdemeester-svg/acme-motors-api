@@ -261,6 +261,10 @@ export default function Settings() {
                 <Star className="h-4 w-4" />
                 <span>Reviews</span>
               </TabsTrigger>
+              <TabsTrigger value="business" className="gap-1.5 px-3 whitespace-nowrap">
+                <DollarSign className="h-4 w-4" />
+                <span>Business</span>
+              </TabsTrigger>
               {isMasterAdmin && (
                 <TabsTrigger value="users" className="gap-1.5 px-3 whitespace-nowrap">
                   <Users className="h-4 w-4" />
@@ -1307,6 +1311,86 @@ export default function Settings() {
                   </div>
                 )}
               </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="business" className="mt-6 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Commission & Fees</CardTitle>
+                <CardDescription>Default commission settings for consignments</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="commissionRate">Default Commission Rate (%)</Label>
+                  <div className="flex items-center gap-4">
+                    <Input
+                      id="commissionRate"
+                      type="range"
+                      min="5"
+                      max="25"
+                      step="1"
+                      value={formData.commissionRate || "10"}
+                      onChange={(e) => setFormData({ ...formData, commissionRate: e.target.value })}
+                      className="flex-1"
+                      data-testid="input-commission-rate"
+                    />
+                    <span className="text-sm font-medium w-12">{formData.commissionRate || "10"}%</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    This is the default rate used in the consignment process. Individual vehicles can override this.
+                  </p>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Timeline Estimates</CardTitle>
+                <CardDescription>Average timelines shown to sellers</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="avgDaysToFirstInquiry">Avg Days to First Inquiry</Label>
+                  <Input
+                    id="avgDaysToFirstInquiry"
+                    type="number"
+                    min="1"
+                    max="90"
+                    value={formData.avgDaysToFirstInquiry || "7"}
+                    onChange={(e) => setFormData({ ...formData, avgDaysToFirstInquiry: e.target.value })}
+                    data-testid="input-avg-days-inquiry"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Shown to sellers as the typical time to receive a buyer inquiry
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="avgDaysToSell">Avg Days to Sell</Label>
+                  <Input
+                    id="avgDaysToSell"
+                    type="number"
+                    min="1"
+                    max="180"
+                    value={formData.avgDaysToSell || "30"}
+                    onChange={(e) => setFormData({ ...formData, avgDaysToSell: e.target.value })}
+                    data-testid="input-avg-days-sell"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Shown to sellers as the typical time from listing to sale
+                  </p>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardFooter>
             </Card>
           </TabsContent>
 
