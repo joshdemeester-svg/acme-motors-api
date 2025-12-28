@@ -34,7 +34,7 @@ const navItems: NavItem[] = [
 
 interface SessionData {
   isAdmin: boolean;
-  isMasterAdmin?: boolean;
+  role?: string;
   username?: string;
 }
 
@@ -120,23 +120,35 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <div className="fixed top-0 left-0 right-0 z-30 md:hidden bg-background border-b px-4 py-3 flex items-center gap-3">
-        <button
-          className="rounded-lg bg-muted p-2"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          data-testid="button-toggle-sidebar"
+      <div className="fixed top-0 left-0 right-0 z-30 md:hidden bg-background border-b px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            className="rounded-lg bg-muted p-2"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            data-testid="button-toggle-sidebar"
+          >
+            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+          {settings?.logoUrl ? (
+            <img 
+              src={settings.logoUrl} 
+              alt={settings?.siteName || "Logo"} 
+              className="h-8 w-auto"
+            />
+          ) : (
+            <span className="font-serif font-bold truncate">{settings?.siteName || "Admin"}</span>
+          )}
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-destructive"
+          onClick={() => logoutMutation.mutate()}
+          disabled={logoutMutation.isPending}
+          data-testid="button-logout-mobile"
         >
-          {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
-        {settings?.logoUrl ? (
-          <img 
-            src={settings.logoUrl} 
-            alt={settings?.siteName || "Logo"} 
-            className="h-8 w-auto"
-          />
-        ) : (
-          <span className="font-serif font-bold truncate">{settings?.siteName || "Admin"}</span>
-        )}
+          <LogOut className="h-5 w-5" />
+        </Button>
       </div>
 
       {sidebarOpen && (

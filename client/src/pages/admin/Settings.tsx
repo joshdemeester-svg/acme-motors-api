@@ -76,6 +76,9 @@ export default function Settings() {
   });
 
   const isMasterAdmin = session?.role === "master";
+  
+  // Debug: log session data
+  console.log("[Settings] Session data:", session, "isMasterAdmin:", isMasterAdmin);
 
   const { data: testimonials = [] } = useQuery<Testimonial[]>({
     queryKey: ["/api/testimonials/all"],
