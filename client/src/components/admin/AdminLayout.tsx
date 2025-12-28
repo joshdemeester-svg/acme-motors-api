@@ -133,7 +133,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             <img 
               src={settings.logoUrl} 
               alt={settings?.siteName || "Logo"} 
-              className="h-8 w-auto"
+              style={{ width: `${settings.mobileLogoWidth || settings.logoWidth || '100'}px`, height: 'auto' }}
+              className="max-h-8"
             />
           ) : (
             <span className="font-serif font-bold truncate">{settings?.siteName || "Admin"}</span>
