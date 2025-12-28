@@ -4503,7 +4503,7 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                       return `/objects/uploads/${objectId}`;
                     });
                     if (newPhotos.length > 0) {
-                      setEditPhotos([...editPhotos, ...newPhotos]);
+                      setEditPhotos(prev => [...prev, ...newPhotos]);
                       toast({ title: "Photos Uploaded", description: `${newPhotos.length} photo(s) added.` });
                     }
                   }}
@@ -4524,7 +4524,7 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                       />
                       <button
                         type="button"
-                        onClick={() => setEditPhotos(editPhotos.filter((_, i) => i !== index))}
+                        onClick={() => setEditPhotos(prev => prev.filter((_, i) => i !== index))}
                         className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                         title="Remove photo"
                       >
