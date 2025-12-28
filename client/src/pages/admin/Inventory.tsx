@@ -1025,7 +1025,7 @@ export default function Inventory() {
                       return `/objects/uploads/${objectId}`;
                     }).filter(Boolean);
                     if (newPhotos.length > 0) {
-                      setAddPhotos([...addPhotos, ...newPhotos]);
+                      setAddPhotos(prev => [...prev, ...newPhotos]);
                       toast({ title: "Photos Uploaded", description: `${newPhotos.length} photo(s) added.` });
                     }
                   }}
@@ -1048,7 +1048,7 @@ export default function Inventory() {
                           key={photo}
                           photo={photo}
                           index={index}
-                          onRemove={() => setAddPhotos(addPhotos.filter((_, i) => i !== index))}
+                          onRemove={() => setAddPhotos(prev => prev.filter((_, i) => i !== index))}
                         />
                       ))}
                     </div>
@@ -1350,7 +1350,7 @@ export default function Inventory() {
                       return `/objects/uploads/${objectId}`;
                     }).filter(Boolean);
                     if (newPhotos.length > 0) {
-                      setEditPhotos([...editPhotos, ...newPhotos]);
+                      setEditPhotos(prev => [...prev, ...newPhotos]);
                       toast({ title: "Photos Uploaded", description: `${newPhotos.length} photo(s) added.` });
                     }
                   }}
@@ -1373,7 +1373,7 @@ export default function Inventory() {
                           key={photo}
                           photo={photo}
                           index={index}
-                          onRemove={() => setEditPhotos(editPhotos.filter((_, i) => i !== index))}
+                          onRemove={() => setEditPhotos(prev => prev.filter((_, i) => i !== index))}
                         />
                       ))}
                     </div>
