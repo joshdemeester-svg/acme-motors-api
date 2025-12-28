@@ -133,8 +133,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             <img 
               src={settings.logoUrl} 
               alt={settings?.siteName || "Logo"} 
-              style={{ width: `${settings.mobileLogoWidth || settings.logoWidth || '100'}px`, height: 'auto' }}
-              className="max-h-8"
+              style={{ width: `${settings.mobileLogoWidth || settings.logoWidth || '100'}px` }}
+              className="object-contain"
             />
           ) : (
             <span className="font-serif font-bold truncate">{settings?.siteName || "Admin"}</span>
@@ -177,7 +177,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                 <img 
                   src={settings.logoUrl} 
                   alt={settings?.siteName || "Logo"} 
-                  className="h-10 w-auto"
+                  style={{ width: `${settings.logoWidth || '120'}px` }}
+                  className="object-contain"
                 />
               ) : (
                 <h1 className="font-serif text-xl font-bold truncate">

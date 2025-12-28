@@ -2912,14 +2912,23 @@ export async function initializeDefaultAdmin(): Promise<void> {
   try {
     const existingAdmin = await storage.getUserByUsername("Josh");
     if (existingAdmin) {
-      console.log(`[auth] Default admin user 'Josh' already exists with role: '${existingAdmin.role}'`);
-      // Ensure Josh has master role (migration for existing deployments)
+      console.log(`[auth] Default admin user 'Josh' found with role: '${existingAdmin.role}'`);
+      // ALWAYS ensure Josh has master role - hardcoded requirement
       if (existingAdmin.role !== "master") {
         console.log("[auth] Upgrading 'Josh' to master role...");
-        await storage.updateUserRole(existingAdmin.id, "master");
-        console.log("[auth] 'Josh' upgraded to master role");
+        const updated = await storage.updateUserRole(existingAdmin.id, "master");
+        if (updated) {
+          console.log("[auth] 'Josh' successfully upgraded to master role");
+        } else {
+          console.error("[auth] Failed to upgrade 'Josh' to master role");
+        }
       } else {
-        console.log("[auth] 'Josh' already has master role");
+        console.log("[auth] 'Josh' already has master role - verified");
+      }
+      // Also ensure Josh is marked as admin
+      if (!existingAdmin.isAdmin) {
+        console.log("[auth] Ensuring 'Josh' is marked as admin...");
+        await storage.setUserAdmin(existingAdmin.id, true);
       }
     } else {
       const hashedPassword = "d7da12f7f0b51ba5ab3e7bb2617161d7:a5d33d043a5bfc73921e861303f31e6a9a6909740dc0368989809ddec3b64526e3f4cab9bd1569dd166d2f4043dc441645c821b0e1582b6547a0ebebeed9e00d";
@@ -2929,7 +2938,7 @@ export async function initializeDefaultAdmin(): Promise<void> {
         isAdmin: true,
         role: "master",
       });
-      console.log("[auth] Default admin user 'Josh' created successfully");
+      console.log("[auth] Default admin user 'Josh' created successfully with master role");
     }
   } catch (error) {
     console.error("[auth] Error initializing default admin:", error);
