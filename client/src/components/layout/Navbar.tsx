@@ -40,11 +40,14 @@ export function Navbar() {
       <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2 font-serif text-2xl font-bold tracking-tighter text-foreground transition-opacity hover:opacity-80">
           {settings?.logoUrl ? (
-            <img 
-              src={settings.logoUrl} 
-              alt={siteName} 
-              style={{ width: `${settings.logoWidth || 120}px`, height: 'auto' }}
-            />
+            <>
+              <img 
+                src={settings.logoUrl} 
+                alt={siteName} 
+                style={{ width: `${settings.logoWidth || 120}px`, height: 'auto' }}
+              />
+              {!settings.hideSiteNameWithLogo && <span>{siteName}</span>}
+            </>
           ) : (
             <>
               <Car className="h-8 w-8 text-primary" />
@@ -60,11 +63,15 @@ export function Navbar() {
               key={link.href}
               href={link.href}
               className={cn(
-                "text-sm font-medium transition-colors",
+                "font-medium transition-colors",
                 location === link.href
                   ? "nav-link"
                   : "nav-link-inactive"
               )}
+              style={{
+                fontSize: `${parseInt(settings?.menuFontSize || '14')}px`,
+                textTransform: settings?.menuAllCaps !== false ? 'uppercase' : 'none'
+              }}
             >
               {link.label}
             </Link>
@@ -106,11 +113,14 @@ export function Navbar() {
             <div className="flex flex-col gap-8 pt-10">
               <Link href="/" className="flex items-center gap-2 font-serif text-2xl font-bold" onClick={() => setIsOpen(false)}>
                 {settings?.logoUrl ? (
-                  <img 
-                    src={settings.logoUrl} 
-                    alt={siteName} 
-                    style={{ width: `${Math.min(parseInt(settings.logoWidth || '120'), 150)}px`, height: 'auto' }}
-                  />
+                  <>
+                    <img 
+                      src={settings.logoUrl} 
+                      alt={siteName} 
+                      style={{ width: `${Math.min(parseInt(settings.logoWidth || '120'), 150)}px`, height: 'auto' }}
+                    />
+                    {!settings.hideSiteNameWithLogo && <span>{siteName}</span>}
+                  </>
                 ) : (
                   <>
                     <Car className="h-6 w-6 text-primary" />
@@ -129,6 +139,9 @@ export function Navbar() {
                         ? "nav-link"
                         : "nav-link-inactive"
                     )}
+                    style={{
+                      textTransform: settings?.menuAllCaps !== false ? 'uppercase' : 'none'
+                    }}
                     onClick={() => setIsOpen(false)}
                   >
                     {link.label}

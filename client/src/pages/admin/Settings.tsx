@@ -310,6 +310,135 @@ export default function Settings() {
                 </Button>
               </CardFooter>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Logo Settings</CardTitle>
+                <CardDescription>Configure your logo display</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="logoUrl">Logo URL</Label>
+                  <Input
+                    id="logoUrl"
+                    value={formData.logoUrl || ""}
+                    onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+                    placeholder="https://example.com/logo.png"
+                    data-testid="input-logo-url"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="logoWidth">Logo Width (px)</Label>
+                  <div className="flex items-center gap-4">
+                    <Input
+                      id="logoWidth"
+                      type="range"
+                      min="60"
+                      max="300"
+                      value={formData.logoWidth || "120"}
+                      onChange={(e) => setFormData({ ...formData, logoWidth: e.target.value })}
+                      className="flex-1"
+                      data-testid="input-logo-width"
+                    />
+                    <span className="text-sm font-medium w-16">{formData.logoWidth || "120"}px</span>
+                  </div>
+                  {formData.logoUrl && (
+                    <div className="mt-2 p-4 bg-muted rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-2">Preview:</p>
+                      <img 
+                        src={formData.logoUrl} 
+                        alt="Logo preview" 
+                        style={{ width: `${formData.logoWidth || 120}px` }}
+                        className="max-h-20 object-contain"
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="hideSiteNameWithLogo"
+                    checked={formData.hideSiteNameWithLogo || false}
+                    onCheckedChange={(checked) => setFormData({ ...formData, hideSiteNameWithLogo: checked })}
+                    data-testid="switch-hide-site-name"
+                  />
+                  <Label htmlFor="hideSiteNameWithLogo">Hide site name when logo is present</Label>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Typography & Menu</CardTitle>
+                <CardDescription>Font sizes and menu text styling</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="menuFontSize">Menu Font Size (px)</Label>
+                    <div className="flex items-center gap-4">
+                      <Input
+                        id="menuFontSize"
+                        type="range"
+                        min="12"
+                        max="20"
+                        value={formData.menuFontSize || "14"}
+                        onChange={(e) => setFormData({ ...formData, menuFontSize: e.target.value })}
+                        className="flex-1"
+                        data-testid="input-menu-font-size"
+                      />
+                      <span className="text-sm font-medium w-12">{formData.menuFontSize || "14"}px</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bodyFontSize">Body Font Size (px)</Label>
+                    <div className="flex items-center gap-4">
+                      <Input
+                        id="bodyFontSize"
+                        type="range"
+                        min="14"
+                        max="20"
+                        value={formData.bodyFontSize || "16"}
+                        onChange={(e) => setFormData({ ...formData, bodyFontSize: e.target.value })}
+                        className="flex-1"
+                        data-testid="input-body-font-size"
+                      />
+                      <span className="text-sm font-medium w-12">{formData.bodyFontSize || "16"}px</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="menuAllCaps"
+                    checked={formData.menuAllCaps ?? true}
+                    onCheckedChange={(checked) => setFormData({ ...formData, menuAllCaps: checked })}
+                    data-testid="switch-menu-all-caps"
+                  />
+                  <Label htmlFor="menuAllCaps">Menu text in ALL CAPS</Label>
+                </div>
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-2">Menu Text Preview:</p>
+                  <div 
+                    className="font-medium" 
+                    style={{ 
+                      fontSize: `${formData.menuFontSize || 14}px`,
+                      textTransform: formData.menuAllCaps ?? true ? 'uppercase' : 'none'
+                    }}
+                  >
+                    Home &nbsp; Inventory &nbsp; Consign &nbsp; Contact
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardFooter>
+            </Card>
           </TabsContent>
 
           <TabsContent value="contact" className="mt-6 space-y-6">
