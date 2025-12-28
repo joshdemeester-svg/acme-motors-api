@@ -40,11 +40,20 @@ export function Navbar() {
       <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2 font-serif text-2xl font-bold tracking-tighter text-foreground transition-opacity hover:opacity-80">
           {settings?.logoUrl ? (
-            <img 
-              src={settings.logoUrl} 
-              alt={siteName} 
-              style={{ width: `${settings.logoWidth || 120}px`, height: 'auto' }}
-            />
+            <>
+              <img 
+                src={settings.logoUrl} 
+                alt={siteName} 
+                style={{ width: `${settings.logoWidth || 120}px`, height: 'auto' }}
+                className="hidden md:block"
+              />
+              <img 
+                src={settings.logoUrl} 
+                alt={siteName} 
+                style={{ width: `${settings.mobileLogoWidth || settings.logoWidth || 100}px`, height: 'auto' }}
+                className="block md:hidden"
+              />
+            </>
           ) : (
             <>
               <Car className="h-8 w-8 text-primary" />

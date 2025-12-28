@@ -15,11 +15,20 @@ export function Footer() {
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2 font-serif text-xl font-bold">
               {settings?.logoUrl ? (
-                <img 
-                  src={settings.logoUrl} 
-                  alt={siteName} 
-                  style={{ width: `${settings.logoWidth || 120}px`, height: 'auto' }}
-                />
+                <>
+                  <img 
+                    src={settings.logoUrl} 
+                    alt={siteName} 
+                    style={{ width: `${settings.logoWidth || 120}px`, height: 'auto' }}
+                    className="hidden md:block"
+                  />
+                  <img 
+                    src={settings.logoUrl} 
+                    alt={siteName} 
+                    style={{ width: `${settings.mobileLogoWidth || settings.logoWidth || 100}px`, height: 'auto' }}
+                    className="block md:hidden"
+                  />
+                </>
               ) : (
                 <>
                   <Car className="h-6 w-6 text-primary" />

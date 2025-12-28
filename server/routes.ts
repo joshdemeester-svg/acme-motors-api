@@ -2910,12 +2910,14 @@ export async function initializeDefaultAdmin(): Promise<void> {
   try {
     const existingAdmin = await storage.getUserByUsername("Josh");
     if (existingAdmin) {
-      console.log("[auth] Default admin user 'Josh' already exists");
+      console.log(`[auth] Default admin user 'Josh' already exists with role: '${existingAdmin.role}'`);
       // Ensure Josh has master role (migration for existing deployments)
       if (existingAdmin.role !== "master") {
         console.log("[auth] Upgrading 'Josh' to master role...");
         await storage.updateUserRole(existingAdmin.id, "master");
         console.log("[auth] 'Josh' upgraded to master role");
+      } else {
+        console.log("[auth] 'Josh' already has master role");
       }
     } else {
       const hashedPassword = "d7da12f7f0b51ba5ab3e7bb2617161d7:a5d33d043a5bfc73921e861303f31e6a9a6909740dc0368989809ddec3b64526e3f4cab9bd1569dd166d2f4043dc441645c821b0e1582b6547a0ebebeed9e00d";
