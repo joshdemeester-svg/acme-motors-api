@@ -25,10 +25,15 @@ import {
   Check,
   Eye,
   EyeOff,
-  Menu
+  Menu,
+  Star,
+  Plus,
+  Trash2,
+  Edit2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { SiteSettings } from "@shared/schema";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import type { SiteSettings, Testimonial } from "@shared/schema";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("branding");
@@ -36,6 +41,16 @@ export default function Settings() {
   const [showGhlToken, setShowGhlToken] = useState(false);
   const [ghlTestStatus, setGhlTestStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
   const [ghlTestMessage, setGhlTestMessage] = useState("");
+  const [testimonialDialogOpen, setTestimonialDialogOpen] = useState(false);
+  const [editingTestimonial, setEditingTestimonial] = useState<Testimonial | null>(null);
+  const [testimonialForm, setTestimonialForm] = useState({
+    customerName: "",
+    customerLocation: "",
+    vehicleSold: "",
+    rating: 5,
+    content: "",
+    featured: false,
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -58,6 +73,108 @@ export default function Settings() {
   });
 
   const isMasterAdmin = session?.isMasterAdmin;
+
+  const { data: testimonials = [] } = useQuery<Testimonial[]>({
+    queryKey: ["/api/testimonials/all"],
+    queryFn: async () => {
+      const res = await fetch("/api/testimonials/all");
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const createTestimonialMutation = useMutation({
+    mutationFn: async (data: typeof testimonialForm) => {
+      const res = await fetch("/api/testimonials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data, approved: true }),
+      });
+      if (!res.ok) throw new Error("Failed to create testimonial");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials/featured"] });
+      setTestimonialDialogOpen(false);
+      resetTestimonialForm();
+      toast({ title: "Testimonial added successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to add testimonial", variant: "destructive" });
+    },
+  });
+
+  const updateTestimonialMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<typeof testimonialForm> }) => {
+      const res = await fetch(`/api/testimonials/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update testimonial");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials/featured"] });
+      setTestimonialDialogOpen(false);
+      setEditingTestimonial(null);
+      resetTestimonialForm();
+      toast({ title: "Testimonial updated successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update testimonial", variant: "destructive" });
+    },
+  });
+
+  const deleteTestimonialMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/testimonials/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete testimonial");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials/featured"] });
+      toast({ title: "Testimonial deleted" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete testimonial", variant: "destructive" });
+    },
+  });
+
+  const resetTestimonialForm = () => {
+    setTestimonialForm({
+      customerName: "",
+      customerLocation: "",
+      vehicleSold: "",
+      rating: 5,
+      content: "",
+      featured: false,
+    });
+  };
+
+  const openEditTestimonial = (t: Testimonial) => {
+    setEditingTestimonial(t);
+    setTestimonialForm({
+      customerName: t.customerName,
+      customerLocation: t.customerLocation || "",
+      vehicleSold: t.vehicleSold || "",
+      rating: t.rating || 5,
+      content: t.content,
+      featured: t.featured || false,
+    });
+    setTestimonialDialogOpen(true);
+  };
+
+  const handleTestimonialSubmit = () => {
+    if (editingTestimonial) {
+      updateTestimonialMutation.mutate({ id: editingTestimonial.id, data: testimonialForm });
+    } else {
+      createTestimonialMutation.mutate(testimonialForm);
+    }
+  };
 
   const [formData, setFormData] = useState<Partial<SiteSettings>>({});
 
@@ -136,6 +253,10 @@ export default function Settings() {
               <TabsTrigger value="integrations" className="gap-1.5 px-3 whitespace-nowrap">
                 <Plug className="h-4 w-4" />
                 <span>Integrations</span>
+              </TabsTrigger>
+              <TabsTrigger value="reviews" className="gap-1.5 px-3 whitespace-nowrap">
+                <Star className="h-4 w-4" />
+                <span>Reviews</span>
               </TabsTrigger>
               {isMasterAdmin && (
                 <TabsTrigger value="users" className="gap-1.5 px-3 whitespace-nowrap">
@@ -592,6 +713,97 @@ export default function Settings() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="reviews" className="mt-6 space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Customer Testimonials</CardTitle>
+                  <CardDescription>Manage reviews displayed on your website</CardDescription>
+                </div>
+                <Button
+                  onClick={() => {
+                    setEditingTestimonial(null);
+                    resetTestimonialForm();
+                    setTestimonialDialogOpen(true);
+                  }}
+                  data-testid="button-add-testimonial"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Review
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {testimonials.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    No testimonials yet. Add your first customer review!
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {testimonials.map((t) => (
+                      <div
+                        key={t.id}
+                        className="flex items-start justify-between p-4 border rounded-lg"
+                        data-testid={`testimonial-row-${t.id}`}
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium">{t.customerName}</span>
+                            {t.customerLocation && (
+                              <span className="text-sm text-muted-foreground">
+                                — {t.customerLocation}
+                              </span>
+                            )}
+                            {t.featured && (
+                              <Badge variant="secondary" className="text-xs">Featured</Badge>
+                            )}
+                          </div>
+                          <div className="flex mb-2">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-3 w-3 ${i < (t.rating || 5) ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
+                              />
+                            ))}
+                          </div>
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            "{t.content}"
+                          </p>
+                          {t.vehicleSold && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Vehicle: {t.vehicleSold}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2 ml-4">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEditTestimonial(t)}
+                            data-testid={`button-edit-testimonial-${t.id}`}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              if (confirm("Delete this testimonial?")) {
+                                deleteTestimonialMutation.mutate(t.id);
+                              }
+                            }}
+                            data-testid={`button-delete-testimonial-${t.id}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {isMasterAdmin && (
             <TabsContent value="users" className="mt-6 space-y-6">
               <Card>
@@ -614,6 +826,107 @@ export default function Settings() {
           )}
         </Tabs>
       </div>
+
+      <Dialog open={testimonialDialogOpen} onOpenChange={(open) => {
+        setTestimonialDialogOpen(open);
+        if (!open) {
+          setEditingTestimonial(null);
+          resetTestimonialForm();
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingTestimonial ? "Edit Testimonial" : "Add Testimonial"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="customerName">Customer Name *</Label>
+              <Input
+                id="customerName"
+                value={testimonialForm.customerName}
+                onChange={(e) => setTestimonialForm({ ...testimonialForm, customerName: e.target.value })}
+                placeholder="John Smith"
+                data-testid="input-testimonial-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="customerLocation">Location</Label>
+              <Input
+                id="customerLocation"
+                value={testimonialForm.customerLocation}
+                onChange={(e) => setTestimonialForm({ ...testimonialForm, customerLocation: e.target.value })}
+                placeholder="Miami, FL"
+                data-testid="input-testimonial-location"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="vehicleSold">Vehicle (optional)</Label>
+              <Input
+                id="vehicleSold"
+                value={testimonialForm.vehicleSold}
+                onChange={(e) => setTestimonialForm({ ...testimonialForm, vehicleSold: e.target.value })}
+                placeholder="2022 Porsche 911 GT3"
+                data-testid="input-testimonial-vehicle"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Rating</Label>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setTestimonialForm({ ...testimonialForm, rating: star })}
+                    className="p-1"
+                    data-testid={`button-rating-${star}`}
+                  >
+                    <Star
+                      className={`h-6 w-6 ${star <= testimonialForm.rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="content">Review *</Label>
+              <Textarea
+                id="content"
+                value={testimonialForm.content}
+                onChange={(e) => setTestimonialForm({ ...testimonialForm, content: e.target.value })}
+                placeholder="Share what the customer said about their experience..."
+                rows={4}
+                data-testid="input-testimonial-content"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="featured"
+                checked={testimonialForm.featured}
+                onCheckedChange={(checked) => setTestimonialForm({ ...testimonialForm, featured: checked })}
+                data-testid="switch-testimonial-featured"
+              />
+              <Label htmlFor="featured">Featured on homepage</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setTestimonialDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleTestimonialSubmit}
+              disabled={!testimonialForm.customerName || !testimonialForm.content || createTestimonialMutation.isPending || updateTestimonialMutation.isPending}
+              data-testid="button-save-testimonial"
+            >
+              {createTestimonialMutation.isPending || updateTestimonialMutation.isPending ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
