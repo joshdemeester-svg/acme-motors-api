@@ -14,10 +14,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Plus, Search, Car, DollarSign, Pencil, Trash2, Eye, Loader2, Check, X, Clock, ChevronsUpDown, Upload, Star, CalendarDays, MessageSquare } from "lucide-react";
+import { Plus, Search, Car, DollarSign, Pencil, Trash2, Eye, Loader2, Check, X, Clock, ChevronsUpDown, Upload, Star, CalendarDays, MessageSquare, GripVertical } from "lucide-react";
 import type { InventoryCar, InventoryCarWithMetrics } from "@shared/schema";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface NHTSAMake {
   MakeId: number;
@@ -55,6 +58,65 @@ function StatusBadge({ status }: { status: string | null | undefined }) {
       {config.icon}
       {statusValue}
     </Badge>
+  );
+}
+
+function SortablePhotoItem({ 
+  photo, 
+  index, 
+  onRemove 
+}: { 
+  photo: string; 
+  index: number; 
+  onRemove: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: photo });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : 1,
+  };
+
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      className="relative group aspect-square rounded-md overflow-hidden border bg-muted"
+    >
+      <div 
+        {...attributes} 
+        {...listeners}
+        className="absolute top-1 left-1 bg-black/70 text-white rounded p-1 cursor-grab active:cursor-grabbing z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+        title="Drag to reorder"
+      >
+        <GripVertical className="h-3 w-3" />
+      </div>
+      <img 
+        src={photo} 
+        alt={`Photo ${index + 1}`} 
+        className="h-full w-full object-cover"
+      />
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+        title="Remove photo"
+      >
+        <Trash2 className="h-3 w-3" />
+      </button>
+      {index === 0 && (
+        <span className="absolute bottom-1 left-1 bg-primary text-xs text-primary-foreground px-1 rounded">Main</span>
+      )}
+    </div>
   );
 }
 
@@ -111,6 +173,29 @@ export default function Inventory() {
   const [editMakeOpen, setEditMakeOpen] = useState(false);
   const [editModelOpen, setEditModelOpen] = useState(false);
   const [editVinLoading, setEditVinLoading] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleAddPhotosDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = addPhotos.indexOf(active.id as string);
+      const newIndex = addPhotos.indexOf(over.id as string);
+      setAddPhotos(arrayMove(addPhotos, oldIndex, newIndex));
+    }
+  };
+
+  const handleEditPhotosDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = editPhotos.indexOf(active.id as string);
+      const newIndex = editPhotos.indexOf(over.id as string);
+      setEditPhotos(arrayMove(editPhotos, oldIndex, newIndex));
+    }
+  };
 
   const { data: inventory = [], isLoading } = useQuery<InventoryCarWithMetrics[]>({
     queryKey: ["/api/inventory/all"],
@@ -911,7 +996,7 @@ export default function Inventory() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>Photos ({addPhotos.length})</Label>
+                <Label>Photos ({addPhotos.length}) {addPhotos.length > 1 && <span className="text-muted-foreground font-normal">- Drag to reorder</span>}</Label>
                 <ObjectUploader
                   maxNumberOfFiles={10}
                   maxFileSize={10485760}
@@ -951,28 +1036,24 @@ export default function Inventory() {
               </div>
               
               {addPhotos.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {addPhotos.map((photo, index) => (
-                    <div key={index} className="relative group aspect-square rounded-md overflow-hidden border">
-                      <img 
-                        src={photo} 
-                        alt={`Photo ${index + 1}`} 
-                        className="h-full w-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setAddPhotos(addPhotos.filter((_, i) => i !== index))}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Remove photo"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                      {index === 0 && (
-                        <span className="absolute bottom-1 left-1 bg-primary text-xs text-primary-foreground px-1 rounded">Main</span>
-                      )}
+                <DndContext 
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleAddPhotosDragEnd}
+                >
+                  <SortableContext items={addPhotos} strategy={rectSortingStrategy}>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {addPhotos.map((photo, index) => (
+                        <SortablePhotoItem
+                          key={photo}
+                          photo={photo}
+                          index={index}
+                          onRemove={() => setAddPhotos(addPhotos.filter((_, i) => i !== index))}
+                        />
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </SortableContext>
+                </DndContext>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-4 border border-dashed rounded-md">
                   No photos added yet. Click "Add Photos" to upload images.
@@ -1240,7 +1321,7 @@ export default function Inventory() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>Photos ({editPhotos.length})</Label>
+                <Label>Photos ({editPhotos.length}) <span className="text-muted-foreground font-normal">- Drag to reorder, first photo is main</span></Label>
                 <ObjectUploader
                   maxNumberOfFiles={10}
                   maxFileSize={10485760}
@@ -1280,28 +1361,24 @@ export default function Inventory() {
               </div>
               
               {editPhotos.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {editPhotos.map((photo, index) => (
-                    <div key={index} className="relative group aspect-square rounded-md overflow-hidden border">
-                      <img 
-                        src={photo} 
-                        alt={`Photo ${index + 1}`} 
-                        className="h-full w-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setEditPhotos(editPhotos.filter((_, i) => i !== index))}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Remove photo"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                      {index === 0 && (
-                        <span className="absolute bottom-1 left-1 bg-primary text-xs text-primary-foreground px-1 rounded">Main</span>
-                      )}
+                <DndContext 
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleEditPhotosDragEnd}
+                >
+                  <SortableContext items={editPhotos} strategy={rectSortingStrategy}>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {editPhotos.map((photo, index) => (
+                        <SortablePhotoItem
+                          key={photo}
+                          photo={photo}
+                          index={index}
+                          onRemove={() => setEditPhotos(editPhotos.filter((_, i) => i !== index))}
+                        />
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </SortableContext>
+                </DndContext>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-4 border border-dashed rounded-md">
                   No photos added yet. Click "Add Photos" to upload images.
