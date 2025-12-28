@@ -439,6 +439,331 @@ export default function Settings() {
                 </Button>
               </CardFooter>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Color Scheme</CardTitle>
+                <CardDescription>Customize colors throughout your website</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="backgroundColor">Background Color</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="backgroundColor"
+                        type="color"
+                        value={formData.backgroundColor || "#000000"}
+                        onChange={(e) => setFormData({ ...formData, backgroundColor: e.target.value })}
+                        className="w-16 h-10 p-1"
+                        data-testid="input-background-color"
+                      />
+                      <Input
+                        value={formData.backgroundColor || ""}
+                        onChange={(e) => setFormData({ ...formData, backgroundColor: e.target.value })}
+                        placeholder="#000000"
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="mainMenuColor">Menu Link Color</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="mainMenuColor"
+                        type="color"
+                        value={formData.mainMenuColor || "#D4AF37"}
+                        onChange={(e) => setFormData({ ...formData, mainMenuColor: e.target.value })}
+                        className="w-16 h-10 p-1"
+                        data-testid="input-menu-color"
+                      />
+                      <Input
+                        value={formData.mainMenuColor || ""}
+                        onChange={(e) => setFormData({ ...formData, mainMenuColor: e.target.value })}
+                        placeholder="#D4AF37"
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="mainMenuHoverColor">Menu Link Hover</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="mainMenuHoverColor"
+                        type="color"
+                        value={formData.mainMenuHoverColor || "#B8960C"}
+                        onChange={(e) => setFormData({ ...formData, mainMenuHoverColor: e.target.value })}
+                        className="w-16 h-10 p-1"
+                        data-testid="input-menu-hover-color"
+                      />
+                      <Input
+                        value={formData.mainMenuHoverColor || ""}
+                        onChange={(e) => setFormData({ ...formData, mainMenuHoverColor: e.target.value })}
+                        placeholder="#B8960C"
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contactButtonColor">Contact Button</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="contactButtonColor"
+                        type="color"
+                        value={formData.contactButtonColor || "#D4AF37"}
+                        onChange={(e) => setFormData({ ...formData, contactButtonColor: e.target.value })}
+                        className="w-16 h-10 p-1"
+                        data-testid="input-contact-btn-color"
+                      />
+                      <Input
+                        value={formData.contactButtonColor || ""}
+                        onChange={(e) => setFormData({ ...formData, contactButtonColor: e.target.value })}
+                        placeholder="#D4AF37"
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contactButtonHoverColor">Contact Button Hover</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="contactButtonHoverColor"
+                        type="color"
+                        value={formData.contactButtonHoverColor || "#B8960C"}
+                        onChange={(e) => setFormData({ ...formData, contactButtonHoverColor: e.target.value })}
+                        className="w-16 h-10 p-1"
+                        data-testid="input-contact-btn-hover-color"
+                      />
+                      <Input
+                        value={formData.contactButtonHoverColor || ""}
+                        onChange={(e) => setFormData({ ...formData, contactButtonHoverColor: e.target.value })}
+                        placeholder="#B8960C"
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium mb-3">Vehicle Cards</h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="vehicleTitleColor">Vehicle Title Color</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="vehicleTitleColor"
+                          type="color"
+                          value={formData.vehicleTitleColor || "#FFFFFF"}
+                          onChange={(e) => setFormData({ ...formData, vehicleTitleColor: e.target.value })}
+                          className="w-16 h-10 p-1"
+                          data-testid="input-vehicle-title-color"
+                        />
+                        <Input
+                          value={formData.vehicleTitleColor || ""}
+                          onChange={(e) => setFormData({ ...formData, vehicleTitleColor: e.target.value })}
+                          placeholder="#FFFFFF"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="vehiclePriceColor">Vehicle Price Color</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="vehiclePriceColor"
+                          type="color"
+                          value={formData.vehiclePriceColor || "#FFFFFF"}
+                          onChange={(e) => setFormData({ ...formData, vehiclePriceColor: e.target.value })}
+                          className="w-16 h-10 p-1"
+                          data-testid="input-vehicle-price-color"
+                        />
+                        <Input
+                          value={formData.vehiclePriceColor || ""}
+                          onChange={(e) => setFormData({ ...formData, vehiclePriceColor: e.target.value })}
+                          placeholder="#FFFFFF"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium mb-3">How It Works Steps</h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="stepBgColor">Step Background</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="stepBgColor"
+                          type="color"
+                          value={formData.stepBgColor || "#DC2626"}
+                          onChange={(e) => setFormData({ ...formData, stepBgColor: e.target.value })}
+                          className="w-16 h-10 p-1"
+                          data-testid="input-step-bg-color"
+                        />
+                        <Input
+                          value={formData.stepBgColor || ""}
+                          onChange={(e) => setFormData({ ...formData, stepBgColor: e.target.value })}
+                          placeholder="#DC2626"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="stepNumberColor">Step Number Color</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="stepNumberColor"
+                          type="color"
+                          value={formData.stepNumberColor || "#FFFFFF"}
+                          onChange={(e) => setFormData({ ...formData, stepNumberColor: e.target.value })}
+                          className="w-16 h-10 p-1"
+                          data-testid="input-step-number-color"
+                        />
+                        <Input
+                          value={formData.stepNumberColor || ""}
+                          onChange={(e) => setFormData({ ...formData, stepNumberColor: e.target.value })}
+                          placeholder="#FFFFFF"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium mb-3">Social Icons</h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="socialIconBgColor">Icon Background</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="socialIconBgColor"
+                          type="color"
+                          value={formData.socialIconBgColor || "#D4AF37"}
+                          onChange={(e) => setFormData({ ...formData, socialIconBgColor: e.target.value })}
+                          className="w-16 h-10 p-1"
+                          data-testid="input-social-bg-color"
+                        />
+                        <Input
+                          value={formData.socialIconBgColor || ""}
+                          onChange={(e) => setFormData({ ...formData, socialIconBgColor: e.target.value })}
+                          placeholder="#D4AF37"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="socialIconHoverColor">Icon Hover</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="socialIconHoverColor"
+                          type="color"
+                          value={formData.socialIconHoverColor || "#B8960C"}
+                          onChange={(e) => setFormData({ ...formData, socialIconHoverColor: e.target.value })}
+                          className="w-16 h-10 p-1"
+                          data-testid="input-social-hover-color"
+                        />
+                        <Input
+                          value={formData.socialIconHoverColor || ""}
+                          onChange={(e) => setFormData({ ...formData, socialIconHoverColor: e.target.value })}
+                          placeholder="#B8960C"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium mb-3">Payment Calculator</h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="calculatorBgColor">Calculator Background</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="calculatorBgColor"
+                          type="color"
+                          value={formData.calculatorBgColor || "#1E3A5F"}
+                          onChange={(e) => setFormData({ ...formData, calculatorBgColor: e.target.value })}
+                          className="w-16 h-10 p-1"
+                          data-testid="input-calc-bg-color"
+                        />
+                        <Input
+                          value={formData.calculatorBgColor || ""}
+                          onChange={(e) => setFormData({ ...formData, calculatorBgColor: e.target.value })}
+                          placeholder="#1E3A5F"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="calculatorTextColor">Calculator Text</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="calculatorTextColor"
+                          type="color"
+                          value={formData.calculatorTextColor || "#FFFFFF"}
+                          onChange={(e) => setFormData({ ...formData, calculatorTextColor: e.target.value })}
+                          className="w-16 h-10 p-1"
+                          data-testid="input-calc-text-color"
+                        />
+                        <Input
+                          value={formData.calculatorTextColor || ""}
+                          onChange={(e) => setFormData({ ...formData, calculatorTextColor: e.target.value })}
+                          placeholder="#FFFFFF"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="calculatorAccentColor">Calculator Accent</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="calculatorAccentColor"
+                          type="color"
+                          value={formData.calculatorAccentColor || "#3B82F6"}
+                          onChange={(e) => setFormData({ ...formData, calculatorAccentColor: e.target.value })}
+                          className="w-16 h-10 p-1"
+                          data-testid="input-calc-accent-color"
+                        />
+                        <Input
+                          value={formData.calculatorAccentColor || ""}
+                          onChange={(e) => setFormData({ ...formData, calculatorAccentColor: e.target.value })}
+                          placeholder="#3B82F6"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="calculatorSliderColor">Calculator Slider</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="calculatorSliderColor"
+                          type="color"
+                          value={formData.calculatorSliderColor || "#3B82F6"}
+                          onChange={(e) => setFormData({ ...formData, calculatorSliderColor: e.target.value })}
+                          className="w-16 h-10 p-1"
+                          data-testid="input-calc-slider-color"
+                        />
+                        <Input
+                          value={formData.calculatorSliderColor || ""}
+                          onChange={(e) => setFormData({ ...formData, calculatorSliderColor: e.target.value })}
+                          placeholder="#3B82F6"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardFooter>
+            </Card>
           </TabsContent>
 
           <TabsContent value="contact" className="mt-6 space-y-6">
