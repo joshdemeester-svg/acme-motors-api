@@ -24,7 +24,8 @@ import {
   Loader2,
   Check,
   Eye,
-  EyeOff
+  EyeOff,
+  Menu
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { SiteSettings } from "@shared/schema";
@@ -123,6 +124,10 @@ export default function Settings() {
               <TabsTrigger value="notifications" className="gap-1.5 px-3 whitespace-nowrap">
                 <Bell className="h-4 w-4" />
                 <span>Alerts</span>
+              </TabsTrigger>
+              <TabsTrigger value="menus" className="gap-1.5 px-3 whitespace-nowrap">
+                <Menu className="h-4 w-4" />
+                <span>Menus</span>
               </TabsTrigger>
               <TabsTrigger value="legal" className="gap-1.5 px-3 whitespace-nowrap">
                 <FileText className="h-4 w-4" />
@@ -331,6 +336,74 @@ export default function Settings() {
                 <p className="text-sm text-muted-foreground">
                   These numbers will receive SMS notifications for new consignment submissions and buyer inquiries.
                 </p>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="menus" className="mt-6 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Navigation Menu Labels</CardTitle>
+                <CardDescription>Customize the text shown in your website's main navigation</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="menuLabelHome">Home</Label>
+                    <Input
+                      id="menuLabelHome"
+                      value={formData.menuLabelHome || ""}
+                      onChange={(e) => setFormData({ ...formData, menuLabelHome: e.target.value })}
+                      placeholder="Home"
+                      data-testid="input-menu-label-home"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="menuLabelInventory">Inventory</Label>
+                    <Input
+                      id="menuLabelInventory"
+                      value={formData.menuLabelInventory || ""}
+                      onChange={(e) => setFormData({ ...formData, menuLabelInventory: e.target.value })}
+                      placeholder="Inventory"
+                      data-testid="input-menu-label-inventory"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="menuLabelConsign">Consign</Label>
+                    <Input
+                      id="menuLabelConsign"
+                      value={formData.menuLabelConsign || ""}
+                      onChange={(e) => setFormData({ ...formData, menuLabelConsign: e.target.value })}
+                      placeholder="Consign"
+                      data-testid="input-menu-label-consign"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="menuLabelTradeIn">Trade-In</Label>
+                    <Input
+                      id="menuLabelTradeIn"
+                      value={formData.menuLabelTradeIn || ""}
+                      onChange={(e) => setFormData({ ...formData, menuLabelTradeIn: e.target.value })}
+                      placeholder="Trade-In"
+                      data-testid="input-menu-label-trade-in"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="menuLabelAppointments">Appointments</Label>
+                    <Input
+                      id="menuLabelAppointments"
+                      value={formData.menuLabelAppointments || ""}
+                      onChange={(e) => setFormData({ ...formData, menuLabelAppointments: e.target.value })}
+                      placeholder="Book Appointment"
+                      data-testid="input-menu-label-appointments"
+                    />
+                  </div>
+                </div>
               </CardContent>
               <CardFooter>
                 <Button onClick={handleSave} disabled={saveMutation.isPending}>
