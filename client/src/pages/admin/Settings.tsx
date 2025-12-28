@@ -974,6 +974,58 @@ export default function Settings() {
                 </Button>
               </CardFooter>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>SMS Templates</CardTitle>
+                <CardDescription>
+                  Customize the confirmation messages sent to customers
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sellerConfirmationSms">Seller Confirmation SMS</Label>
+                  <Textarea
+                    id="sellerConfirmationSms"
+                    value={formData.sellerConfirmationSms || ""}
+                    onChange={(e) => setFormData({ ...formData, sellerConfirmationSms: e.target.value })}
+                    placeholder="Thank you for submitting your vehicle! We'll review your consignment request and get back to you shortly."
+                    rows={3}
+                    data-testid="input-seller-sms"
+                  />
+                  <p className="text-xs text-muted-foreground">Sent to sellers after they submit a consignment</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="inquiryConfirmationSms">Buyer Inquiry Confirmation SMS</Label>
+                  <Textarea
+                    id="inquiryConfirmationSms"
+                    value={formData.inquiryConfirmationSms || ""}
+                    onChange={(e) => setFormData({ ...formData, inquiryConfirmationSms: e.target.value })}
+                    placeholder="Thank you for your interest! A member of our team will reach out to you soon about this vehicle."
+                    rows={3}
+                    data-testid="input-inquiry-sms"
+                  />
+                  <p className="text-xs text-muted-foreground">Sent to buyers after they submit an inquiry</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tradeInConfirmationSms">Trade-In Confirmation SMS</Label>
+                  <Textarea
+                    id="tradeInConfirmationSms"
+                    value={formData.tradeInConfirmationSms || ""}
+                    onChange={(e) => setFormData({ ...formData, tradeInConfirmationSms: e.target.value })}
+                    placeholder="Thank you for your trade-in request! We'll evaluate your vehicle and get back to you with an offer."
+                    rows={3}
+                    data-testid="input-tradein-sms"
+                  />
+                  <p className="text-xs text-muted-foreground">Sent to customers after they submit a trade-in request</p>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardFooter>
+            </Card>
           </TabsContent>
 
           <TabsContent value="menus" className="mt-6 space-y-6">
