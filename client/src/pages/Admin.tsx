@@ -4493,15 +4493,14 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
                       }),
                     });
                     if (!res.ok) throw new Error("Failed to get upload URL");
-                    const { uploadURL } = await res.json();
+                    const { uploadURL, objectPath } = await res.json();
+                    (file as any).objectPath = objectPath;
                     return { method: "PUT", url: uploadURL };
                   }}
                   onComplete={(result) => {
                     const newPhotos = (result.successful || []).map((file) => {
-                      const urlParts = file.uploadURL?.split("/") || [];
-                      const objectId = urlParts[urlParts.length - 1]?.split("?")[0] || "";
-                      return `/objects/uploads/${objectId}`;
-                    });
+                      return (file as any).objectPath || "";
+                    }).filter(Boolean);
                     if (newPhotos.length > 0) {
                       setEditPhotos(prev => [...prev, ...newPhotos]);
                       toast({ title: "Photos Uploaded", description: `${newPhotos.length} photo(s) added.` });
