@@ -16,6 +16,7 @@ import {
   Instagram, 
   Twitter, 
   Youtube, 
+  Music,
   Bell, 
   Plug, 
   FileText,
@@ -29,7 +30,9 @@ import {
   Star,
   Plus,
   Trash2,
-  Edit2
+  Edit2,
+  DollarSign,
+  Image
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -362,6 +365,44 @@ export default function Settings() {
                     data-testid="switch-hide-site-name"
                   />
                   <Label htmlFor="hideSiteNameWithLogo">Hide site name when logo is present</Label>
+                </div>
+                <div className="space-y-2 pt-4 border-t">
+                  <Label htmlFor="faviconUrl" className="flex items-center gap-2">
+                    <Image className="h-4 w-4" /> Favicon URL
+                  </Label>
+                  <Input
+                    id="faviconUrl"
+                    value={formData.faviconUrl || ""}
+                    onChange={(e) => setFormData({ ...formData, faviconUrl: e.target.value })}
+                    placeholder="https://example.com/favicon.ico"
+                    data-testid="input-favicon-url"
+                  />
+                  <p className="text-xs text-muted-foreground">URL to your browser tab icon (recommended: .ico or 32x32 .png)</p>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Footer</CardTitle>
+                <CardDescription>Customize your website footer</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="footerTagline">Footer Tagline</Label>
+                  <Textarea
+                    id="footerTagline"
+                    value={formData.footerTagline || ""}
+                    onChange={(e) => setFormData({ ...formData, footerTagline: e.target.value })}
+                    placeholder="Luxury automotive consignment services for discerning collectors and enthusiasts."
+                    rows={3}
+                    data-testid="input-footer-tagline"
+                  />
                 </div>
               </CardContent>
               <CardFooter>
@@ -869,6 +910,17 @@ export default function Settings() {
                       value={formData.youtubeUrl || ""}
                       onChange={(e) => setFormData({ ...formData, youtubeUrl: e.target.value })}
                       placeholder="https://youtube.com/@yourdealership"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Music className="h-4 w-4" /> TikTok
+                    </Label>
+                    <Input
+                      value={formData.tiktokUrl || ""}
+                      onChange={(e) => setFormData({ ...formData, tiktokUrl: e.target.value })}
+                      placeholder="https://tiktok.com/@yourdealership"
+                      data-testid="input-tiktok-url"
                     />
                   </div>
                 </div>
