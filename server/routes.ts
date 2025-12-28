@@ -2194,8 +2194,9 @@ export async function registerRoutes(
         color: z.string().min(1).max(50).optional(),
         price: z.number().int().min(0).optional(),
         featured: z.boolean().optional(),
+        status: z.enum(["available", "pending", "sold"]).optional(),
         condition: z.string().min(1).max(100).optional(),
-        description: z.string().max(2000).optional(),
+        description: z.string().nullable().optional(),
         photos: z.array(z.string()).optional(),
       });
 
