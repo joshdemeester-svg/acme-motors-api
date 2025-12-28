@@ -160,19 +160,18 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               <span className="text-sm">Back to Site</span>
             </Link>
             <div className="mt-3 flex items-center gap-3">
-              {settings?.logoUrl && (
+              {settings?.logoUrl ? (
                 <img 
                   src={settings.logoUrl} 
                   alt={settings?.siteName || "Logo"} 
                   className="h-10 w-auto"
                 />
-              )}
-              <div>
+              ) : (
                 <h1 className="font-serif text-xl font-bold truncate">
                   {settings?.siteName || "Admin Panel"}
                 </h1>
-                <p className="text-xs text-muted-foreground">Administration</p>
-              </div>
+              )}
+              <p className="text-xs text-muted-foreground">Administration</p>
             </div>
           </div>
 
