@@ -3127,7 +3127,6 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Welcome back!" });
       onSuccess();
     },
     onError: (error: Error) => {
