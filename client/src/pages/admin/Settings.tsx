@@ -1596,7 +1596,7 @@ export default function Settings() {
             <TabsContent value="users" className="mt-6 space-y-6">
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <CardTitle className="flex items-center gap-2">
                         <Shield className="h-5 w-5" />
@@ -1612,7 +1612,7 @@ export default function Settings() {
                         setUserForm({ username: "", password: "", role: "admin" });
                         setUserDialogOpen(true);
                       }}
-                      className="gap-2"
+                      className="gap-2 w-full sm:w-auto"
                       data-testid="button-add-user"
                     >
                       <UserPlus className="h-4 w-4" />
@@ -1634,19 +1634,19 @@ export default function Settings() {
                       {adminUsers.map((user) => (
                         <div 
                           key={user.id} 
-                          className="flex items-center justify-between p-4 border rounded-lg"
+                          className="p-4 border rounded-lg space-y-3"
                           data-testid={`user-row-${user.id}`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                               {user.role === "master" ? (
                                 <Crown className="h-5 w-5 text-yellow-600" />
                               ) : (
                                 <Users className="h-5 w-5 text-muted-foreground" />
                               )}
                             </div>
-                            <div>
-                              <div className="flex items-center gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <p className="font-medium">{user.username}</p>
                                 <Badge variant={user.role === "master" ? "default" : "secondary"}>
                                   {user.role === "master" ? "Master Admin" : "Admin"}
@@ -1657,7 +1657,7 @@ export default function Settings() {
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap gap-2">
                             {user.role !== "master" && (
                               <Button
                                 variant="outline"
