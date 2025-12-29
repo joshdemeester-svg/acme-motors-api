@@ -67,10 +67,6 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
       return res.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Welcome Back!",
-        description: "Redirecting to your portal...",
-      });
       onOpenChange(false);
       resetState();
       setLocation("/seller-portal");
@@ -99,10 +95,6 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/session"] });
-      toast({
-        title: "Welcome!",
-        description: "Redirecting to admin dashboard...",
-      });
       onOpenChange(false);
       resetState();
       setLocation("/admin");
