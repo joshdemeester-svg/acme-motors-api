@@ -99,8 +99,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     
     return (
       <>
-        <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30 p-4">
-          <div className="text-center space-y-4">
+        <div className="fixed inset-0 flex items-center justify-center bg-muted/30">
+          <div className="text-center space-y-4 p-6 max-w-sm mx-auto">
             <h1 className="text-2xl font-bold font-serif">Admin Access Required</h1>
             <p className="text-muted-foreground">Please log in to access the admin panel.</p>
             <Button onClick={() => setShowLogin(true)} data-testid="button-login">
@@ -172,7 +172,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               <ChevronLeft className="h-4 w-4" />
               <span className="text-sm">Back to Site</span>
             </Link>
-            <div className="mt-3 flex items-center gap-3">
+            <div className="mt-3">
               {settings?.logoUrl ? (
                 <img 
                   src={settings.logoUrl} 
@@ -185,7 +185,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   {settings?.siteName || "Admin Panel"}
                 </h1>
               )}
-              <p className="text-xs text-muted-foreground">Administration</p>
             </div>
           </div>
 
