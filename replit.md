@@ -200,15 +200,35 @@ When testing changes in production:
 
 ---
 
-## Future Enhancements (Not Yet Built)
+## Planned Features (Not Yet Built)
 
-| Feature | Priority | Description |
-|---------|----------|-------------|
-| Email notifications | Low | Send email confirmations in addition to SMS |
-| Analytics dashboard | Medium | Charts showing leads, sales, inventory trends |
-| Appointment scheduling | Low | Calendar integration for test drives |
-| Multi-location support | Low | Support multiple dealership locations |
-| Custom report builder | Low | Generate custom reports on leads/inventory |
+### High Priority - Production Readiness
+
+| Feature | Description | Implementation Notes |
+|---------|-------------|---------------------|
+| **Admin 2FA via SMS** | Two-factor authentication for admin login with 3-day trust period | Add phone to users table, send OTP via GoHighLevel, store lastTwoFactorVerified timestamp |
+| **Lead follow-up reminders** | Set reminders on leads, show overdue/upcoming on dashboard | New reminders table, UI in lead detail dialog, dashboard widget |
+| **Admin dashboard** | Key metrics: leads this week, inventory count, avg days on lot | New dashboard page at /admin with charts/stats |
+| **Duplicate VIN detection** | Prevent adding same vehicle twice | Check VIN on add/edit, show warning if exists |
+| **Email notifications** | Send email confirmations for buyer inquiries and consignments | Integrate email service, templates for each notification type |
+
+### Medium Priority - Enhanced Functionality
+
+| Feature | Description | Implementation Notes |
+|---------|-------------|---------------------|
+| **GoHighLevel sync for all leads** | Sync buyer inquiries, trade-ins, credit apps to GHL (not just consignments) | Extend createGHLContact to all lead types |
+| **Sold vehicle workflow** | Mark vehicle sold → archive related leads → update inventory status | Add "Mark Sold" button, cascade status updates |
+| **CSV import validation** | Preview and validate data before bulk import | Show preview table, highlight errors, allow corrections |
+
+### Lower Priority - Future Enhancements
+
+| Feature | Description |
+|---------|-------------|
+| Appointment scheduling | Calendar integration for test drives |
+| Multi-location support | Support multiple dealership locations with separate inventory/staff |
+| Custom report builder | Generate custom reports on leads/inventory |
+| E-signature for contracts | Digital signing for consignment agreements |
+| Pricing guidance | Market data integration for competitive pricing
 
 ---
 
