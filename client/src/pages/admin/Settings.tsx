@@ -1383,7 +1383,7 @@ export default function Settings() {
                   onClick={async () => {
                     setGhlTestStatus("testing");
                     try {
-                      const res = await fetch("/api/ghl/test", {
+                      const res = await fetch("/api/settings/test-ghl", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
