@@ -54,6 +54,8 @@ export const consignmentSubmissions = pgTable("consignment_submissions", {
   
   status: text("status").notNull().default("pending"),
   
+  isDemo: boolean("is_demo").default(false),
+  
   customPayoutAmount: integer("custom_payout_amount"),
   overrideCommissionRate: integer("override_commission_rate"),
   overrideAvgDaysToFirstInquiry: integer("override_avg_days_to_first_inquiry"),
@@ -96,12 +98,15 @@ export const inventoryCars = pgTable("inventory_cars", {
   
   consignmentId: varchar("consignment_id").references(() => consignmentSubmissions.id),
   
+  isDemo: boolean("is_demo").default(false),
+  
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertInventoryCarSchema = createInsertSchema(inventoryCars).omit({
   id: true,
   createdAt: true,
+  isDemo: true,
 });
 
 export type InsertInventoryCar = z.infer<typeof insertInventoryCarSchema>;
@@ -165,6 +170,7 @@ export const siteSettings = pgTable("site_settings", {
   menuLabelConsign: text("menu_label_consign").default("Consign"),
   menuLabelTradeIn: text("menu_label_trade_in").default("Trade-In"),
   menuLabelAppointments: text("menu_label_appointments").default("Book Appointment"),
+  demoModeActive: boolean("demo_mode_active").default(false),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
@@ -256,6 +262,8 @@ export const buyerInquiries = pgTable("buyer_inquiries", {
   pipelineStage: text("pipeline_stage").notNull().default("new"),
   assignedTo: varchar("assigned_to").references(() => users.id),
   
+  isDemo: boolean("is_demo").default(false),
+  
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -263,6 +271,7 @@ export const insertBuyerInquirySchema = createInsertSchema(buyerInquiries).omit(
   id: true,
   createdAt: true,
   status: true,
+  isDemo: true,
 });
 
 export type InsertBuyerInquiry = z.infer<typeof insertBuyerInquirySchema>;
@@ -313,6 +322,8 @@ export const testimonials = pgTable("testimonials", {
   featured: boolean("featured").default(false),
   approved: boolean("approved").default(false),
   
+  isDemo: boolean("is_demo").default(false),
+  
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -320,6 +331,7 @@ export const insertTestimonialSchema = createInsertSchema(testimonials).omit({
   id: true,
   createdAt: true,
   approved: true,
+  isDemo: true,
 });
 
 export type InsertTestimonial = z.infer<typeof insertTestimonialSchema>;
