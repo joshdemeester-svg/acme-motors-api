@@ -10,7 +10,8 @@ import {
   Menu,
   X,
   ChevronLeft,
-  Loader2
+  Loader2,
+  Monitor
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -224,6 +225,13 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       <main className="md:ml-64 min-h-screen pt-16 md:pt-0">
+        {settings?.demoModeActive && (
+          <div className="bg-amber-500 text-amber-950 px-4 py-2 flex items-center justify-center gap-2 text-sm font-medium">
+            <Monitor className="h-4 w-4" />
+            <span>Demo Mode Active</span>
+            <span className="hidden sm:inline">— Sample data is being displayed</span>
+          </div>
+        )}
         <div className="p-4 md:p-6 lg:p-8">
           {children}
         </div>
