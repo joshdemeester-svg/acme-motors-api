@@ -35,7 +35,8 @@ import {
   Image,
   UserPlus,
   Key,
-  Crown
+  Crown,
+  Monitor
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -325,6 +326,62 @@ export default function Settings() {
     },
   });
 
+  const enableDemoMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/demo/enable", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to enable demo mode");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inquiries"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/consignments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
+      toast({ 
+        title: "Demo mode enabled", 
+        description: `Created ${data.created?.vehicles || 0} vehicles, ${data.created?.inquiries || 0} leads, ${data.created?.testimonials || 0} testimonials` 
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message, variant: "destructive" });
+    },
+  });
+
+  const disableDemoMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/demo/disable", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to disable demo mode");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inquiries"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/consignments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
+      toast({ 
+        title: "Demo mode disabled", 
+        description: `Removed ${data.deleted?.vehicles || 0} vehicles, ${data.deleted?.inquiries || 0} leads, ${data.deleted?.testimonials || 0} testimonials` 
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message, variant: "destructive" });
+    },
+  });
+
   const handleSave = () => {
     saveMutation.mutate(formData);
   };
@@ -388,6 +445,12 @@ export default function Settings() {
                 <TabsTrigger value="users" className="gap-1.5 px-3 whitespace-nowrap">
                   <Users className="h-4 w-4" />
                   <span>Users</span>
+                </TabsTrigger>
+              )}
+              {isMasterAdmin && (
+                <TabsTrigger value="demo" className="gap-1.5 px-3 whitespace-nowrap">
+                  <Monitor className="h-4 w-4" />
+                  <span>Demo</span>
                 </TabsTrigger>
               )}
             </TabsList>
@@ -1706,6 +1769,88 @@ export default function Settings() {
                       ))}
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {isMasterAdmin && (
+            <TabsContent value="demo" className="mt-6 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Monitor className="h-5 w-5" />
+                    Demo Mode
+                  </CardTitle>
+                  <CardDescription>
+                    Enable demo mode to show sample vehicles, leads, and testimonials for client presentations. 
+                    Demo data is marked separately and won't mix with your real customer data.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="space-y-1">
+                      <div className="font-medium">Demo Mode Status</div>
+                      <div className="text-sm text-muted-foreground">
+                        {settings?.demoModeActive 
+                          ? "Demo mode is active. Sample data is visible on the site." 
+                          : "Demo mode is off. Only real data is shown."}
+                      </div>
+                    </div>
+                    <Badge variant={settings?.demoModeActive ? "default" : "secondary"} className="text-sm px-3 py-1">
+                      {settings?.demoModeActive ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Button
+                      onClick={() => enableDemoMutation.mutate()}
+                      disabled={settings?.demoModeActive || enableDemoMutation.isPending}
+                      className="w-full"
+                      data-testid="button-enable-demo"
+                    >
+                      {enableDemoMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Creating Sample Data...
+                        </>
+                      ) : (
+                        <>
+                          <Monitor className="h-4 w-4 mr-2" />
+                          Enable Demo Mode
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => disableDemoMutation.mutate()}
+                      disabled={!settings?.demoModeActive || disableDemoMutation.isPending}
+                      className="w-full"
+                      data-testid="button-disable-demo"
+                    >
+                      {disableDemoMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Removing Sample Data...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Disable Demo Mode
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  <div className="text-sm text-muted-foreground border-t pt-4 mt-4">
+                    <strong>What gets created:</strong>
+                    <ul className="list-disc pl-5 mt-2 space-y-1">
+                      <li>6 luxury vehicles (Ferrari, Lamborghini, Porsche, etc.)</li>
+                      <li>4 sample buyer inquiries at different pipeline stages</li>
+                      <li>2 sample consignment submissions</li>
+                      <li>3 customer testimonials</li>
+                    </ul>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
