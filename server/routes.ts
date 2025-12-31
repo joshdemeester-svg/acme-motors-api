@@ -2575,6 +2575,93 @@ ${allPages.map(page => `  <url>
     }
   });
 
+  // Demo Mode - Enable (master admin only)
+  app.post("/api/demo/enable", requireMasterAdmin, async (req, res) => {
+    try {
+      const { demoVehicles, demoConsignments, demoTestimonials, demoBuyerInquiries } = await import("./demoData");
+      
+      const settings = await storage.getSiteSettings();
+      if (settings?.demoModeActive) {
+        return res.status(400).json({ error: "Demo mode is already active" });
+      }
+      
+      const allVehicles = await storage.getAllInventoryCars();
+      const vehicleIds: string[] = [];
+      
+      for (const vehicle of demoVehicles) {
+        const created = await storage.createInventoryCar(vehicle);
+        vehicleIds.push(created.id);
+      }
+      
+      for (const inquiry of demoBuyerInquiries) {
+        if (vehicleIds.length > 0) {
+          const vehicleIndex = demoBuyerInquiries.indexOf(inquiry) % vehicleIds.length;
+          await storage.createBuyerInquiry({
+            ...inquiry,
+            inventoryCarId: vehicleIds[vehicleIndex],
+          });
+        }
+      }
+      
+      for (const consignment of demoConsignments) {
+        await storage.createConsignment(consignment as any);
+      }
+      
+      for (const testimonial of demoTestimonials) {
+        await storage.createTestimonial(testimonial);
+      }
+      
+      await storage.updateSiteSettings({ demoModeActive: true });
+      
+      console.log("[demo] Demo mode enabled - sample data created");
+      res.json({ 
+        success: true, 
+        message: "Demo mode enabled", 
+        created: {
+          vehicles: demoVehicles.length,
+          inquiries: demoBuyerInquiries.length,
+          consignments: demoConsignments.length,
+          testimonials: demoTestimonials.length,
+        }
+      });
+    } catch (error) {
+      console.error("[demo] Error enabling demo mode:", error);
+      res.status(500).json({ error: "Failed to enable demo mode" });
+    }
+  });
+
+  // Demo Mode - Disable (master admin only)
+  app.post("/api/demo/disable", requireMasterAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getSiteSettings();
+      if (!settings?.demoModeActive) {
+        return res.status(400).json({ error: "Demo mode is not active" });
+      }
+      
+      const deletedVehicles = await storage.deleteDemoInventory();
+      const deletedInquiries = await storage.deleteDemoBuyerInquiries();
+      const deletedConsignments = await storage.deleteDemoConsignments();
+      const deletedTestimonials = await storage.deleteDemoTestimonials();
+      
+      await storage.updateSiteSettings({ demoModeActive: false });
+      
+      console.log("[demo] Demo mode disabled - sample data removed");
+      res.json({ 
+        success: true, 
+        message: "Demo mode disabled", 
+        deleted: {
+          vehicles: deletedVehicles,
+          inquiries: deletedInquiries,
+          consignments: deletedConsignments,
+          testimonials: deletedTestimonials,
+        }
+      });
+    } catch (error) {
+      console.error("[demo] Error disabling demo mode:", error);
+      res.status(500).json({ error: "Failed to disable demo mode" });
+    }
+  });
+
   // Vehicle Alerts - Public create, Admin manage
   app.post("/api/vehicle-alerts", async (req, res) => {
     try {

@@ -146,6 +146,11 @@ export interface IStorage {
   updateBuyerInquiryPipeline(id: string, pipelineStage: string): Promise<BuyerInquiry | undefined>;
   updateBuyerInquiryAssignment(id: string, assignedTo: string | null): Promise<BuyerInquiry | undefined>;
   updateCreditApplicationAssignment(id: string, assignedTo: string | null): Promise<CreditApplication | undefined>;
+  
+  deleteDemoInventory(): Promise<number>;
+  deleteDemoBuyerInquiries(): Promise<number>;
+  deleteDemoConsignments(): Promise<number>;
+  deleteDemoTestimonials(): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -652,6 +657,38 @@ export class DatabaseStorage implements IStorage {
       .where(eq(creditApplications.id, id))
       .returning();
     return updated || undefined;
+  }
+
+  async deleteDemoInventory(): Promise<number> {
+    const demoVehicles = await db.select().from(inventoryCars).where(eq(inventoryCars.isDemo, true));
+    for (const vehicle of demoVehicles) {
+      await db.delete(buyerInquiries).where(eq(buyerInquiries.inventoryCarId, vehicle.id));
+      await db.delete(vehicleViews).where(eq(vehicleViews.vehicleId, vehicle.id));
+      await db.delete(vehicleDocuments).where(eq(vehicleDocuments.vehicleId, vehicle.id));
+    }
+    const result = await db.delete(inventoryCars).where(eq(inventoryCars.isDemo, true)).returning();
+    return result.length;
+  }
+
+  async deleteDemoBuyerInquiries(): Promise<number> {
+    const result = await db.delete(buyerInquiries).where(eq(buyerInquiries.isDemo, true)).returning();
+    return result.length;
+  }
+
+  async deleteDemoConsignments(): Promise<number> {
+    const demoConsignments = await db.select().from(consignmentSubmissions).where(eq(consignmentSubmissions.isDemo, true));
+    for (const consignment of demoConsignments) {
+      await db.delete(sellerNotes).where(eq(sellerNotes.consignmentId, consignment.id));
+      await db.delete(sellerDocuments).where(eq(sellerDocuments.consignmentId, consignment.id));
+      await db.delete(statusHistory).where(eq(statusHistory.consignmentId, consignment.id));
+    }
+    const result = await db.delete(consignmentSubmissions).where(eq(consignmentSubmissions.isDemo, true)).returning();
+    return result.length;
+  }
+
+  async deleteDemoTestimonials(): Promise<number> {
+    const result = await db.delete(testimonials).where(eq(testimonials.isDemo, true)).returning();
+    return result.length;
   }
 }
 
