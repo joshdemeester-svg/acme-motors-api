@@ -27,6 +27,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Feature Specifications (High-Level)
 - **Admin & Authentication**: Admin login, two-tier roles, user management, seller portal with phone login.
+- **Demo Mode**: Master admin toggle to populate/clear sample luxury vehicles, leads, consignments, and testimonials for client presentations. Demo data is tagged with `isDemo: true` and displayed with an amber banner when active.
 - **Branding & Site Settings**: Customizable logo, colors, menus, footer, social links, legal pages, and favicon.
 - **Inventory Management**: Add, edit, delete vehicles; photo uploads with drag-and-drop reordering; CSV bulk import; VIN API auto-fill.
 - **Lead Management**: Buyer inquiries, trade-in requests, credit applications; visual CRM pipeline; lead notes and activity timeline; salesperson assignment.
