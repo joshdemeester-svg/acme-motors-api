@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import {
   DndContext,
   DragOverlay,
-  pointerWithin,
+  closestCorners,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -44,36 +44,56 @@ interface PipelineBoardProps {
 interface LeadCardProps {
   inquiry: BuyerInquiry;
   onViewDetails: (inquiry: BuyerInquiry) => void;
-  isDragging?: boolean;
+  isActiveItem?: boolean;
 }
 
-function LeadCard({ inquiry, onViewDetails, isDragging }: LeadCardProps) {
+function LeadCard({ inquiry, onViewDetails, isActiveItem }: LeadCardProps) {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
     transition,
-  } = useSortable({ id: inquiry.id });
+    isDragging,
+  } = useSortable({ 
+    id: inquiry.id,
+    data: {
+      type: 'card',
+      inquiry,
+      stage: inquiry.pipelineStage || 'new',
+    }
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
   };
+
+  // Hide the original card when it's being dragged (overlay shows instead)
+  if (isActiveItem) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="bg-card/30 border border-dashed rounded-lg p-3 h-[120px]"
+      />
+    );
+  }
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-card border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing"
+      className={`bg-card border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow ${
+        isDragging ? "opacity-50" : ""
+      }`}
       data-testid={`pipeline-card-${inquiry.id}`}
     >
       <div className="flex items-start gap-2">
         <div
           {...attributes}
           {...listeners}
-          className="mt-1 text-muted-foreground hover:text-foreground cursor-grab"
+          className="mt-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
         >
           <GripVertical className="h-4 w-4" />
         </div>
@@ -128,15 +148,16 @@ function LeadCard({ inquiry, onViewDetails, isDragging }: LeadCardProps) {
 
 function DragOverlayCard({ inquiry }: { inquiry: BuyerInquiry }) {
   return (
-    <div className="bg-card border rounded-lg p-3 shadow-lg cursor-grabbing opacity-90">
+    <div className="bg-card border rounded-lg p-3 shadow-xl cursor-grabbing w-[260px]">
       <div className="flex items-center gap-2 mb-1">
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
         <User className="h-3 w-3 text-muted-foreground" />
         <span className="font-medium text-sm">
           {inquiry.buyerName}
         </span>
       </div>
       {inquiry.inventoryCarId && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground ml-6">
           <Car className="h-3 w-3" />
           <span>Vehicle #{inquiry.inventoryCarId}</span>
         </div>
@@ -149,20 +170,26 @@ interface StageColumnProps {
   stage: typeof PIPELINE_STAGES[number];
   inquiries: BuyerInquiry[];
   onViewDetails: (inquiry: BuyerInquiry) => void;
+  activeId: string | null;
 }
 
-function StageColumn({ stage, inquiries, onViewDetails }: StageColumnProps) {
-  const inquiryIds = inquiries.map((i) => i.id);
+function StageColumn({ stage, inquiries, onViewDetails, activeId }: StageColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
-    id: stage.id,
+    id: `column-${stage.id}`,
+    data: {
+      type: 'column',
+      stageId: stage.id,
+    }
   });
+
+  const inquiryIds = inquiries.map((i) => i.id);
 
   return (
     <div
       className="flex flex-col min-w-[280px] max-w-[320px] flex-shrink-0"
       data-testid={`pipeline-column-${stage.id}`}
     >
-      <Card className={`h-full flex flex-col transition-colors ${isOver ? "ring-2 ring-primary" : ""}`}>
+      <Card className={`h-full flex flex-col transition-all duration-200 ${isOver ? "ring-2 ring-primary" : ""}`}>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -191,6 +218,7 @@ function StageColumn({ stage, inquiries, onViewDetails }: StageColumnProps) {
                       key={inquiry.id}
                       inquiry={inquiry}
                       onViewDetails={onViewDetails}
+                      isActiveItem={activeId === inquiry.id}
                     />
                   ))
                 )}
@@ -210,7 +238,6 @@ export function PipelineBoard({
   isLoading,
 }: PipelineBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [overId, setOverId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -242,43 +269,62 @@ export function PipelineBoard({
     return inquiries.find((i) => i.id === activeId) || null;
   }, [activeId, inquiries]);
 
+  // Find which stage an inquiry belongs to
+  function findStageForInquiry(inquiryId: string): string | null {
+    const inquiry = inquiries.find((i) => i.id === inquiryId);
+    return inquiry?.pipelineStage || "new";
+  }
+
   function handleDragStart(event: DragStartEvent) {
     setActiveId(event.active.id as string);
   }
 
   function handleDragOver(event: DragOverEvent) {
-    const { over } = event;
-    if (over) {
-      setOverId(over.id as string);
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    // Get stage from column droppable
+    if (overId.startsWith('column-')) {
+      const targetStageId = overId.replace('column-', '');
+      const currentStage = findStageForInquiry(activeId);
+      
+      if (currentStage !== targetStageId) {
+        // Trigger stage change during drag over for visual feedback
+        // The actual API call happens on drag end
+      }
     }
   }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setActiveId(null);
-    setOverId(null);
 
     if (!over) return;
 
     const activeInquiryId = active.id as string;
-    const targetId = over.id as string;
+    const overId = over.id as string;
+    
+    // Determine target stage
+    let targetStageId: string | null = null;
 
-    // Check if dropped directly on a stage column
-    const targetStage = PIPELINE_STAGES.find((s) => s.id === targetId);
-    if (targetStage) {
-      const inquiry = inquiries.find((i) => i.id === activeInquiryId);
-      if (inquiry && inquiry.pipelineStage !== targetStage.id) {
-        onStageChange(activeInquiryId, targetStage.id);
+    // Dropped on a column
+    if (overId.startsWith('column-')) {
+      targetStageId = overId.replace('column-', '');
+    } 
+    // Dropped on another card - find that card's stage
+    else {
+      const overInquiry = inquiries.find((i) => i.id === overId);
+      if (overInquiry) {
+        targetStageId = overInquiry.pipelineStage || "new";
       }
-      return;
     }
 
-    // Check if dropped on another card - find that card's stage
-    const overInquiry = inquiries.find((i) => i.id === targetId);
-    if (overInquiry) {
-      const targetStageId = overInquiry.pipelineStage || "new";
-      const inquiry = inquiries.find((i) => i.id === activeInquiryId);
-      if (inquiry && inquiry.pipelineStage !== targetStageId) {
+    if (targetStageId) {
+      const currentStage = findStageForInquiry(activeInquiryId);
+      if (currentStage !== targetStageId) {
         onStageChange(activeInquiryId, targetStageId);
       }
     }
@@ -302,7 +348,7 @@ export function PipelineBoard({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={pointerWithin}
+      collisionDetection={closestCorners}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
@@ -314,10 +360,11 @@ export function PipelineBoard({
             stage={stage}
             inquiries={inquiriesByStage[stage.id]}
             onViewDetails={onViewDetails}
+            activeId={activeId}
           />
         ))}
       </div>
-      <DragOverlay>
+      <DragOverlay dropAnimation={null}>
         {activeInquiry ? <DragOverlayCard inquiry={activeInquiry} /> : null}
       </DragOverlay>
     </DndContext>
