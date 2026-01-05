@@ -79,6 +79,7 @@ export type ConsignmentSubmission = typeof consignmentSubmissions.$inferSelect;
 
 export const inventoryCars = pgTable("inventory_cars", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  slug: text("slug").unique(),
   
   vin: text("vin").notNull(),
   year: integer("year").notNull(),
@@ -102,6 +103,23 @@ export const inventoryCars = pgTable("inventory_cars", {
   
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export function generateVehicleSlug(year: number, make: string, model: string, existingSlugs: string[] = []): string {
+  const baseSlug = `${year}-${make}-${model}`
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  
+  if (!existingSlugs.includes(baseSlug)) {
+    return baseSlug;
+  }
+  
+  let counter = 2;
+  while (existingSlugs.includes(`${baseSlug}-${counter}`)) {
+    counter++;
+  }
+  return `${baseSlug}-${counter}`;
+}
 
 export const insertInventoryCarSchema = createInsertSchema(inventoryCars).omit({
   id: true,

@@ -363,9 +363,14 @@ export default function VehicleDetails({ id }: { id: string }) {
   }, [id]);
 
   const { data: car, isLoading: carLoading } = useQuery<InventoryCar>({
-    queryKey: [`/api/inventory/${id}`],
+    queryKey: [`/api/inventory/by-slug/${id}`],
     queryFn: async () => {
-      const res = await fetch(`/api/inventory/${id}`);
+      // Try by slug first (new SEO-friendly URL)
+      let res = await fetch(`/api/inventory/by-slug/${id}`);
+      if (!res.ok) {
+        // Fall back to ID lookup for backwards compatibility
+        res = await fetch(`/api/inventory/${id}`);
+      }
       if (!res.ok) throw new Error("Vehicle not found");
       return res.json();
     },
