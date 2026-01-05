@@ -2533,6 +2533,15 @@ ${allPages.map(page => `  <url>
     try {
       const { seedSettings } = await import("./seed-data");
       
+      const currentSettings = await storage.getSiteSettings();
+      const preservedSettings = currentSettings ? {
+        ghlApiToken: currentSettings.ghlApiToken,
+        ghlLocationId: currentSettings.ghlLocationId,
+        demoModeActive: currentSettings.demoModeActive,
+        privacyPolicy: currentSettings.privacyPolicy,
+        termsOfService: currentSettings.termsOfService,
+      } : {};
+      
       await storage.updateSiteSettings({
         primaryColor: seedSettings.primaryColor,
         backgroundColor: seedSettings.backgroundColor,
@@ -2565,6 +2574,7 @@ ${allPages.map(page => `  <url>
         commissionRate: seedSettings.commissionRate,
         avgDaysToFirstInquiry: seedSettings.avgDaysToFirstInquiry,
         avgDaysToSell: seedSettings.avgDaysToSell,
+        ...preservedSettings,
       });
       
       console.log("[settings] Force resync from seed data completed");
@@ -3055,6 +3065,13 @@ export async function seedDatabaseFromConfig(): Promise<void> {
         });
         console.log(`[seed] Admin user '${seedAdmin.username}' created`);
       }
+      
+      const preservedSettings = currentSettings ? {
+        ghlApiToken: currentSettings.ghlApiToken,
+        ghlLocationId: currentSettings.ghlLocationId,
+        demoModeActive: currentSettings.demoModeActive,
+      } : {};
+      
       await storage.updateSiteSettings({
         primaryColor: seedSettings.primaryColor,
         backgroundColor: seedSettings.backgroundColor,
@@ -3087,6 +3104,7 @@ export async function seedDatabaseFromConfig(): Promise<void> {
         commissionRate: seedSettings.commissionRate,
         avgDaysToFirstInquiry: seedSettings.avgDaysToFirstInquiry,
         avgDaysToSell: seedSettings.avgDaysToSell,
+        ...preservedSettings,
       });
       console.log("[seed] Site settings seeded successfully");
     } else {
