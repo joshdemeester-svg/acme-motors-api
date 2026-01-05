@@ -171,6 +171,10 @@ export const siteSettings = pgTable("site_settings", {
   menuLabelTradeIn: text("menu_label_trade_in").default("Trade-In"),
   menuLabelAppointments: text("menu_label_appointments").default("Book Appointment"),
   demoModeActive: boolean("demo_mode_active").default(false),
+  ogTitle: text("og_title"),
+  ogDescription: text("og_description"),
+  ogImage: text("og_image"),
+  twitterHandle: text("twitter_handle"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

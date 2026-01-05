@@ -36,7 +36,8 @@ import {
   UserPlus,
   Key,
   Crown,
-  Monitor
+  Monitor,
+  Share2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -440,6 +441,10 @@ export default function Settings() {
               <TabsTrigger value="business" className="gap-1.5 px-3 whitespace-nowrap">
                 <DollarSign className="h-4 w-4" />
                 <span>Business</span>
+              </TabsTrigger>
+              <TabsTrigger value="seo" className="gap-1.5 px-3 whitespace-nowrap">
+                <Share2 className="h-4 w-4" />
+                <span>SEO</span>
               </TabsTrigger>
               {isMasterAdmin && (
                 <TabsTrigger value="users" className="gap-1.5 px-3 whitespace-nowrap">
@@ -1654,6 +1659,120 @@ export default function Settings() {
                   {saveMutation.isPending ? "Saving..." : "Save Changes"}
                 </Button>
               </CardFooter>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="seo" className="mt-6 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Social Sharing & SEO</CardTitle>
+                <CardDescription>
+                  Control how your site appears when shared on social media (Facebook, Twitter, LinkedIn)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="ogTitle">Social Share Title</Label>
+                  <Input
+                    id="ogTitle"
+                    value={formData.ogTitle || ""}
+                    onChange={(e) => setFormData({ ...formData, ogTitle: e.target.value })}
+                    placeholder={formData.siteName || "Your Site Name"}
+                    data-testid="input-og-title"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Leave blank to use your site name. This appears as the main headline when shared.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ogDescription">Social Share Description</Label>
+                  <Textarea
+                    id="ogDescription"
+                    value={formData.ogDescription || ""}
+                    onChange={(e) => setFormData({ ...formData, ogDescription: e.target.value })}
+                    placeholder="Premium automotive consignment services for discerning collectors and enthusiasts."
+                    rows={3}
+                    data-testid="input-og-description"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    1-2 sentences describing your business. This appears below the title when shared.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ogImage">Social Share Image URL</Label>
+                  <Input
+                    id="ogImage"
+                    value={formData.ogImage || ""}
+                    onChange={(e) => setFormData({ ...formData, ogImage: e.target.value })}
+                    placeholder="https://example.com/share-image.jpg"
+                    data-testid="input-og-image"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Recommended: 1200x630 pixels. This is the image that appears when your site is shared.
+                  </p>
+                  {formData.ogImage && (
+                    <div className="mt-2 p-4 bg-muted rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-2">Preview:</p>
+                      <img 
+                        src={formData.ogImage} 
+                        alt="Social share preview" 
+                        className="max-w-full max-h-40 object-contain rounded"
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="twitterHandle">Twitter/X Handle</Label>
+                  <Input
+                    id="twitterHandle"
+                    value={formData.twitterHandle || ""}
+                    onChange={(e) => setFormData({ ...formData, twitterHandle: e.target.value })}
+                    placeholder="@yourdealership"
+                    data-testid="input-twitter-handle"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Your Twitter/X handle (include the @). Used for Twitter card attribution.
+                  </p>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Social Share Preview</CardTitle>
+                <CardDescription>
+                  How your site will appear when shared on social media
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-lg overflow-hidden max-w-md">
+                  {formData.ogImage && (
+                    <div className="aspect-[1.91/1] bg-muted">
+                      <img 
+                        src={formData.ogImage} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="p-3 bg-muted/50">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                      {typeof window !== 'undefined' ? window.location.hostname : 'yourdomain.com'}
+                    </p>
+                    <p className="font-semibold text-sm">
+                      {formData.ogTitle || formData.siteName || "Your Site Name"}
+                    </p>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                      {formData.ogDescription || formData.footerTagline || "Your site description will appear here."}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
             </Card>
           </TabsContent>
 
