@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertConsignmentSchema, insertInventoryCarSchema, insertCreditApplicationSchema, generateVehicleSlug, type InsertConsignment } from "@shared/schema";
+import { insertConsignmentSchema, insertInventoryCarSchema, insertCreditApplicationSchema, generateVehicleSlug, generateVehicleSlugLegacy, extractIdFromSlug, slugify, type InsertConsignment } from "@shared/schema";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { z } from "zod";
 import crypto from "crypto";
@@ -2134,12 +2134,26 @@ export async function registerRoutes(
     try {
       const validatedData = insertInventoryCarSchema.parse(req.body);
       
-      // Generate slug for new vehicle
-      const existingSlugs = await storage.getAllInventoryCarSlugs();
-      const slug = generateVehicleSlug(validatedData.year, validatedData.make, validatedData.model, existingSlugs);
+      // Generate slug for new vehicle using new canonical format with city/state
+      const settings = await storage.getSiteSettings();
+      const car = await storage.createInventoryCar(validatedData);
       
-      const car = await storage.createInventoryCar({ ...validatedData, slug });
-      res.status(201).json(car);
+      // Generate canonical slug with ID, respecting admin settings
+      const slug = generateVehicleSlug({
+        year: validatedData.year,
+        make: validatedData.make,
+        model: validatedData.model,
+        trim: settings?.slugIncludeTrim !== false ? (validatedData.trim || null) : null,
+        city: settings?.slugIncludeLocation !== false ? (settings?.dealerCity || null) : null,
+        state: settings?.slugIncludeLocation !== false ? (settings?.dealerState || null) : null,
+        id: car.id,
+      });
+      
+      // Update car with slug
+      await storage.updateInventoryCar(car.id, { slug });
+      const updatedCar = await storage.getInventoryCar(car.id);
+      
+      res.status(201).json(updatedCar);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Invalid data", details: error.errors });
@@ -2149,22 +2163,33 @@ export async function registerRoutes(
     }
   });
 
-  // Backfill slugs for existing vehicles without slugs
+  // Backfill slugs for existing vehicles without slugs or with old-format slugs
   app.post("/api/inventory/backfill-slugs", requireAdmin, async (req, res) => {
     try {
       const allCars = await storage.getAllInventoryCars();
-      const carsWithoutSlugs = allCars.filter(car => !car.slug);
-      const existingSlugs = await storage.getAllInventoryCarSlugs();
+      const settings = await storage.getSiteSettings();
       
       let updated = 0;
-      for (const car of carsWithoutSlugs) {
-        const slug = generateVehicleSlug(car.year, car.make, car.model, existingSlugs);
-        await storage.updateInventoryCar(car.id, { slug });
-        existingSlugs.push(slug);
-        updated++;
+      for (const car of allCars) {
+        // Generate new canonical slug with ID, respecting admin settings
+        const slug = generateVehicleSlug({
+          year: car.year,
+          make: car.make,
+          model: car.model,
+          trim: settings?.slugIncludeTrim !== false ? (car.trim || null) : null,
+          city: settings?.slugIncludeLocation !== false ? (settings?.dealerCity || null) : null,
+          state: settings?.slugIncludeLocation !== false ? (settings?.dealerState || null) : null,
+          id: car.id,
+        });
+        
+        // Only update if slug changed
+        if (car.slug !== slug) {
+          await storage.updateInventoryCar(car.id, { slug });
+          updated++;
+        }
       }
       
-      res.json({ message: `Updated ${updated} vehicles with slugs` });
+      res.json({ message: `Updated ${updated} vehicles with canonical slugs` });
     } catch (error) {
       console.error("Error backfilling slugs:", error);
       res.status(500).json({ error: "Failed to backfill slugs" });
@@ -2178,20 +2203,18 @@ export async function registerRoutes(
         return res.status(400).json({ error: "No vehicles provided" });
       }
       
-      const existingSlugs = await storage.getAllInventoryCarSlugs();
+      const settings = await storage.getSiteSettings();
       const createdCars = [];
       const errors = [];
       
       for (const vehicle of vehicles) {
         try {
-          const slug = generateVehicleSlug(vehicle.year, vehicle.make, vehicle.model, existingSlugs);
-          existingSlugs.push(slug);
-          
           const validatedData = insertInventoryCarSchema.parse({
             vin: vehicle.vin,
             year: vehicle.year,
             make: vehicle.make,
             model: vehicle.model,
+            trim: vehicle.trim || null,
             mileage: vehicle.mileage,
             color: vehicle.color,
             price: vehicle.price,
@@ -2200,10 +2223,21 @@ export async function registerRoutes(
             photos: [],
             status: "available",
             featured: false,
-            slug,
           });
           const car = await storage.createInventoryCar(validatedData);
-          createdCars.push(car);
+          
+          // Generate canonical slug with ID, respecting admin settings
+          const slug = generateVehicleSlug({
+            year: vehicle.year,
+            make: vehicle.make,
+            model: vehicle.model,
+            trim: settings?.slugIncludeTrim !== false ? (vehicle.trim || null) : null,
+            city: settings?.slugIncludeLocation !== false ? (settings?.dealerCity || null) : null,
+            state: settings?.slugIncludeLocation !== false ? (settings?.dealerState || null) : null,
+            id: car.id,
+          });
+          await storage.updateInventoryCar(car.id, { slug });
+          createdCars.push({ ...car, slug });
         } catch (error) {
           errors.push({ vehicle, error: error instanceof Error ? error.message : "Unknown error" });
         }
@@ -3068,6 +3102,181 @@ ${allPages.map(page => `  <url>
     } catch (error) {
       console.error("Error fetching analytics:", error);
       res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
+  // ====================== SEO ENDPOINTS ======================
+  
+  // robots.txt - dynamic based on settings
+  app.get("/robots.txt", async (req, res) => {
+    try {
+      const settings = await storage.getSiteSettings();
+      const baseUrl = settings?.baseUrl || `https://${req.get('host')}`;
+      
+      const robotsTxt = `# Prestige Auto Consignment robots.txt
+User-agent: *
+Allow: /
+Allow: /vehicle/
+Allow: /inventory/
+Allow: /inventory/*
+
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /api/
+Disallow: /api/*
+
+# Sitemap
+Sitemap: ${baseUrl}/sitemap.xml
+`;
+      res.type('text/plain').send(robotsTxt);
+    } catch (error) {
+      console.error("Error generating robots.txt:", error);
+      res.status(500).send("Error generating robots.txt");
+    }
+  });
+
+  // sitemap.xml - dynamic based on inventory
+  app.get("/sitemap.xml", async (req, res) => {
+    try {
+      const settings = await storage.getSiteSettings();
+      const baseUrl = settings?.baseUrl || `https://${req.get('host')}`;
+      const inventory = await storage.getAllInventoryCars();
+      
+      const urls: string[] = [];
+      
+      // Static pages
+      urls.push(`
+    <url>
+      <loc>${baseUrl}/</loc>
+      <changefreq>daily</changefreq>
+      <priority>1.0</priority>
+    </url>`);
+      
+      urls.push(`
+    <url>
+      <loc>${baseUrl}/inventory</loc>
+      <changefreq>daily</changefreq>
+      <priority>0.9</priority>
+    </url>`);
+      
+      urls.push(`
+    <url>
+      <loc>${baseUrl}/consign</loc>
+      <changefreq>weekly</changefreq>
+      <priority>0.7</priority>
+    </url>`);
+      
+      urls.push(`
+    <url>
+      <loc>${baseUrl}/trade-in</loc>
+      <changefreq>weekly</changefreq>
+      <priority>0.6</priority>
+    </url>`);
+      
+      // Location page
+      if (settings?.dealerCity && settings?.dealerState) {
+        const locationSlug = slugify(`${settings.dealerCity}-${settings.dealerState}`);
+        urls.push(`
+    <url>
+      <loc>${baseUrl}/${locationSlug}</loc>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>`);
+        
+        // Inventory by location
+        urls.push(`
+    <url>
+      <loc>${baseUrl}/inventory/${locationSlug}</loc>
+      <changefreq>daily</changefreq>
+      <priority>0.8</priority>
+    </url>`);
+      }
+      
+      // Vehicle pages
+      const availableCars = inventory.filter(car => car.status === "available" || car.status === "pending");
+      for (const car of availableCars) {
+        const vehicleSlug = car.slug || car.id;
+        urls.push(`
+    <url>
+      <loc>${baseUrl}/vehicle/${vehicleSlug}</loc>
+      <lastmod>${car.createdAt ? new Date(car.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>`);
+      }
+      
+      // Make pages
+      const makes = [...new Set(availableCars.map(c => c.make))];
+      for (const make of makes) {
+        const makeSlug = slugify(make);
+        urls.push(`
+    <url>
+      <loc>${baseUrl}/inventory/make/${makeSlug}</loc>
+      <changefreq>weekly</changefreq>
+      <priority>0.7</priority>
+    </url>`);
+      }
+      
+      const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.join('')}
+</urlset>`;
+      
+      res.type('application/xml').send(sitemap);
+    } catch (error) {
+      console.error("Error generating sitemap.xml:", error);
+      res.status(500).send("Error generating sitemap.xml");
+    }
+  });
+
+  // Get canonical URL for a vehicle
+  app.get("/api/vehicle/canonical/:idOrSlug", async (req, res) => {
+    try {
+      const { idOrSlug } = req.params;
+      const settings = await storage.getSiteSettings();
+      const baseUrl = settings?.baseUrl || `https://${req.get('host')}`;
+      
+      // Try to find vehicle by slug or ID
+      let car = await storage.getInventoryCarBySlug(idOrSlug);
+      if (!car) {
+        car = await storage.getInventoryCar(idOrSlug);
+      }
+      
+      // Also try extracting UUID from slug and looking up
+      if (!car) {
+        const extractedId = extractIdFromSlug(idOrSlug);
+        if (extractedId) {
+          car = await storage.getInventoryCar(extractedId);
+        }
+      }
+      
+      if (!car) {
+        return res.status(404).json({ error: "Vehicle not found" });
+      }
+      
+      // Generate canonical slug if needed
+      let canonicalSlug = car.slug;
+      if (!canonicalSlug) {
+        canonicalSlug = generateVehicleSlug({
+          year: car.year,
+          make: car.make,
+          model: car.model,
+          trim: car.trim || null,
+          city: settings?.slugIncludeLocation ? (settings?.dealerCity || null) : null,
+          state: settings?.slugIncludeLocation ? (settings?.dealerState || null) : null,
+          id: car.id,
+        });
+      }
+      
+      res.json({
+        id: car.id,
+        slug: canonicalSlug,
+        canonicalUrl: `${baseUrl}/vehicle/${canonicalSlug}`,
+        needsRedirect: idOrSlug !== canonicalSlug,
+      });
+    } catch (error) {
+      console.error("Error getting canonical URL:", error);
+      res.status(500).json({ error: "Failed to get canonical URL" });
     }
   });
 

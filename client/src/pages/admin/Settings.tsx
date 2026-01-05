@@ -1774,6 +1774,184 @@ export default function Settings() {
                 </div>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Dealer Location (Local SEO)</CardTitle>
+                <CardDescription>
+                  Used in vehicle page titles, descriptions, and structured data for local search visibility
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="dealerCity">City</Label>
+                    <Input
+                      id="dealerCity"
+                      value={(formData as any).dealerCity || ""}
+                      onChange={(e) => setFormData({ ...formData, dealerCity: e.target.value } as any)}
+                      placeholder="Navarre"
+                      data-testid="input-dealer-city"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dealerState">State</Label>
+                    <Input
+                      id="dealerState"
+                      value={(formData as any).dealerState || ""}
+                      onChange={(e) => setFormData({ ...formData, dealerState: e.target.value } as any)}
+                      placeholder="FL"
+                      data-testid="input-dealer-state"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dealerAddress">Street Address</Label>
+                  <Input
+                    id="dealerAddress"
+                    value={(formData as any).dealerAddress || ""}
+                    onChange={(e) => setFormData({ ...formData, dealerAddress: e.target.value } as any)}
+                    placeholder="123 Main Street"
+                    data-testid="input-dealer-address"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dealerHours">Business Hours</Label>
+                  <Input
+                    id="dealerHours"
+                    value={(formData as any).dealerHours || ""}
+                    onChange={(e) => setFormData({ ...formData, dealerHours: e.target.value } as any)}
+                    placeholder="Mon-Fri 9am-6pm, Sat 10am-4pm"
+                    data-testid="input-dealer-hours"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="googleMapUrl">Google Map Embed URL</Label>
+                  <Input
+                    id="googleMapUrl"
+                    value={(formData as any).googleMapUrl || ""}
+                    onChange={(e) => setFormData({ ...formData, googleMapUrl: e.target.value } as any)}
+                    placeholder="https://maps.google.com/..."
+                    data-testid="input-google-map-url"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Used for embedding a map on your location page
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="baseUrl">Base URL</Label>
+                  <Input
+                    id="baseUrl"
+                    value={(formData as any).baseUrl || ""}
+                    onChange={(e) => setFormData({ ...formData, baseUrl: e.target.value } as any)}
+                    placeholder="https://dealerconsign.com"
+                    data-testid="input-base-url"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Your production domain. Used for canonical URLs and sitemap generation.
+                  </p>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Vehicle URL Settings</CardTitle>
+                <CardDescription>
+                  Control how vehicle page URLs are generated for SEO
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Include Trim in URL</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Add vehicle trim level to the URL slug (e.g., black-badge)
+                    </p>
+                  </div>
+                  <Switch
+                    checked={(formData as any).slugIncludeTrim ?? true}
+                    onCheckedChange={(checked) => setFormData({ ...formData, slugIncludeTrim: checked } as any)}
+                    data-testid="switch-slug-include-trim"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Include Location in URL</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Add city and state to the URL slug (e.g., navarre-fl)
+                    </p>
+                  </div>
+                  <Switch
+                    checked={(formData as any).slugIncludeLocation ?? true}
+                    onCheckedChange={(checked) => setFormData({ ...formData, slugIncludeLocation: checked } as any)}
+                    data-testid="switch-slug-include-location"
+                  />
+                </div>
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Example URL:</p>
+                  <code className="text-xs">
+                    /vehicle/2023-rolls-royce-cullinan{(formData as any).slugIncludeTrim ? '-black-badge' : ''}{(formData as any).slugIncludeLocation ? `-${((formData as any).dealerCity || 'navarre').toLowerCase()}-${((formData as any).dealerState || 'fl').toLowerCase()}` : ''}-abc123
+                  </code>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Sold Vehicle Behavior</CardTitle>
+                <CardDescription>
+                  Control what happens to vehicle pages after they're sold
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>When a vehicle is sold:</Label>
+                  <select
+                    className="w-full p-2 border rounded-md bg-background"
+                    value={(formData as any).soldVehicleBehavior || "keep_live"}
+                    onChange={(e) => setFormData({ ...formData, soldVehicleBehavior: e.target.value } as any)}
+                    data-testid="select-sold-behavior"
+                  >
+                    <option value="keep_live">Keep page live with "Sold" status (recommended)</option>
+                    <option value="redirect">301 redirect to similar vehicles</option>
+                    <option value="noindex">Keep accessible but noindex after X days</option>
+                  </select>
+                </div>
+                {(formData as any).soldVehicleBehavior === "noindex" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="soldVehicleNoindexDays">Days before noindex</Label>
+                    <Input
+                      id="soldVehicleNoindexDays"
+                      type="number"
+                      min="1"
+                      max="365"
+                      value={(formData as any).soldVehicleNoindexDays || 30}
+                      onChange={(e) => setFormData({ ...formData, soldVehicleNoindexDays: parseInt(e.target.value) || 30 } as any)}
+                      data-testid="input-noindex-days"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Number of days after sale before adding noindex tag
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardFooter>
+            </Card>
           </TabsContent>
 
           {isMasterAdmin && (

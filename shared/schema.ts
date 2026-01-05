@@ -85,6 +85,7 @@ export const inventoryCars = pgTable("inventory_cars", {
   year: integer("year").notNull(),
   make: text("make").notNull(),
   model: text("model").notNull(),
+  trim: text("trim"),
   mileage: integer("mileage").notNull(),
   color: text("color").notNull(),
   price: integer("price").notNull(),
@@ -96,6 +97,7 @@ export const inventoryCars = pgTable("inventory_cars", {
   
   status: text("status").notNull().default("available"),
   featured: boolean("featured").default(false),
+  soldDate: timestamp("sold_date"),
   
   consignmentId: varchar("consignment_id").references(() => consignmentSubmissions.id),
   
@@ -104,7 +106,37 @@ export const inventoryCars = pgTable("inventory_cars", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export function generateVehicleSlug(year: number, make: string, model: string, existingSlugs: string[] = []): string {
+export interface VehicleSlugOptions {
+  year: number;
+  make: string;
+  model: string;
+  trim?: string | null;
+  city?: string | null;
+  state?: string | null;
+  id: string;
+}
+
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+export function generateVehicleSlug(options: VehicleSlugOptions): string {
+  const { year, make, model, trim, city, state, id } = options;
+  
+  const parts = [year.toString(), make, model];
+  if (trim) parts.push(trim);
+  if (city) parts.push(city);
+  if (state) parts.push(state);
+  parts.push(id);
+  
+  return parts.map(p => slugify(p)).filter(Boolean).join('-');
+}
+
+export function generateVehicleSlugLegacy(year: number, make: string, model: string, existingSlugs: string[] = []): string {
   const baseSlug = `${year}-${make}-${model}`
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
@@ -119,6 +151,12 @@ export function generateVehicleSlug(year: number, make: string, model: string, e
     counter++;
   }
   return `${baseSlug}-${counter}`;
+}
+
+export function extractIdFromSlug(slug: string): string | null {
+  const uuidPattern = /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i;
+  const match = slug.match(uuidPattern);
+  return match ? match[1] : null;
 }
 
 export const insertInventoryCarSchema = createInsertSchema(inventoryCars).omit({
@@ -193,6 +231,37 @@ export const siteSettings = pgTable("site_settings", {
   ogDescription: text("og_description"),
   ogImage: text("og_image"),
   twitterHandle: text("twitter_handle"),
+  
+  dealerCity: text("dealer_city").default("Navarre"),
+  dealerState: text("dealer_state").default("FL"),
+  dealerAddress: text("dealer_address"),
+  dealerHours: text("dealer_hours"),
+  googleMapUrl: text("google_map_url"),
+  googlePlaceId: text("google_place_id"),
+  baseUrl: text("base_url").default("https://dealerconsign.com"),
+  
+  seoTitleTemplate: text("seo_title_template").default("{year} {make} {model} {trim} for Sale in {city}, {state} | {dealerName}"),
+  seoDescriptionTemplate: text("seo_description_template").default("Shop this {year} {make} {model} with {mileage} miles for ${price}. Located in {city}, {state}. View photos and contact us today!"),
+  
+  slugIncludeTrim: boolean("slug_include_trim").default(true),
+  slugIncludeLocation: boolean("slug_include_location").default(true),
+  
+  soldVehicleBehavior: text("sold_vehicle_behavior").default("keep_live"),
+  soldVehicleNoindexDays: integer("sold_vehicle_noindex_days").default(30),
+  
+  indexVehiclePages: boolean("index_vehicle_pages").default(true),
+  indexInventoryPages: boolean("index_inventory_pages").default(true),
+  indexMakePages: boolean("index_make_pages").default(true),
+  indexModelPages: boolean("index_model_pages").default(true),
+  indexLocationPages: boolean("index_location_pages").default(true),
+  
+  locationPageTitle: text("location_page_title"),
+  locationPageDescription: text("location_page_description"),
+  locationPageIntro: text("location_page_intro"),
+  inventoryPageTitle: text("inventory_page_title"),
+  inventoryPageDescription: text("inventory_page_description"),
+  inventoryPageIntro: text("inventory_page_intro"),
+  
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

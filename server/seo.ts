@@ -1,12 +1,95 @@
 import { storage } from "./storage";
+import { generateVehicleSlug, extractIdFromSlug, type InventoryCar, type SiteSettings } from "@shared/schema";
 
 interface SEOData {
   title: string;
   description: string;
   image?: string;
   url: string;
+  canonicalUrl?: string;
   type: string;
   twitterHandle?: string;
+  jsonLd?: object;
+  noindex?: boolean;
+}
+
+function generateVehicleJsonLd(car: InventoryCar, settings: SiteSettings | null, baseUrl: string, canonicalUrl: string): object {
+  const dealerName = settings?.siteName || "Prestige Auto Consignment";
+  const city = settings?.dealerCity || "";
+  const state = settings?.dealerState || "";
+  const address = settings?.dealerAddress || "";
+  const phone = settings?.contactPhone || "";
+  
+  return {
+    "@context": "https://schema.org",
+    "@type": "Vehicle",
+    "name": `${car.year} ${car.make} ${car.model}${car.trim ? ` ${car.trim}` : ""}`,
+    "brand": {
+      "@type": "Brand",
+      "name": car.make
+    },
+    "model": car.model,
+    "vehicleModelDate": car.year.toString(),
+    "mileageFromOdometer": {
+      "@type": "QuantitativeValue",
+      "value": car.mileage,
+      "unitCode": "SMI"
+    },
+    "vehicleIdentificationNumber": car.vin || undefined,
+    "color": car.color,
+    "itemCondition": car.condition === "New" ? "https://schema.org/NewCondition" : "https://schema.org/UsedCondition",
+    "image": car.photos && car.photos.length > 0 ? car.photos.map(p => p.startsWith('http') ? p : `${baseUrl}${p}`) : undefined,
+    "description": car.description || `${car.year} ${car.make} ${car.model} for sale`,
+    "offers": {
+      "@type": "Offer",
+      "price": car.price,
+      "priceCurrency": "USD",
+      "availability": car.status === "available" ? "https://schema.org/InStock" : (car.status === "sold" ? "https://schema.org/SoldOut" : "https://schema.org/LimitedAvailability"),
+      "url": canonicalUrl,
+      "seller": {
+        "@type": "AutoDealer",
+        "name": dealerName,
+        "address": address ? {
+          "@type": "PostalAddress",
+          "addressLocality": city,
+          "addressRegion": state,
+          "streetAddress": address
+        } : undefined,
+        "telephone": phone || undefined
+      }
+    }
+  };
+}
+
+function generateDealerJsonLd(settings: SiteSettings | null, baseUrl: string): object {
+  const dealerName = settings?.siteName || "Prestige Auto Consignment";
+  const city = settings?.dealerCity || "";
+  const state = settings?.dealerState || "";
+  const address = settings?.dealerAddress || "";
+  const phone = settings?.contactPhone || "";
+  const hours = settings?.dealerHours || "";
+  
+  return {
+    "@context": "https://schema.org",
+    "@type": "AutoDealer",
+    "name": dealerName,
+    "url": baseUrl,
+    "telephone": phone || undefined,
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": city,
+      "addressRegion": state,
+      "streetAddress": address || undefined
+    },
+    "openingHours": hours || undefined,
+    "sameAs": [
+      settings?.facebookUrl,
+      settings?.instagramUrl,
+      settings?.twitterUrl,
+      settings?.youtubeUrl,
+      settings?.tiktokUrl
+    ].filter(Boolean)
+  };
 }
 
 const seoCache = new Map<string, { data: SEOData; timestamp: number }>();
@@ -52,20 +135,62 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
     const vehicleSlugMatch = url.match(/^\/vehicle\/([a-z0-9-]+)$/i);
     if (vehicleSlugMatch) {
       const slug = vehicleSlugMatch[1];
-      // Try by slug first, then by ID for backwards compatibility
+      // Try by slug first, then by ID, then extract ID from slug
       let car = await storage.getInventoryCarBySlug(slug);
       if (!car) {
         car = await storage.getInventoryCar(slug);
       }
+      if (!car) {
+        const extractedId = extractIdFromSlug(slug);
+        if (extractedId) {
+          car = await storage.getInventoryCar(extractedId);
+        }
+      }
       if (car) {
-        const imageUrl = car.photos?.[0] ? `${baseUrl}${car.photos[0]}` : logoUrl;
+        const city = settings?.dealerCity || "";
+        const state = settings?.dealerState || "";
+        const trim = car.trim || "";
+        
+        // Generate canonical slug with full format
+        const canonicalSlug = car.slug || generateVehicleSlug({
+          year: car.year,
+          make: car.make,
+          model: car.model,
+          trim: settings?.slugIncludeTrim ? trim : null,
+          city: settings?.slugIncludeLocation ? city : null,
+          state: settings?.slugIncludeLocation ? state : null,
+          id: car.id,
+        });
+        const canonicalUrl = `${baseUrl}/vehicle/${canonicalSlug}`;
+        
+        // Build title with location
+        const locationPart = city && state ? ` in ${city}, ${state}` : "";
+        const trimPart = trim ? ` ${trim}` : "";
+        const title = `${car.year} ${car.make} ${car.model}${trimPart} for Sale${locationPart} | ${siteName}`;
+        
+        const imageUrl = car.photos?.[0] ? (car.photos[0].startsWith('http') ? car.photos[0] : `${baseUrl}${car.photos[0]}`) : logoUrl;
+        const description = `Shop this ${car.year} ${car.make} ${car.model}${trimPart} with ${car.mileage?.toLocaleString()} miles for $${car.price?.toLocaleString()}.${locationPart ? ` Located${locationPart}.` : ""} View photos and contact us today!`;
+        
+        // Check if sold and should be noindex
+        let noindex = false;
+        if (car.status === "sold" && settings?.soldVehicleBehavior === "noindex" && car.soldDate) {
+          const daysSinceSold = Math.floor((Date.now() - new Date(car.soldDate).getTime()) / (1000 * 60 * 60 * 24));
+          const noindexDays = settings?.soldVehicleNoindexDays || 30;
+          if (daysSinceSold >= noindexDays) {
+            noindex = true;
+          }
+        }
+        
         return setCachedSEO(cacheKey, {
-          title: `${car.year} ${car.make} ${car.model} for Sale | ${siteName}`,
-          description: `${car.year} ${car.make} ${car.model} with ${car.mileage?.toLocaleString()} miles in ${car.color}. ${car.condition} condition. Price: $${car.price?.toLocaleString()}. View details and contact us today.`,
+          title,
+          description,
           image: imageUrl,
           url: `${baseUrl}${url}`,
+          canonicalUrl,
           type: "product",
           twitterHandle,
+          jsonLd: generateVehicleJsonLd(car, settings || null, baseUrl, canonicalUrl),
+          noindex,
         });
       }
     }
@@ -290,6 +415,40 @@ export function injectSEOTags(html: string, seo: SEOData): string {
     html = html.replace(
       /<meta name="description" content="[^"]*"\s*\/?>/,
       `<meta name="description" content="${escapeHtml(seo.description)}" />`
+    );
+  }
+
+  // Add canonical link tag
+  if (seo.canonicalUrl) {
+    if (!html.includes('rel="canonical"')) {
+      html = html.replace(
+        '</head>',
+        `  <link rel="canonical" href="${escapeHtml(seo.canonicalUrl)}" />\n  </head>`
+      );
+    } else {
+      html = html.replace(
+        /<link rel="canonical" href="[^"]*"\s*\/?>/,
+        `<link rel="canonical" href="${escapeHtml(seo.canonicalUrl)}" />`
+      );
+    }
+  }
+
+  // Add noindex meta tag if needed
+  if (seo.noindex) {
+    if (!html.includes('name="robots"')) {
+      html = html.replace(
+        '</head>',
+        `  <meta name="robots" content="noindex, follow" />\n  </head>`
+      );
+    }
+  }
+
+  // Add JSON-LD structured data
+  if (seo.jsonLd) {
+    const jsonLdScript = `<script type="application/ld+json">${JSON.stringify(seo.jsonLd)}</script>`;
+    html = html.replace(
+      '</head>',
+      `  ${jsonLdScript}\n  </head>`
     );
   }
 
