@@ -1356,15 +1356,26 @@ export default function Settings() {
                 <CardDescription>Connect your GoHighLevel CRM for lead management and automation</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {(settings as any)?.ghlSource === 'env' && (
+                  <div className="rounded-lg border border-green-500/50 p-4 bg-green-500/10">
+                    <div className="flex items-center gap-2 text-green-600">
+                      <Check className="h-4 w-4" />
+                      <span className="text-sm font-medium">Credentials stored securely in environment secrets</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Your GHL credentials are configured via Replit Secrets and will persist across republishes.
+                    </p>
+                  </div>
+                )}
                 <div className="rounded-lg border p-4 bg-muted/50">
                   <div className="flex items-center gap-3 mb-3">
                     <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
                       ghlTestStatus === "success" ? "bg-green-500/10" : 
-                      settings?.ghlApiToken ? "bg-green-500/10" : "bg-orange-500/10"
+                      settings?.ghlConfigured ? "bg-green-500/10" : "bg-orange-500/10"
                     }`}>
                       <Plug className={`h-5 w-5 ${
                         ghlTestStatus === "success" ? "text-green-500" : 
-                        settings?.ghlApiToken ? "text-green-500" : "text-orange-500"
+                        settings?.ghlConfigured ? "text-green-500" : "text-orange-500"
                       }`} />
                     </div>
                     <div>
@@ -1376,10 +1387,10 @@ export default function Settings() {
                         <Check className="h-3 w-3" />
                         Verified
                       </Badge>
-                    ) : settings?.ghlApiToken ? (
+                    ) : settings?.ghlConfigured ? (
                       <Badge className="gap-1 ml-auto bg-green-600 hover:bg-green-700">
                         <Check className="h-3 w-3" />
-                        Connected
+                        Connected {(settings as any)?.ghlSource === 'env' ? '(Secrets)' : ''}
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="ml-auto">
@@ -1391,7 +1402,11 @@ export default function Settings() {
                 
                 <div className="space-y-2">
                   <Label htmlFor="ghlApiToken">
-                    API Token {settings?.ghlApiToken && !ghlApiToken && <span className="text-green-600 text-xs">(configured)</span>}
+                    API Token {(settings as any)?.ghlSource === 'env' ? (
+                      <span className="text-green-600 text-xs">(configured via Secrets)</span>
+                    ) : settings?.ghlConfigured && !ghlApiToken ? (
+                      <span className="text-green-600 text-xs">(configured)</span>
+                    ) : null}
                   </Label>
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
@@ -1400,8 +1415,9 @@ export default function Settings() {
                         type={showGhlToken ? "text" : "password"}
                         value={ghlApiToken}
                         onChange={(e) => setGhlApiToken(e.target.value)}
-                        placeholder={settings?.ghlApiToken ? "Enter new token to update" : "Enter your GoHighLevel API token"}
+                        placeholder={(settings as any)?.ghlSource === 'env' ? "Configured via Secrets - enter to override" : settings?.ghlConfigured ? "Enter new token to update" : "Enter your GoHighLevel API token"}
                         className="pr-10"
+                        disabled={(settings as any)?.ghlSource === 'env'}
                         data-testid="input-ghl-api-token"
                       />
                       <button
@@ -1416,15 +1432,25 @@ export default function Settings() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="ghlLocationId">Location ID</Label>
+                  <Label htmlFor="ghlLocationId">
+                    Location ID {(settings as any)?.ghlSource === 'env' && (
+                      <span className="text-green-600 text-xs">(configured via Secrets)</span>
+                    )}
+                  </Label>
                   <Input
                     id="ghlLocationId"
-                    value={formData.ghlLocationId || ""}
+                    value={(settings as any)?.ghlSource === 'env' ? (settings?.ghlLocationId || "") : (formData.ghlLocationId || "")}
                     onChange={(e) => setFormData({ ...formData, ghlLocationId: e.target.value })}
-                    placeholder="Enter your GoHighLevel location ID"
+                    placeholder={(settings as any)?.ghlSource === 'env' ? "Configured via Secrets" : "Enter your GoHighLevel location ID"}
+                    disabled={(settings as any)?.ghlSource === 'env'}
                     data-testid="input-ghl-location-id"
                   />
-                  <p className="text-xs text-muted-foreground">Find this in your GHL Settings → Business Profile</p>
+                  <p className="text-xs text-muted-foreground">
+                    {(settings as any)?.ghlSource === 'env' 
+                      ? "Managed via Replit Secrets for security and persistence"
+                      : "Find this in your GHL Settings → Business Profile"
+                    }
+                  </p>
                 </div>
               </CardContent>
               <CardFooter className="flex flex-wrap gap-2">
