@@ -293,17 +293,26 @@ export class DatabaseStorage implements IStorage {
 
   async updateSiteSettings(data: InsertSiteSettings): Promise<SiteSettings> {
     const existing = await this.getSiteSettings();
+    
+    // Filter out undefined values to prevent overwriting existing data with NULL
+    const filteredData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        filteredData[key] = value;
+      }
+    }
+    
     if (existing) {
       const [updated] = await db
         .update(siteSettings)
-        .set({ ...data, updatedAt: new Date() })
+        .set({ ...filteredData, updatedAt: new Date() })
         .where(eq(siteSettings.id, "default"))
         .returning();
       return updated;
     } else {
       const [created] = await db
         .insert(siteSettings)
-        .values({ id: "default", ...data })
+        .values({ id: "default", ...filteredData })
         .returning();
       return created;
     }
