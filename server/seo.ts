@@ -6,6 +6,7 @@ interface SEOData {
   image?: string;
   url: string;
   type: string;
+  twitterHandle?: string;
 }
 
 const seoCache = new Map<string, { data: SEOData; timestamp: number }>();
@@ -41,9 +42,11 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
 
   try {
     const settings = await storage.getSiteSettings();
-    const siteName = settings?.siteName || "Prestige Auto Consignment";
-    const defaultDescription = settings?.footerTagline || "Premium automotive consignment services for discerning collectors and enthusiasts.";
-    const logoUrl = settings?.logoUrl ? `${baseUrl}${settings.logoUrl}` : undefined;
+    const siteName = settings?.ogTitle || settings?.siteName || "Prestige Auto Consignment";
+    const defaultDescription = settings?.ogDescription || settings?.footerTagline || "Premium automotive consignment services for discerning collectors and enthusiasts.";
+    const ogImageUrl = settings?.ogImage ? (settings.ogImage.startsWith('http') ? settings.ogImage : `${baseUrl}${settings.ogImage}`) : undefined;
+    const logoUrl = ogImageUrl || (settings?.logoUrl ? `${baseUrl}${settings.logoUrl}` : undefined);
+    const twitterHandle = settings?.twitterHandle || undefined;
 
     // Vehicle details page: /inventory/:id
     const vehicleMatch = url.match(/^\/inventory\/([a-f0-9-]+)$/i);
@@ -58,6 +61,7 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
           image: imageUrl,
           url: `${baseUrl}${url}`,
           type: "product",
+          twitterHandle,
         });
       }
     }
@@ -73,6 +77,7 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
         image: imageUrl,
         url: `${baseUrl}/inventory`,
         type: "website",
+        twitterHandle,
       });
     }
 
@@ -84,6 +89,7 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
         image: logoUrl,
         url: `${baseUrl}/consign`,
         type: "website",
+        twitterHandle,
       });
     }
 
@@ -95,6 +101,7 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
         image: logoUrl,
         url: `${baseUrl}/trade-in`,
         type: "website",
+        twitterHandle,
       });
     }
 
@@ -106,6 +113,7 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
         image: logoUrl,
         url: `${baseUrl}/compare`,
         type: "website",
+        twitterHandle,
       });
     }
 
@@ -117,6 +125,7 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
         image: logoUrl,
         url: `${baseUrl}/credit-application`,
         type: "website",
+        twitterHandle,
       });
     }
 
@@ -128,6 +137,7 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
         image: logoUrl,
         url: `${baseUrl}/contact`,
         type: "website",
+        twitterHandle,
       });
     }
 
@@ -139,6 +149,7 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
         image: logoUrl,
         url: baseUrl,
         type: "website",
+        twitterHandle,
       });
     }
 
@@ -149,6 +160,7 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
       image: logoUrl,
       url: `${baseUrl}${url}`,
       type: "website",
+      twitterHandle,
     });
   } catch (error) {
     console.error("[seo] Error fetching SEO data:", error);
@@ -176,6 +188,21 @@ export function injectSEOTags(html: string, seo: SEOData): string {
     /<meta name="twitter:description" content="[^"]*"\s*\/?>/,
     `<meta name="twitter:description" content="${escapeHtml(seo.description)}" />`
   );
+
+  // Add twitter:site if we have a handle
+  if (seo.twitterHandle) {
+    if (!html.includes('twitter:site')) {
+      html = html.replace(
+        '</head>',
+        `  <meta name="twitter:site" content="${escapeHtml(seo.twitterHandle)}" />\n  </head>`
+      );
+    } else {
+      html = html.replace(
+        /<meta name="twitter:site" content="[^"]*"\s*\/?>/,
+        `<meta name="twitter:site" content="${escapeHtml(seo.twitterHandle)}" />`
+      );
+    }
+  }
 
   if (seo.image) {
     if (!html.includes('og:image')) {

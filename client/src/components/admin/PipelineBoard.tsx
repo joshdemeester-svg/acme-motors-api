@@ -50,6 +50,7 @@ function LeadCard({ inquiry, onViewDetails, index }: LeadCardProps) {
             <div
               {...provided.dragHandleProps}
               className="mt-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
+              style={{ touchAction: "none" }}
             >
               <GripVertical className="h-4 w-4" />
             </div>
