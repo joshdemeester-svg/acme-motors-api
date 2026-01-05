@@ -200,9 +200,28 @@ export default function Leads() {
         body: JSON.stringify({ pipelineStage }),
       });
       if (!res.ok) throw new Error("Failed to update");
+      return { id, pipelineStage };
+    },
+    onMutate: async ({ id, pipelineStage }) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/inquiries"] });
+      const previousInquiries = queryClient.getQueryData<BuyerInquiry[]>(["/api/inquiries"]);
+      queryClient.setQueryData<BuyerInquiry[]>(["/api/inquiries"], (old) => 
+        old?.map((inquiry) => 
+          inquiry.id === id ? { ...inquiry, pipelineStage } : inquiry
+        ) ?? []
+      );
+      return { previousInquiries };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousInquiries) {
+        queryClient.setQueryData(["/api/inquiries"], context.previousInquiries);
+      }
+      toast({ title: "Failed to update stage", variant: "destructive" });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inquiries"] });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/inquiries"] });
       toast({ title: "Pipeline stage updated" });
     },
   });
