@@ -1360,11 +1360,11 @@ export default function Settings() {
                   <div className="flex items-center gap-3 mb-3">
                     <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
                       ghlTestStatus === "success" ? "bg-green-500/10" : 
-                      settings?.ghlConfigured ? "bg-green-500/10" : "bg-orange-500/10"
+                      (settings as any)?.ghlConfigured ? "bg-green-500/10" : "bg-orange-500/10"
                     }`}>
                       <Plug className={`h-5 w-5 ${
                         ghlTestStatus === "success" ? "text-green-500" : 
-                        settings?.ghlConfigured ? "text-green-500" : "text-orange-500"
+                        (settings as any)?.ghlConfigured ? "text-green-500" : "text-orange-500"
                       }`} />
                     </div>
                     <div>
@@ -1376,7 +1376,7 @@ export default function Settings() {
                         <Check className="h-3 w-3" />
                         Verified
                       </Badge>
-                    ) : settings?.ghlConfigured ? (
+                    ) : (settings as any)?.ghlConfigured ? (
                       <Badge className="gap-1 ml-auto bg-green-600 hover:bg-green-700">
                         <Check className="h-3 w-3" />
                         Connected
@@ -1391,7 +1391,7 @@ export default function Settings() {
                 
                 <div className="space-y-2">
                   <Label htmlFor="ghlApiToken">
-                    API Token {settings?.ghlConfigured && !ghlApiToken && (
+                    API Token {(settings as any)?.ghlConfigured && !ghlApiToken && (
                       <span className="text-green-600 text-xs">(configured)</span>
                     )}
                   </Label>
@@ -1402,7 +1402,7 @@ export default function Settings() {
                         type={showGhlToken ? "text" : "password"}
                         value={ghlApiToken}
                         onChange={(e) => setGhlApiToken(e.target.value)}
-                        placeholder={settings?.ghlConfigured ? "Enter new token to update" : "Enter your GoHighLevel API token"}
+                        placeholder={(settings as any)?.ghlConfigured ? "Enter new token to update" : "Enter your GoHighLevel API token"}
                         className="pr-10"
                         data-testid="input-ghl-api-token"
                       />
@@ -1594,7 +1594,7 @@ export default function Settings() {
                       max="25"
                       step="1"
                       value={formData.commissionRate || "10"}
-                      onChange={(e) => setFormData({ ...formData, commissionRate: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, commissionRate: parseInt(e.target.value) || 10 })}
                       className="flex-1"
                       data-testid="input-commission-rate"
                     />
@@ -1626,7 +1626,7 @@ export default function Settings() {
                     min="1"
                     max="90"
                     value={formData.avgDaysToFirstInquiry || "7"}
-                    onChange={(e) => setFormData({ ...formData, avgDaysToFirstInquiry: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, avgDaysToFirstInquiry: parseInt(e.target.value) || 7 })}
                     data-testid="input-avg-days-inquiry"
                   />
                   <p className="text-xs text-muted-foreground">
@@ -1641,7 +1641,7 @@ export default function Settings() {
                     min="1"
                     max="180"
                     value={formData.avgDaysToSell || "30"}
-                    onChange={(e) => setFormData({ ...formData, avgDaysToSell: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, avgDaysToSell: parseInt(e.target.value) || 30 })}
                     data-testid="input-avg-days-sell"
                   />
                   <p className="text-xs text-muted-foreground">

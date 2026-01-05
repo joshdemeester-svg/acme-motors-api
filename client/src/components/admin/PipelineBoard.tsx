@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import {
   DndContext,
   DragOverlay,
-  closestCenter,
+  pointerWithin,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -10,6 +10,7 @@ import {
   useDroppable,
   type DragStartEvent,
   type DragEndEvent,
+  type DragOverEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -209,11 +210,12 @@ export function PipelineBoard({
   isLoading,
 }: PipelineBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 5,
       },
     }),
     useSensor(KeyboardSensor)
@@ -244,16 +246,25 @@ export function PipelineBoard({
     setActiveId(event.active.id as string);
   }
 
+  function handleDragOver(event: DragOverEvent) {
+    const { over } = event;
+    if (over) {
+      setOverId(over.id as string);
+    }
+  }
+
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setActiveId(null);
+    setOverId(null);
 
     if (!over) return;
 
     const activeInquiryId = active.id as string;
-    const overId = over.id as string;
+    const targetId = over.id as string;
 
-    const targetStage = PIPELINE_STAGES.find((s) => s.id === overId);
+    // Check if dropped directly on a stage column
+    const targetStage = PIPELINE_STAGES.find((s) => s.id === targetId);
     if (targetStage) {
       const inquiry = inquiries.find((i) => i.id === activeInquiryId);
       if (inquiry && inquiry.pipelineStage !== targetStage.id) {
@@ -262,7 +273,8 @@ export function PipelineBoard({
       return;
     }
 
-    const overInquiry = inquiries.find((i) => i.id === overId);
+    // Check if dropped on another card - find that card's stage
+    const overInquiry = inquiries.find((i) => i.id === targetId);
     if (overInquiry) {
       const targetStageId = overInquiry.pipelineStage || "new";
       const inquiry = inquiries.find((i) => i.id === activeInquiryId);
@@ -290,8 +302,9 @@ export function PipelineBoard({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={pointerWithin}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <div className="flex gap-4 overflow-x-auto pb-4" data-testid="pipeline-board">
