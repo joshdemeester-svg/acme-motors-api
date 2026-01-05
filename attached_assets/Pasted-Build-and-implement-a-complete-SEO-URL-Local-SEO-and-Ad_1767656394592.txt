@@ -1,0 +1,165 @@
+Build and implement a complete SEO URL, Local SEO, and Admin SEO Settings system for the production site https://dealerconsign.com.
+
+Current issue
+Vehicle detail pages use a non-SEO UUID-only URL format like:
+  /vehicle/cbd18aa4-4480-4c06-a2cc-d5254ed6b90e
+Update routing and production behavior so canonical vehicle URLs are SEO friendly and include a descriptive slug, while keeping the UUID for uniqueness.
+
+Assume a typical Replit stack: Node/Express backend with an API, a frontend (React or Next), and a database with vehicles keyed by UUID. Adapt to the actual repo structure.
+
+A. Canonical Vehicle URL Format
+Implement canonical vehicle URLs as:
+  /vehicle/{year}-{make}-{model}-{trim}-{city}-{state}-{id}
+
+Rules
+- slugify to lowercase
+- replace spaces and punctuation with hyphens
+- collapse repeated hyphens
+- trim leading and trailing hyphens
+- omit {trim} if empty
+- {city} and {state} come from Admin dealer settings
+- always keep {id} (UUID) at the end
+
+Example
+  /vehicle/2023-rolls-royce-cullinan-black-badge-navarre-fl-cbd18aa4-4480-4c06-a2cc-d5254ed6b90e
+
+B. Routing and Redirects (Must be server-side)
+1. Backward compatibility
+Support legacy URLs:
+  /vehicle/{id}
+When requested, perform a server-side 301 redirect to the canonical slug URL.
+
+2. Slug mismatch handling
+If a request is:
+  /vehicle/{any-slug}-{id}
+and the UUID is valid, fetch the vehicle by id and 301 redirect to the correct canonical slug URL if the slug portion does not match the canonical.
+
+3. Deep link support in production
+Ensure the web server serves the frontend for all non-API routes so that direct requests to deep routes work. Do not break API routes.
+
+C. SEO Tags, Canonical, and Social Metadata
+For every vehicle detail page, ensure the HTML returned to crawlers includes correct metadata. Prefer SSR or server-side HTML injection for vehicle routes. If the app is purely SPA, implement a server middleware that detects vehicle routes, fetches the vehicle, and returns HTML with proper tags.
+
+Set on vehicle pages:
+- <title> = "{year} {make} {model} {trim} for Sale in {city}, {state} | {Dealer Name}"
+- meta description includes: year make model trim, price, mileage, and city/state (use best available fields)
+- canonical link tag to "https://dealerconsign.com/vehicle/{canonicalSlug}"
+- Open Graph: og:title, og:description, og:url, og:image (use primary photo)
+- Twitter card equivalents
+
+D. Structured Data (JSON-LD)
+1. Vehicle schema
+Add JSON-LD for each vehicle page using Vehicle and/or Product schema with:
+- name, brand, model, vehicleModelDate (year), mileageFromOdometer, vehicleIdentificationNumber (if available), image(s)
+- offers: price, priceCurrency, availability, url
+- itemCondition (use used/new based on data)
+
+2. Dealer schema
+Add AutoDealer or LocalBusiness JSON-LD site-wide (or on location pages) containing:
+- dealer name, address, phone, opening hours, geo if available, sameAs if available
+
+E. Robots and Sitemap
+1. robots.txt
+Serve /robots.txt with rules that allow indexing of:
+- /vehicle/
+- /inventory/
+- location pages
+Disallow admin routes and any sensitive endpoints.
+
+2. sitemap.xml
+Serve a dynamic /sitemap.xml that includes:
+- homepage
+- main inventory page
+- location pages
+- make pages
+- model pages
+- all active vehicle canonical URLs
+Update on inventory changes or generate dynamically on request with caching.
+
+F. Local SEO Pages (Indexable)
+Create indexable pages:
+1. Location page
+  /{city}-{state}
+Include NAP (name, address, phone), hours, embedded map, and an inventory preview. Add LocalBusiness JSON-LD.
+
+2. Inventory pages
+  /inventory/{city}-{state}
+  /inventory/{city}-{state}/{make}
+  /inventory/{city}-{state}/{make}/{model}
+Each must have:
+- unique H1
+- unique title and meta description
+- short unique intro paragraph (admin editable)
+- internal links to relevant related pages
+
+G. Internal Linking
+Add consistent internal links:
+- homepage links to inventory, top makes, location page, financing, trade-in
+- location pages link to inventory and top makes
+- inventory pages link to make and model pages
+- vehicle pages link back to city inventory, make page, model page, and similar vehicles
+
+H. Sold Vehicle Strategy
+Add a configurable behavior for sold vehicles in Admin:
+Option 1: Keep page live with "Sold" status and link to similar vehicles and model/make pages (default)
+Option 2: 301 redirect to closest matching make/model inventory page
+Option 3: keep accessible but add noindex after N days (admin configurable)
+
+Do not hard-delete sold vehicle pages. Avoid 404 for previously indexed URLs.
+
+I. Admin SEO Settings (Must be implemented)
+Add an Admin section "SEO Settings" with:
+
+1. Dealer Profile
+- Dealer Name
+- Primary City
+- State
+- Address
+- Phone
+- Hours
+- Default OG Image URL
+- Base Site URL override (default https://dealerconsign.com)
+- Google Map embed URL or Place ID
+
+2. Global SEO Defaults
+- Title template (with variables)
+- Meta description template (with variables)
+- Indexing toggles per page type (vehicle, inventory, make, model, location)
+- Canonical base URL
+
+3. Vehicle SEO Rules
+- Slug format selector (toggle inclusion of trim, city/state, stock number)
+- Sold-vehicle behavior setting from section H
+
+4. Per Page Overrides
+Allow admin overrides for:
+- location page title and description
+- inventory city page title and description
+- make and model page title and description
+- intro copy and FAQ blocks (optional but recommended)
+
+J. Data Model and Migration
+If needed, add fields:
+- vehicle.primaryPhotoUrl
+- vehicle.slugCache (optional)
+- vehicle.soldStatus and soldDate
+- dealer settings fields used above
+
+Create a migration or backfill script that computes slugCache for all vehicles if you store it.
+
+K. QA and Verification (Run and document)
+- Requesting /vehicle/{id} returns an HTTP 301 to /vehicle/{canonicalSlug}
+- Requesting /vehicle/{wrong-slug}-{id} returns an HTTP 301 to canonical
+- Vehicle pages have correct canonical, title, description, OG tags, and JSON-LD in the HTML response
+- /sitemap.xml contains canonical vehicle URLs
+- /robots.txt is correct
+- Location and inventory pages are indexable and have unique titles/descriptions
+- No duplicate canonical conflicts
+- Performance: compress images, lazy load galleries, and ensure inventory pages are fast
+
+Deliverables
+- All code changes implementing A through K
+- Admin UI for SEO settings and persistence
+- robots.txt and sitemap.xml endpoints
+- Migration script if fields added
+- Brief internal documentation: where to manage SEO settings and how slugs are generated

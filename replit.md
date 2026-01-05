@@ -34,6 +34,42 @@ Preferred communication style: Simple, everyday language.
 - **Consignments**: Multi-step submission form, phone verification, status tracking, conversion to inventory, SMS confirmations and admin notifications.
 - **Public Website**: Homepage, inventory listings, vehicle details, comparison, payment calculator, trade-in form, contact page, testimonials display.
 
+## SEO System
+
+### URL Structure
+- **Canonical Vehicle URLs**: `/vehicle/{year}-{make}-{model}-{trim}-{city}-{state}-{id}`
+  - Format: slugified lowercase, hyphens replace spaces/punctuation
+  - Trim is optional (omitted if empty)
+  - City/State from Admin SEO Settings > Dealer Location
+  - UUID always included at end for uniqueness
+  - Example: `/vehicle/2023-rolls-royce-cullinan-black-badge-navarre-fl-cbd18aa4-4480-4c06-a2cc-d5254ed6b90e`
+
+### Where to Manage SEO Settings
+- **Admin Panel > Settings > SEO Tab** contains all SEO controls:
+  - Social Sharing (OG title, description, image, Twitter handle)
+  - Dealer Location (city, state, address, hours, Google Map URL, base URL)
+  - Vehicle URL Settings (toggle trim/location in slugs)
+  - Sold Vehicle Behavior (keep live, redirect, or noindex after X days)
+
+### How Slugs Are Generated
+1. New vehicles automatically get canonical slugs when created via API
+2. Existing vehicles can be backfilled via `POST /api/inventory/backfill-slugs` (admin only)
+3. Slug format: `{year}-{make}-{model}[-{trim}][-{city}-{state}]-{uuid}`
+4. All parts are slugified (lowercase, hyphens, no special chars)
+
+### Endpoints
+- **robots.txt**: `GET /robots.txt` - Dynamic, allows indexing of public pages, blocks admin/API
+- **sitemap.xml**: `GET /sitemap.xml` - Dynamic, includes all available vehicles, inventory pages, location pages
+- **Canonical URL API**: `GET /api/vehicle/canonical/:idOrSlug` - Returns canonical URL for any vehicle
+
+### Structured Data
+- Vehicle pages include JSON-LD with Vehicle/Product schema
+- Includes: name, brand, model, year, mileage, VIN, price, condition, images, seller info
+
+### Backward Compatibility
+- Legacy UUID-only URLs (`/vehicle/{uuid}`) still work
+- SEO data injection handles both slug and UUID lookups
+
 ## External Dependencies
 
 - **Database**: PostgreSQL.
