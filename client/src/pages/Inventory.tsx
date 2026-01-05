@@ -342,7 +342,7 @@ export default function Inventory() {
                     </div>
                   </div>
                   
-                  <Link href={`/vehicle/${car.id}`}>
+                  <Link href={`/vehicle/${car.slug || car.id}`}>
                     <Button className="mt-6 w-full" data-testid={`button-view-${car.id}`}>View Details</Button>
                   </Link>
                 </div>

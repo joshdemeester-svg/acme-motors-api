@@ -48,10 +48,32 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
     const logoUrl = ogImageUrl || (settings?.logoUrl ? `${baseUrl}${settings.logoUrl}` : undefined);
     const twitterHandle = settings?.twitterHandle || undefined;
 
-    // Vehicle details page: /inventory/:id
-    const vehicleMatch = url.match(/^\/inventory\/([a-f0-9-]+)$/i);
-    if (vehicleMatch) {
-      const vehicleId = vehicleMatch[1];
+    // Vehicle details page: /vehicle/:slug (new SEO-friendly URL)
+    const vehicleSlugMatch = url.match(/^\/vehicle\/([a-z0-9-]+)$/i);
+    if (vehicleSlugMatch) {
+      const slug = vehicleSlugMatch[1];
+      // Try by slug first, then by ID for backwards compatibility
+      let car = await storage.getInventoryCarBySlug(slug);
+      if (!car) {
+        car = await storage.getInventoryCar(slug);
+      }
+      if (car) {
+        const imageUrl = car.photos?.[0] ? `${baseUrl}${car.photos[0]}` : logoUrl;
+        return setCachedSEO(cacheKey, {
+          title: `${car.year} ${car.make} ${car.model} for Sale | ${siteName}`,
+          description: `${car.year} ${car.make} ${car.model} with ${car.mileage?.toLocaleString()} miles in ${car.color}. ${car.condition} condition. Price: $${car.price?.toLocaleString()}. View details and contact us today.`,
+          image: imageUrl,
+          url: `${baseUrl}${url}`,
+          type: "product",
+          twitterHandle,
+        });
+      }
+    }
+
+    // Legacy vehicle details page: /inventory/:id (backwards compatibility)
+    const vehicleIdMatch = url.match(/^\/inventory\/([a-f0-9-]+)$/i);
+    if (vehicleIdMatch) {
+      const vehicleId = vehicleIdMatch[1];
       const car = await storage.getInventoryCar(vehicleId);
       if (car) {
         const imageUrl = car.photos?.[0] ? `${baseUrl}${car.photos[0]}` : logoUrl;

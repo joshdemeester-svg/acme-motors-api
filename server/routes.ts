@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertConsignmentSchema, insertInventoryCarSchema, insertCreditApplicationSchema, type InsertConsignment } from "@shared/schema";
+import { insertConsignmentSchema, insertInventoryCarSchema, insertCreditApplicationSchema, generateVehicleSlug, type InsertConsignment } from "@shared/schema";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { z } from "zod";
 import crypto from "crypto";
@@ -2103,6 +2103,20 @@ export async function registerRoutes(
     }
   });
 
+  // Get vehicle by slug (SEO-friendly URL)
+  app.get("/api/inventory/by-slug/:slug", async (req, res) => {
+    try {
+      const car = await storage.getInventoryCarBySlug(req.params.slug);
+      if (!car) {
+        return res.status(404).json({ error: "Car not found" });
+      }
+      res.json(car);
+    } catch (error) {
+      console.error("Error fetching car by slug:", error);
+      res.status(500).json({ error: "Failed to fetch car" });
+    }
+  });
+
   app.get("/api/inventory/:id", async (req, res) => {
     try {
       const car = await storage.getInventoryCar(req.params.id);
@@ -2119,7 +2133,12 @@ export async function registerRoutes(
   app.post("/api/inventory", async (req, res) => {
     try {
       const validatedData = insertInventoryCarSchema.parse(req.body);
-      const car = await storage.createInventoryCar(validatedData);
+      
+      // Generate slug for new vehicle
+      const existingSlugs = await storage.getAllInventoryCarSlugs();
+      const slug = generateVehicleSlug(validatedData.year, validatedData.make, validatedData.model, existingSlugs);
+      
+      const car = await storage.createInventoryCar({ ...validatedData, slug });
       res.status(201).json(car);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -2130,6 +2149,28 @@ export async function registerRoutes(
     }
   });
 
+  // Backfill slugs for existing vehicles without slugs
+  app.post("/api/inventory/backfill-slugs", requireAdmin, async (req, res) => {
+    try {
+      const allCars = await storage.getAllInventoryCars();
+      const carsWithoutSlugs = allCars.filter(car => !car.slug);
+      const existingSlugs = await storage.getAllInventoryCarSlugs();
+      
+      let updated = 0;
+      for (const car of carsWithoutSlugs) {
+        const slug = generateVehicleSlug(car.year, car.make, car.model, existingSlugs);
+        await storage.updateInventoryCar(car.id, { slug });
+        existingSlugs.push(slug);
+        updated++;
+      }
+      
+      res.json({ message: `Updated ${updated} vehicles with slugs` });
+    } catch (error) {
+      console.error("Error backfilling slugs:", error);
+      res.status(500).json({ error: "Failed to backfill slugs" });
+    }
+  });
+
   app.post("/api/inventory/bulk", requireAdmin, async (req, res) => {
     try {
       const { vehicles } = req.body;
@@ -2137,11 +2178,15 @@ export async function registerRoutes(
         return res.status(400).json({ error: "No vehicles provided" });
       }
       
+      const existingSlugs = await storage.getAllInventoryCarSlugs();
       const createdCars = [];
       const errors = [];
       
       for (const vehicle of vehicles) {
         try {
+          const slug = generateVehicleSlug(vehicle.year, vehicle.make, vehicle.model, existingSlugs);
+          existingSlugs.push(slug);
+          
           const validatedData = insertInventoryCarSchema.parse({
             vin: vehicle.vin,
             year: vehicle.year,
@@ -2155,6 +2200,7 @@ export async function registerRoutes(
             photos: [],
             status: "available",
             featured: false,
+            slug,
           });
           const car = await storage.createInventoryCar(validatedData);
           createdCars.push(car);

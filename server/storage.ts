@@ -67,6 +67,8 @@ export interface IStorage {
   
   createInventoryCar(data: InsertInventoryCar): Promise<InventoryCar>;
   getInventoryCar(id: string): Promise<InventoryCar | undefined>;
+  getInventoryCarBySlug(slug: string): Promise<InventoryCar | undefined>;
+  getAllInventoryCarSlugs(): Promise<string[]>;
   getAllInventoryCars(): Promise<InventoryCar[]>;
   getAvailableInventoryCars(): Promise<InventoryCar[]>;
   getFeaturedInventoryCars(): Promise<InventoryCar[]>;
@@ -250,6 +252,16 @@ export class DatabaseStorage implements IStorage {
   async getInventoryCar(id: string): Promise<InventoryCar | undefined> {
     const [car] = await db.select().from(inventoryCars).where(eq(inventoryCars.id, id));
     return car || undefined;
+  }
+
+  async getInventoryCarBySlug(slug: string): Promise<InventoryCar | undefined> {
+    const [car] = await db.select().from(inventoryCars).where(eq(inventoryCars.slug, slug));
+    return car || undefined;
+  }
+
+  async getAllInventoryCarSlugs(): Promise<string[]> {
+    const cars = await db.select({ slug: inventoryCars.slug }).from(inventoryCars);
+    return cars.map(c => c.slug).filter((s): s is string => s !== null);
   }
 
   async getAllInventoryCars(): Promise<InventoryCar[]> {

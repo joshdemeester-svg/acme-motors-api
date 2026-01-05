@@ -130,7 +130,7 @@ export default function Compare() {
                   <CardContent className="p-4">
                     <h3 className="font-serif text-lg font-bold">{car.year} {car.make}</h3>
                     <p className="text-xl font-bold text-primary">{car.model}</p>
-                    <Link href={`/vehicle/${car.id}`}>
+                    <Link href={`/vehicle/${car.slug || car.id}`}>
                       <Button variant="outline" size="sm" className="mt-3 w-full">
                         View Details
                       </Button>
