@@ -8,17 +8,34 @@ import crypto from "crypto";
 
 const GHL_API_BASE = "https://services.leadconnectorhq.com";
 
-async function getGHLCredentials(): Promise<{ locationId: string | null; apiToken: string | null }> {
+async function getGHLCredentials(): Promise<{ locationId: string | null; apiToken: string | null; source: 'env' | 'db' | 'none' }> {
+  // Priority: Environment secrets first (persist across republishes), then database fallback
+  const envToken = process.env.GHL_API_TOKEN || null;
+  const envLocationId = process.env.GHL_LOCATION_ID || null;
+  
+  if (envToken && envLocationId) {
+    return { locationId: envLocationId, apiToken: envToken, source: 'env' };
+  }
+  
   try {
     const settings = await storage.getSiteSettings();
-    const locationId = settings?.ghlLocationId || process.env.GHL_LOCATION_ID || null;
-    const apiToken = settings?.ghlApiToken || process.env.GHL_API_TOKEN || null;
-    return { locationId, apiToken };
+    const dbToken = settings?.ghlApiToken || null;
+    const dbLocationId = settings?.ghlLocationId || null;
+    
+    if (dbToken && dbLocationId) {
+      return { locationId: dbLocationId, apiToken: dbToken, source: 'db' };
+    }
+    
+    // Partial credentials - use whatever is available
+    const locationId = envLocationId || dbLocationId || null;
+    const apiToken = envToken || dbToken || null;
+    return { locationId, apiToken, source: locationId && apiToken ? 'db' : 'none' };
   } catch (error) {
     console.error("[GHL] Error fetching credentials from database:", error);
     return { 
-      locationId: process.env.GHL_LOCATION_ID || null, 
-      apiToken: process.env.GHL_API_TOKEN || null 
+      locationId: envLocationId, 
+      apiToken: envToken,
+      source: envLocationId && envToken ? 'env' : 'none'
     };
   }
 }
@@ -2316,11 +2333,17 @@ ${allPages.map(page => `  <url>
   app.get("/api/settings", async (req, res) => {
     try {
       const settings = await storage.getSiteSettings();
+      const ghlCreds = await getGHLCredentials();
+      const ghlConfigured = !!(ghlCreds.apiToken && ghlCreds.locationId);
+      const ghlSource = ghlCreds.source; // 'env', 'db', or 'none'
+      
       if (settings) {
         const { ghlApiToken, ...safeSettings } = settings;
         res.json({
           ...safeSettings,
-          ghlConfigured: !!(ghlApiToken && settings.ghlLocationId)
+          ghlConfigured,
+          ghlSource,
+          ghlLocationId: ghlCreds.locationId || settings.ghlLocationId || null
         });
       } else {
         res.json({ 
@@ -2353,8 +2376,9 @@ ${allPages.map(page => `  <url>
           twitterUrl: null,
           youtubeUrl: null,
           tiktokUrl: null,
-          ghlConfigured: false,
-          ghlLocationId: null
+          ghlConfigured,
+          ghlSource,
+          ghlLocationId: ghlCreds.locationId || null
         });
       }
     } catch (error) {
