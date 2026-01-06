@@ -33,7 +33,9 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/inventory" component={Inventory} />
+      <Route path="/inventory">{() => <Inventory />}</Route>
+      <Route path="/inventory/make/:make">{(params) => <Inventory makeSlug={params.make} />}</Route>
+      <Route path="/inventory/make/:make/model/:model">{(params) => <Inventory makeSlug={params.make} modelSlug={params.model} />}</Route>
       <Route path="/vehicle/:id">{(params) => <VehicleDetails id={params.id} />}</Route>
       <Route path="/consign" component={Consign} />
       <Route path="/admin" component={AdminDashboard} />

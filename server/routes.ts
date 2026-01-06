@@ -3215,6 +3215,18 @@ Sitemap: ${baseUrl}/sitemap.xml
       <changefreq>weekly</changefreq>
       <priority>0.7</priority>
     </url>`);
+        
+        // Model pages for each make
+        const modelsForMake = [...new Set(availableCars.filter(c => c.make === make).map(c => c.model))];
+        for (const model of modelsForMake) {
+          const modelSlug = slugify(model);
+          urls.push(`
+    <url>
+      <loc>${baseUrl}/inventory/make/${makeSlug}/model/${modelSlug}</loc>
+      <changefreq>weekly</changefreq>
+      <priority>0.6</priority>
+    </url>`);
+        }
       }
       
       const sitemap = `<?xml version="1.0" encoding="UTF-8"?>

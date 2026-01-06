@@ -118,10 +118,16 @@ export interface VehicleSlugOptions {
 
 export function slugify(text: string): string {
   return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+export function matchSlug(slug: string, source: string): boolean {
+  return slugify(source) === slug;
 }
 
 export function generateVehicleSlug(options: VehicleSlugOptions): string {
