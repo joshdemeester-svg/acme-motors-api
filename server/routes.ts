@@ -6,6 +6,12 @@ import { registerObjectStorageRoutes } from "./replit_integrations/object_storag
 import { z } from "zod";
 import crypto from "crypto";
 
+declare module "express-serve-static-core" {
+  interface Request {
+    user?: { id: string; username: string; isAdmin: boolean; role?: string };
+  }
+}
+
 const GHL_API_BASE = "https://services.leadconnectorhq.com";
 
 async function getGHLCredentials(): Promise<{ locationId: string | null; apiToken: string | null; source: 'env' | 'db' | 'none' }> {
@@ -1928,7 +1934,7 @@ export async function registerRoutes(
         leadId: req.params.id,
         activityType: "assignment",
         description: assignedTo ? `Assigned to salesperson` : `Unassigned`,
-        createdBy: (req.user as any)?.id,
+        createdBy: req.user?.id,
       });
       
       res.json(updated);
@@ -1954,7 +1960,7 @@ export async function registerRoutes(
         leadType: type,
         leadId: id,
         content: content.trim(),
-        createdBy: (req.user as any)?.id,
+        createdBy: req.user?.id,
       });
       
       await storage.createActivityLog({
@@ -1962,7 +1968,7 @@ export async function registerRoutes(
         leadId: id,
         activityType: "note_added",
         description: `Note added: ${content.substring(0, 100)}${content.length > 100 ? "..." : ""}`,
-        createdBy: (req.user as any)?.id,
+        createdBy: req.user?.id,
       });
       
       res.status(201).json(note);
@@ -2045,7 +2051,7 @@ export async function registerRoutes(
         leadId: req.params.id,
         activityType: "pipeline_change",
         description: `Pipeline stage changed to ${pipelineStage}`,
-        createdBy: (req.user as any)?.id,
+        createdBy: req.user?.id,
       });
       
       res.json(updated);
@@ -2068,7 +2074,7 @@ export async function registerRoutes(
         leadId: req.params.id,
         activityType: "assignment",
         description: assignedTo ? `Assigned to salesperson` : `Unassigned`,
-        createdBy: (req.user as any)?.id,
+        createdBy: req.user?.id,
       });
       
       res.json(updated);
@@ -3017,7 +3023,7 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Invalid target group" });
       }
       
-      const uniquePhones = [...new Set(phoneNumbers.filter(Boolean))];
+      const uniquePhones = Array.from(new Set(phoneNumbers.filter(Boolean)));
       
       if (uniquePhones.length === 0) {
         return res.status(400).json({ error: "No phone numbers found for selected group" });
@@ -3218,7 +3224,7 @@ Sitemap: ${baseUrl}/sitemap.xml
       }
       
       // Make pages
-      const makes = [...new Set(availableCars.map(c => c.make))];
+      const makes = Array.from(new Set(availableCars.map(c => c.make)));
       for (const make of makes) {
         const makeSlug = slugify(make);
         urls.push(`
@@ -3229,7 +3235,7 @@ Sitemap: ${baseUrl}/sitemap.xml
     </url>`);
         
         // Model pages for each make
-        const modelsForMake = [...new Set(availableCars.filter(c => c.make === make).map(c => c.model))];
+        const modelsForMake = Array.from(new Set(availableCars.filter(c => c.make === make).map(c => c.model)));
         for (const model of modelsForMake) {
           const modelSlug = slugify(model);
           urls.push(`
