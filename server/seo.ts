@@ -135,7 +135,7 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
     const vehicleSlugMatch = url.match(/^\/vehicle\/([a-z0-9-]+)$/i);
     if (vehicleSlugMatch) {
       const slug = vehicleSlugMatch[1];
-      // Try by slug first, then by ID, then extract ID from slug
+      // Try by slug first, then by full ID, then extract ID from slug
       let car = await storage.getInventoryCarBySlug(slug);
       if (!car) {
         car = await storage.getInventoryCar(slug);
@@ -143,7 +143,12 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
       if (!car) {
         const extractedId = extractIdFromSlug(slug);
         if (extractedId) {
+          // Try full ID lookup first
           car = await storage.getInventoryCar(extractedId);
+          // If that fails, try short ID lookup (8-char prefix)
+          if (!car && extractedId.length === 8) {
+            car = await storage.getInventoryCarByShortId(extractedId);
+          }
         }
       }
       if (car) {

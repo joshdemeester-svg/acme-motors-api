@@ -3140,7 +3140,16 @@ Sitemap: ${baseUrl}/sitemap.xml
       // Vehicle pages
       const availableCars = inventory.filter(car => car.status === "available" || car.status === "pending");
       for (const car of availableCars) {
-        const vehicleSlug = car.slug || car.id;
+        // Generate slug on-the-fly if not stored
+        const vehicleSlug = car.slug || generateVehicleSlug({
+          year: car.year,
+          make: car.make,
+          model: car.model,
+          trim: settings?.slugIncludeTrim !== false ? (car.trim || null) : null,
+          city: settings?.slugIncludeLocation !== false ? (settings?.dealerCity || null) : null,
+          state: settings?.slugIncludeLocation !== false ? (settings?.dealerState || null) : null,
+          id: car.id,
+        });
         urls.push(`
     <url>
       <loc>${baseUrl}/vehicle/${vehicleSlug}</loc>
@@ -3367,5 +3376,50 @@ export async function createAdminIfNotExists(): Promise<{ created: boolean; mess
   } catch (error) {
     console.error("[auth] Error creating admin:", error);
     return { created: false, message: "Error creating admin user" };
+  }
+}
+
+export async function autoBackfillSlugs(): Promise<void> {
+  console.log("[seo] Checking for vehicles without SEO slugs...");
+  try {
+    const allCars = await storage.getAllInventoryCars();
+    const settings = await storage.getSiteSettings();
+    
+    // Only process cars without any slug (never overwrite existing)
+    const carsNeedingSlugs = allCars.filter(car => !car.slug);
+    
+    if (carsNeedingSlugs.length === 0) {
+      console.log("[seo] All vehicles have slugs - no backfill needed");
+      return;
+    }
+    
+    console.log(`[seo] Backfilling slugs for ${carsNeedingSlugs.length} vehicles...`);
+    
+    // Collect existing slugs to avoid collisions
+    const existingSlugs = new Set(allCars.map(car => car.slug).filter(Boolean));
+    
+    for (const car of carsNeedingSlugs) {
+      let slug = generateVehicleSlug({
+        year: car.year,
+        make: car.make,
+        model: car.model,
+        trim: settings?.slugIncludeTrim !== false ? (car.trim || null) : null,
+        city: settings?.slugIncludeLocation !== false ? (settings?.dealerCity || null) : null,
+        state: settings?.slugIncludeLocation !== false ? (settings?.dealerState || null) : null,
+        id: car.id,
+      });
+      
+      // Handle collision by appending more of the ID if needed
+      if (existingSlugs.has(slug)) {
+        slug = slug + '-' + car.id.substring(9, 13);
+      }
+      
+      existingSlugs.add(slug);
+      await storage.updateInventoryCar(car.id, { slug });
+    }
+    
+    console.log(`[seo] Successfully backfilled ${carsNeedingSlugs.length} vehicle slugs`);
+  } catch (error) {
+    console.error("[seo] Error auto-backfilling slugs:", error);
   }
 }
