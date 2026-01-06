@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -160,6 +160,9 @@ export function LeadDetailDialog({ open, onOpenChange, leadType, lead }: LeadDet
             <User className="h-5 w-5" />
             {contactName}
           </DialogTitle>
+          <DialogDescription>
+            {isInquiry ? "View and manage buyer inquiry details" : "View and manage credit application details"}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

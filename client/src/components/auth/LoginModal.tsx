@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -138,6 +138,11 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
             {mode === "seller" && "Vehicle Owner Login"}
             {mode === "admin" && "Staff Login"}
           </DialogTitle>
+          <DialogDescription className="text-center">
+            {mode === "select" && "Choose how you would like to log in"}
+            {mode === "seller" && "Enter your phone number to access your consignment"}
+            {mode === "admin" && "Enter your credentials to access the admin panel"}
+          </DialogDescription>
         </DialogHeader>
 
         {mode === "select" && (

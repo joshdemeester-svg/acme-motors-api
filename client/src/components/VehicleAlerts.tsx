@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Bell, Mail, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -88,11 +88,11 @@ export function VehicleAlerts() {
             <Bell className="h-5 w-5" />
             Vehicle Alerts
           </DialogTitle>
+          <DialogDescription>
+            Get notified when vehicles matching your preferences become available.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pb-2">
-          <p className="text-sm text-muted-foreground">
-            Get notified when vehicles matching your preferences become available.
-          </p>
           
           <div className="grid gap-4">
             <div className="space-y-2">
