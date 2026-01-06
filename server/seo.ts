@@ -14,35 +14,42 @@ interface SEOData {
 }
 
 function generateVehicleJsonLd(car: InventoryCar, settings: SiteSettings | null, baseUrl: string, canonicalUrl: string): object {
+  if (!car) return {};
+  
   const dealerName = settings?.siteName || "Prestige Auto Consignment";
   const city = settings?.dealerCity || "";
   const state = settings?.dealerState || "";
   const address = settings?.dealerAddress || "";
   const phone = settings?.contactPhone || "";
   
+  const year = car.year ?? "";
+  const make = car.make ?? "";
+  const model = car.model ?? "";
+  const trim = car.trim || "";
+  
   return {
     "@context": "https://schema.org",
     "@type": "Vehicle",
-    "name": `${car.year} ${car.make} ${car.model}${car.trim ? ` ${car.trim}` : ""}`,
+    "name": `${year} ${make} ${model}${trim ? ` ${trim}` : ""}`,
     "brand": {
       "@type": "Brand",
-      "name": car.make
+      "name": make
     },
-    "model": car.model,
-    "vehicleModelDate": car.year.toString(),
-    "mileageFromOdometer": {
+    "model": model,
+    "vehicleModelDate": String(year),
+    "mileageFromOdometer": car.mileage ? {
       "@type": "QuantitativeValue",
       "value": car.mileage,
       "unitCode": "SMI"
-    },
+    } : undefined,
     "vehicleIdentificationNumber": car.vin || undefined,
-    "color": car.color,
+    "color": car.color || undefined,
     "itemCondition": car.condition === "New" ? "https://schema.org/NewCondition" : "https://schema.org/UsedCondition",
     "image": car.photos && car.photos.length > 0 ? car.photos.map(p => p.startsWith('http') ? p : `${baseUrl}${p}`) : undefined,
-    "description": car.description || `${car.year} ${car.make} ${car.model} for sale`,
+    "description": car.description || `${year} ${make} ${model} for sale`,
     "offers": {
       "@type": "Offer",
-      "price": car.price,
+      "price": car.price ?? 0,
       "priceCurrency": "USD",
       "availability": car.status === "available" ? "https://schema.org/InStock" : (car.status === "sold" ? "https://schema.org/SoldOut" : "https://schema.org/LimitedAvailability"),
       "url": canonicalUrl,
@@ -460,7 +467,8 @@ export function injectSEOTags(html: string, seo: SEOData): string {
   return html;
 }
 
-function escapeHtml(text: string): string {
+function escapeHtml(text: string | null | undefined): string {
+  if (!text) return "";
   return text
     .replace(/&/g, '&amp;')
     .replace(/"/g, '&quot;')
