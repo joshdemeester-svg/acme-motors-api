@@ -49,7 +49,7 @@ function LeadCard({ inquiry, vehicle, onViewDetails, index }: LeadCardProps) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`bg-card border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow mb-2 cursor-grab active:cursor-grabbing ${
+          className={`bg-card border rounded-lg shadow-sm hover:shadow-md transition-shadow mb-2 cursor-grab active:cursor-grabbing ${
             snapshot.isDragging ? "shadow-lg ring-2 ring-primary" : ""
           }`}
           style={{
@@ -58,54 +58,56 @@ function LeadCard({ inquiry, vehicle, onViewDetails, index }: LeadCardProps) {
           }}
           data-testid={`pipeline-card-${inquiry.id}`}
         >
-          <div className="flex items-start gap-2">
-            <div className="mt-1 text-muted-foreground">
-              <GripVertical className="h-4 w-4" />
+          {/* Drag handle bar at top */}
+          <div className="bg-muted/50 rounded-t-lg px-3 py-2 flex items-center justify-center gap-1 border-b">
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Drag to move</span>
+          </div>
+          
+          {/* Card content */}
+          <div className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <User className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="font-medium text-sm truncate">
+                {inquiry.buyerName}
+              </span>
             </div>
-            <div className="flex-1 min-w-0 overflow-hidden">
-              <div className="flex items-center gap-2 mb-1">
-                <User className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                <span className="font-medium text-sm truncate">
-                  {inquiry.buyerName}
-                </span>
+            
+            {vehicleLabel && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                <Car className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate" title={vehicleLabel}>{vehicleLabel}</span>
               </div>
-              
-              {vehicleLabel && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                  <Car className="h-3 w-3 flex-shrink-0" />
-                  <span className="truncate" title={vehicleLabel}>{vehicleLabel}</span>
-                </div>
-              )}
-              
-              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                <Calendar className="h-3 w-3 flex-shrink-0" />
-                <span>
-                  {inquiry.createdAt
-                    ? new Date(inquiry.createdAt).toLocaleDateString()
-                    : "N/A"}
-                </span>
-              </div>
-
-              {inquiry.assignedTo && (
-                <Badge variant="outline" className="text-xs mb-2 block w-fit">
-                  {inquiry.assignedTo}
-                </Badge>
-              )}
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full h-7 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewDetails(inquiry);
-                }}
-                data-testid={`pipeline-view-${inquiry.id}`}
-              >
-                <Eye className="h-3 w-3 mr-1" />
-                View Details
-              </Button>
+            )}
+            
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+              <Calendar className="h-3 w-3 flex-shrink-0" />
+              <span>
+                {inquiry.createdAt
+                  ? new Date(inquiry.createdAt).toLocaleDateString()
+                  : "N/A"}
+              </span>
             </div>
+
+            {inquiry.assignedTo && (
+              <Badge variant="outline" className="text-xs mb-3 block w-fit">
+                {inquiry.assignedTo}
+              </Badge>
+            )}
+
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full h-9 text-xs font-medium"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDetails(inquiry);
+              }}
+              data-testid={`pipeline-view-${inquiry.id}`}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              View Details
+            </Button>
           </div>
         </div>
       )}
