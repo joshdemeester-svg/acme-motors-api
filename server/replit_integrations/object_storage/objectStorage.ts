@@ -79,15 +79,20 @@ export class ObjectStorageService {
     for (const searchPath of this.getPublicObjectSearchPaths()) {
       const fullPath = `${searchPath}/${filePath}`;
 
-      // Full path format: /<bucket_name>/<object_name>
-      const { bucketName, objectName } = parseObjectPath(fullPath);
-      const bucket = objectStorageClient.bucket(bucketName);
-      const file = bucket.file(objectName);
+      try {
+        // Full path format: /<bucket_name>/<object_name>
+        const { bucketName, objectName } = parseObjectPath(fullPath);
+        const bucket = objectStorageClient.bucket(bucketName);
+        const file = bucket.file(objectName);
 
-      // Check if file exists
-      const [exists] = await file.exists();
-      if (exists) {
-        return file;
+        // Check if file exists
+        const [exists] = await file.exists();
+        if (exists) {
+          return file;
+        }
+      } catch (error) {
+        console.error(`[ObjectStorage] Error parsing path ${fullPath}:`, error);
+        continue;
       }
     }
 
@@ -143,15 +148,20 @@ export class ObjectStorageService {
     const objectId = randomUUID();
     const fullPath = `${privateObjectDir}/uploads/${objectId}`;
 
-    const { bucketName, objectName } = parseObjectPath(fullPath);
+    try {
+      const { bucketName, objectName } = parseObjectPath(fullPath);
 
-    // Sign URL for PUT method with TTL
-    return signObjectURL({
-      bucketName,
-      objectName,
-      method: "PUT",
-      ttlSec: 900,
-    });
+      // Sign URL for PUT method with TTL
+      return signObjectURL({
+        bucketName,
+        objectName,
+        method: "PUT",
+        ttlSec: 900,
+      });
+    } catch (error) {
+      console.error(`[ObjectStorage] Error parsing upload path ${fullPath}:`, error);
+      throw new Error("Failed to generate upload URL - invalid storage path configuration");
+    }
   }
 
   // Gets the object entity file from the object path.
@@ -171,14 +181,23 @@ export class ObjectStorageService {
       entityDir = `${entityDir}/`;
     }
     const objectEntityPath = `${entityDir}${entityId}`;
-    const { bucketName, objectName } = parseObjectPath(objectEntityPath);
-    const bucket = objectStorageClient.bucket(bucketName);
-    const objectFile = bucket.file(objectName);
-    const [exists] = await objectFile.exists();
-    if (!exists) {
+    
+    try {
+      const { bucketName, objectName } = parseObjectPath(objectEntityPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const objectFile = bucket.file(objectName);
+      const [exists] = await objectFile.exists();
+      if (!exists) {
+        throw new ObjectNotFoundError();
+      }
+      return objectFile;
+    } catch (error) {
+      if (error instanceof ObjectNotFoundError) {
+        throw error;
+      }
+      console.error(`[ObjectStorage] Error parsing entity path ${objectEntityPath}:`, error);
       throw new ObjectNotFoundError();
     }
-    return objectFile;
   }
 
   normalizeObjectEntityPath(
