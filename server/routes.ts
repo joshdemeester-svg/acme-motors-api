@@ -1355,13 +1355,26 @@ export async function registerRoutes(
 
   app.get("/api/inventory", async (req, res) => {
     try {
-      const { featured } = req.query;
+      const { featured, includeMetrics } = req.query;
+      
       if (featured === "true") {
         const cars = await storage.getFeaturedInventoryCars();
         res.json(cars);
       } else {
-        const cars = await storage.getAvailableInventoryCars();
-        res.json(cars);
+        // Get available cars (and pending for "Sale Pending" badge)
+        const allCars = await storage.getAllInventoryCars();
+        const publicCars = allCars.filter(c => c.status === "available" || c.status === "pending");
+        
+        if (includeMetrics === "true") {
+          const inquiryCounts = await storage.getInquiryCountsPerVehicle();
+          const carsWithMetrics = publicCars.map(car => ({
+            ...car,
+            inquiryCount: inquiryCounts[car.id] || 0,
+          }));
+          res.json(carsWithMetrics);
+        } else {
+          res.json(publicCars);
+        }
       }
     } catch (error) {
       console.error("Error fetching inventory:", error);
@@ -1621,6 +1634,18 @@ export async function registerRoutes(
       res.json(inquiries);
     } catch (error) {
       console.error("Error fetching inquiries:", error);
+      res.status(500).json({ error: "Failed to fetch inquiries" });
+    }
+  });
+
+  // Get inquiry count for a specific vehicle (public - returns only count for badges)
+  app.get("/api/inquiries/vehicle/:vehicleId", async (req, res) => {
+    try {
+      const inquiries = await storage.getInquiriesForCar(req.params.vehicleId);
+      // Return only IDs for privacy, frontend just needs the count
+      res.json(inquiries.map(i => ({ id: i.id })));
+    } catch (error) {
+      console.error("Error fetching vehicle inquiries:", error);
       res.status(500).json({ error: "Failed to fetch inquiries" });
     }
   });
@@ -2051,9 +2076,36 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Invalid pipeline stage" });
       }
       
+      const inquiry = await storage.getBuyerInquiry(req.params.id);
+      if (!inquiry) {
+        return res.status(404).json({ error: "Inquiry not found" });
+      }
+      
       const updated = await storage.updateBuyerInquiryPipeline(req.params.id, pipelineStage);
       if (!updated) {
         return res.status(404).json({ error: "Inquiry not found" });
+      }
+      
+      // Update vehicle status based on pipeline stage
+      // After any stage change, re-evaluate vehicle status based on ALL inquiries for this vehicle
+      const allInquiriesForCar = await storage.getInquiriesForCar(inquiry.inventoryCarId);
+      
+      // Check for the highest priority stage among all inquiries
+      const hasSoldInquiry = allInquiriesForCar.some(i => i.pipelineStage === "sold");
+      const hasNegotiatingInquiry = allInquiriesForCar.some(i => i.pipelineStage === "negotiating");
+      
+      const vehicle = await storage.getInventoryCar(inquiry.inventoryCarId);
+      if (vehicle) {
+        if (hasSoldInquiry) {
+          // If any inquiry is sold, vehicle is sold
+          await storage.updateInventoryCarStatus(inquiry.inventoryCarId, "sold");
+        } else if (hasNegotiatingInquiry) {
+          // If any inquiry is negotiating, vehicle is pending
+          await storage.updateInventoryCarStatus(inquiry.inventoryCarId, "pending");
+        } else if (vehicle.status !== "sold") {
+          // No active negotiations or sales, return to available (unless manually marked sold)
+          await storage.updateInventoryCarStatus(inquiry.inventoryCarId, "available");
+        }
       }
       
       await storage.createActivityLog({

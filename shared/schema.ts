@@ -263,6 +263,8 @@ export const siteSettings = pgTable("site_settings", {
   soldVehicleBehavior: text("sold_vehicle_behavior").default("keep_live"),
   soldVehicleNoindexDays: integer("sold_vehicle_noindex_days").default(30),
   
+  hotListingThreshold: integer("hot_listing_threshold").default(5),
+  
   indexVehiclePages: boolean("index_vehicle_pages").default(true),
   indexInventoryPages: boolean("index_inventory_pages").default(true),
   indexMakePages: boolean("index_make_pages").default(true),

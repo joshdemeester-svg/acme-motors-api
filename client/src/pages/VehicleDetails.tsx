@@ -11,9 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, Car, Fuel, Gauge, Calendar, Palette, FileText, Settings, MapPin, Shield, Zap, Users, Factory, Cog, DollarSign, Weight, CircleDot, Lightbulb, Battery, Loader2, CheckCircle, MessageSquare, Search, Calculator, Phone } from "lucide-react";
+import { ArrowLeft, Car, Fuel, Gauge, Calendar, Palette, FileText, Settings, MapPin, Shield, Zap, Users, Factory, Cog, DollarSign, Weight, CircleDot, Lightbulb, Battery, Loader2, CheckCircle, MessageSquare, Search, Calculator, Phone, Flame } from "lucide-react";
 import { Link } from "wouter";
-import type { InventoryCar } from "@shared/schema";
+import type { InventoryCar, SiteSettings, BuyerInquiry } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
 import { useSEO, generateVehicleSchema } from "@/hooks/use-seo";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -405,6 +405,20 @@ export default function VehicleDetails({ id }: { id: string }) {
     enabled: !!car?.vin && car.vin.length >= 11,
   });
 
+  const { data: inquiriesForCar = [] } = useQuery<{ id: string }[]>({
+    queryKey: ["/api/inquiries/vehicle", car?.id],
+    queryFn: async () => {
+      if (!car?.id) return [];
+      const res = await fetch(`/api/inquiries/vehicle/${car.id}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!car?.id,
+  });
+
+  const inquiryCount = inquiriesForCar.length;
+  const hotListingThreshold = settings?.hotListingThreshold || 5;
+
   useSEO({
     title: car ? `${car.year} ${car.make} ${car.model} for Sale` : "Vehicle Details",
     description: car 
@@ -655,9 +669,24 @@ export default function VehicleDetails({ id }: { id: string }) {
                 alt={`${car.year} ${car.make} ${car.model}`}
                 className="h-full w-full object-cover"
               />
-              <Badge className="absolute top-4 right-4 capitalize" data-testid="badge-status">
-                {car.status}
-              </Badge>
+              <div className="absolute top-4 right-4 flex flex-col gap-1.5 items-end">
+                {car.status === "pending" && (
+                  <Badge className="bg-amber-500 hover:bg-amber-500 text-white font-bold shadow-lg" data-testid="badge-pending">
+                    SALE PENDING
+                  </Badge>
+                )}
+                {car.status === "sold" && (
+                  <Badge className="bg-gray-600 hover:bg-gray-600 text-white font-bold shadow-lg" data-testid="badge-sold">
+                    SOLD
+                  </Badge>
+                )}
+                {inquiryCount >= hotListingThreshold && car.status === "available" && (
+                  <Badge className="bg-red-600 hover:bg-red-600 text-white font-bold shadow-lg flex items-center gap-1" data-testid="badge-hot">
+                    <Flame className="h-3 w-3" />
+                    HOT LISTING
+                  </Badge>
+                )}
+              </div>
             </div>
 
             {additionalPhotos.length > 0 && (
