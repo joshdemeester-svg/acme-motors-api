@@ -54,6 +54,16 @@ async function createGHLContact(consignment: InsertConsignment & { id: string })
     return;
   }
 
+  // Validate required consignment fields
+  if (!consignment.firstName || !consignment.phone) {
+    console.error("[GHL] Invalid consignment data: missing required fields");
+    return;
+  }
+
+  const vehicleTag = consignment.year && consignment.make && consignment.model 
+    ? `${consignment.year} ${consignment.make} ${consignment.model}` 
+    : "Vehicle Consignment";
+
   try {
     const response = await fetch(`${GHL_API_BASE}/contacts/upsert`, {
       method: "POST",
@@ -65,11 +75,11 @@ async function createGHLContact(consignment: InsertConsignment & { id: string })
       },
       body: JSON.stringify({
         firstName: consignment.firstName,
-        lastName: consignment.lastName,
-        email: consignment.email,
+        lastName: consignment.lastName || "",
+        email: consignment.email || "",
         phone: consignment.phone,
         locationId: locationId,
-        tags: ["Consignment Lead", `${consignment.year} ${consignment.make} ${consignment.model}`],
+        tags: ["Consignment Lead", vehicleTag],
         source: "Consignment Website",
       }),
     });
