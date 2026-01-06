@@ -137,7 +137,9 @@ export function generateVehicleSlug(options: VehicleSlugOptions): string {
   if (trim) parts.push(trim);
   if (city) parts.push(city);
   if (state) parts.push(state);
-  parts.push(id);
+  // Use only first 8 characters of UUID for cleaner URLs
+  const shortId = id.split('-')[0] || id.substring(0, 8);
+  parts.push(shortId);
   
   return parts.map(p => slugify(p)).filter(Boolean).join('-');
 }
@@ -160,9 +162,15 @@ export function generateVehicleSlugLegacy(year: number, make: string, model: str
 }
 
 export function extractIdFromSlug(slug: string): string | null {
-  const uuidPattern = /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i;
-  const match = slug.match(uuidPattern);
-  return match ? match[1] : null;
+  // Try full UUID first (legacy format)
+  const fullUuidPattern = /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i;
+  const fullMatch = slug.match(fullUuidPattern);
+  if (fullMatch) return fullMatch[1];
+  
+  // Try short ID (8 hex chars at end - new format)
+  const shortIdPattern = /-([a-f0-9]{8})$/i;
+  const shortMatch = slug.match(shortIdPattern);
+  return shortMatch ? shortMatch[1] : null;
 }
 
 export const insertInventoryCarSchema = createInsertSchema(inventoryCars).omit({
