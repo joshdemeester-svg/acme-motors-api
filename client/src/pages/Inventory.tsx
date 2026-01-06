@@ -6,13 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, SlidersHorizontal, X, Scale } from "lucide-react";
 import { useLocation } from "wouter";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import type { InventoryCar } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
 import { useSEO } from "@/hooks/use-seo";
 import { VehicleAlerts } from "@/components/VehicleAlerts";
+import { slugify, matchSlug } from "@shared/schema";
 
 interface Filters {
   make: string;
@@ -36,17 +37,19 @@ const defaultFilters: Filters = {
   maxMileage: "",
 };
 
-export default function Inventory() {
+interface InventoryProps {
+  makeSlug?: string;
+  modelSlug?: string;
+}
+
+export default function Inventory({ makeSlug, modelSlug }: InventoryProps) {
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [compareIds, setCompareIds] = useState<string[]>([]);
-  
-  useSEO({
-    title: "Current Inventory",
-    description: "Browse our collection of premium luxury and exotic vehicles available for purchase. Quality consignment vehicles with full documentation and transparent history.",
-  });
+  const [resolvedMake, setResolvedMake] = useState<string | undefined>(undefined);
+  const [resolvedModel, setResolvedModel] = useState<string | undefined>(undefined);
 
   const { data: inventory = [], isLoading } = useQuery<InventoryCar[]>({
     queryKey: ["/api/inventory"],
@@ -66,6 +69,42 @@ export default function Inventory() {
     },
   });
 
+  const [slugNotFound, setSlugNotFound] = useState(false);
+
+  useEffect(() => {
+    if (inventory.length > 0 && makeSlug) {
+      const foundMake = inventory.find(car => matchSlug(makeSlug, car.make))?.make;
+      if (foundMake) {
+        setResolvedMake(foundMake);
+        setSlugNotFound(false);
+        setFilters(prev => ({ ...prev, make: foundMake }));
+        
+        if (modelSlug) {
+          const foundModel = inventory.find(car => 
+            car.make === foundMake && matchSlug(modelSlug, car.model)
+          )?.model;
+          if (foundModel) {
+            setResolvedModel(foundModel);
+            setFilters(prev => ({ ...prev, model: foundModel }));
+          } else {
+            setResolvedModel(undefined);
+            setSlugNotFound(true);
+          }
+        } else {
+          setResolvedModel(undefined);
+        }
+      } else {
+        setResolvedMake(undefined);
+        setResolvedModel(undefined);
+        setSlugNotFound(true);
+      }
+    } else if (!makeSlug) {
+      setResolvedMake(undefined);
+      setResolvedModel(undefined);
+      setSlugNotFound(false);
+    }
+  }, [inventory, makeSlug, modelSlug]);
+
   const uniqueMakes = useMemo(() => {
     const makes = Array.from(new Set(inventory.map(car => car.make))).sort();
     return makes;
@@ -81,8 +120,8 @@ export default function Inventory() {
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    if (filters.make) count++;
-    if (filters.model) count++;
+    if (filters.make && !makeSlug) count++;
+    if (filters.model && !modelSlug) count++;
     if (filters.minPrice) count++;
     if (filters.maxPrice) count++;
     if (filters.minYear) count++;
@@ -90,11 +129,14 @@ export default function Inventory() {
     if (filters.minMileage) count++;
     if (filters.maxMileage) count++;
     return count;
-  }, [filters]);
+  }, [filters, makeSlug, modelSlug]);
 
   const clearFilters = () => {
     setFilters(defaultFilters);
     setSearch("");
+    if (makeSlug) {
+      navigate('/inventory');
+    }
   };
 
   const filteredInventory = useMemo(() => {
@@ -115,15 +157,59 @@ export default function Inventory() {
     });
   }, [inventory, search, filters]);
 
+  const pageTitle = resolvedMake 
+    ? resolvedModel 
+      ? `${resolvedMake} ${resolvedModel} Vehicles`
+      : `${resolvedMake} Vehicles for Sale`
+    : "Current Inventory";
+    
+  const pageDescription = resolvedMake
+    ? resolvedModel
+      ? `Browse our premium selection of ${resolvedMake} ${resolvedModel} vehicles. Find quality consignment ${resolvedMake} ${resolvedModel} cars with full documentation and transparent history.`
+      : `Explore our collection of luxury ${resolvedMake} vehicles for sale. Premium consignment ${resolvedMake} cars with full documentation and transparent history.`
+    : "Browse our collection of premium luxury and exotic vehicles available for purchase. Quality consignment vehicles with full documentation and transparent history.";
+  
+  useSEO({
+    title: pageTitle,
+    description: pageDescription,
+  });
+
+  useEffect(() => {
+    if (slugNotFound && !isLoading && inventory.length > 0) {
+      navigate('/inventory');
+    }
+  }, [slugNotFound, isLoading, inventory.length, navigate]);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       
       <div className="container px-4 py-12 md:px-6">
+        {resolvedMake && (
+          <nav className="mb-4 text-sm" data-testid="breadcrumb-nav">
+            <Link href="/inventory" className="text-muted-foreground hover:text-primary">Inventory</Link>
+            <span className="mx-2 text-muted-foreground">/</span>
+            {resolvedModel ? (
+              <>
+                <Link href={`/inventory/make/${slugify(resolvedMake)}`} className="text-muted-foreground hover:text-primary">{resolvedMake}</Link>
+                <span className="mx-2 text-muted-foreground">/</span>
+                <span className="text-foreground">{resolvedModel}</span>
+              </>
+            ) : (
+              <span className="text-foreground">{resolvedMake}</span>
+            )}
+          </nav>
+        )}
+        
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="mb-2 font-serif text-4xl font-bold">Current Inventory</h1>
-            <p className="text-muted-foreground">Browse our collection of available premium vehicles.</p>
+            <h1 className="mb-2 font-serif text-4xl font-bold">{pageTitle}</h1>
+            <p className="text-muted-foreground">
+              {resolvedMake 
+                ? `Explore our premium selection of ${resolvedMake}${resolvedModel ? ` ${resolvedModel}` : ''} vehicles.`
+                : "Browse our collection of available premium vehicles."
+              }
+            </p>
           </div>
           
           <div className="flex gap-2 flex-wrap items-center">
@@ -348,6 +434,49 @@ export default function Inventory() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Browse by Make Section */}
+        {!resolvedMake && uniqueMakes.length > 0 && (
+          <div className="mt-16" data-testid="browse-by-make-section">
+            <div className="mb-6">
+              <h2 className="mb-2 font-serif text-2xl font-bold">Browse by Make</h2>
+              <p className="text-muted-foreground">Explore our inventory by manufacturer.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {uniqueMakes.map((make) => (
+                <Link 
+                  key={make} 
+                  href={`/inventory/make/${slugify(make)}`}
+                  className="px-4 py-2 rounded-full bg-card border border-border hover:border-primary hover:bg-card/80 transition-all text-sm font-medium"
+                  data-testid={`link-make-${slugify(make)}`}
+                >
+                  {make}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Browse Models for Current Make */}
+        {resolvedMake && !resolvedModel && uniqueModels.length > 1 && (
+          <div className="mt-8" data-testid="browse-by-model-section">
+            <div className="mb-4">
+              <h3 className="font-semibold text-lg">Browse {resolvedMake} Models</h3>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {uniqueModels.map((model) => (
+                <Link 
+                  key={model} 
+                  href={`/inventory/make/${slugify(resolvedMake)}/model/${slugify(model)}`}
+                  className="px-3 py-1.5 rounded-full bg-card border border-border hover:border-primary hover:bg-card/80 transition-all text-sm"
+                  data-testid={`link-model-${slugify(model)}`}
+                >
+                  {model}
+                </Link>
+              ))}
+            </div>
           </div>
         )}
 
