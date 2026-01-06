@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Users, MessageSquare, Car, Calendar, Phone, Mail, Loader2, Clock, Check, X, ExternalLink, CreditCard, DollarSign, Briefcase, Eye, LayoutGrid, List } from "lucide-react";
-import type { BuyerInquiry, CreditApplication } from "@shared/schema";
+import type { BuyerInquiry, CreditApplication, InventoryCar } from "@shared/schema";
 import { LeadDetailDialog } from "@/components/admin/LeadDetailDialog";
 import { PipelineBoard } from "@/components/admin/PipelineBoard";
 
@@ -131,6 +131,21 @@ export default function Leads() {
       return res.json();
     },
   });
+
+  const { data: vehicles = [] } = useQuery<InventoryCar[]>({
+    queryKey: ["/api/inventory"],
+    queryFn: async () => {
+      const res = await fetch("/api/inventory");
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const vehiclesMap = useMemo(() => {
+    const map: Record<string, InventoryCar> = {};
+    vehicles.forEach(v => { map[v.id] = v; });
+    return map;
+  }, [vehicles]);
 
   const updateInquiryMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -367,6 +382,7 @@ export default function Leads() {
             {viewMode === "pipeline" ? (
               <PipelineBoard
                 inquiries={filterInquiries(inquiries)}
+                vehicles={vehiclesMap}
                 onStageChange={(id, stage) => updatePipelineStageMutation.mutate({ id, pipelineStage: stage })}
                 onViewDetails={(inquiry) => openLeadDetail(inquiry, "inquiry")}
                 isLoading={loadingInquiries}
