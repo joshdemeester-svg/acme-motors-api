@@ -306,6 +306,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [commissionRate, setCommissionRate] = useState("10");
   const [avgDaysToFirstInquiry, setAvgDaysToFirstInquiry] = useState("5");
   const [avgDaysToSell, setAvgDaysToSell] = useState("45");
+  const [hotListingThreshold, setHotListingThreshold] = useState("5");
   const [adminNotifyPhone1, setAdminNotifyPhone1] = useState("");
   const [adminNotifyPhone2, setAdminNotifyPhone2] = useState("");
   const [ghlApiToken, setGhlApiToken] = useState("");
@@ -371,6 +372,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setCommissionRate(String(settings.commissionRate || 10));
       setAvgDaysToFirstInquiry(String(settings.avgDaysToFirstInquiry || 5));
       setAvgDaysToSell(String(settings.avgDaysToSell || 45));
+      setHotListingThreshold(String(settings.hotListingThreshold || 5));
       setAdminNotifyPhone1(settings.adminNotifyPhone1 || "");
       setAdminNotifyPhone2(settings.adminNotifyPhone2 || "");
       setGhlLocationId(settings.ghlLocationId || "");
@@ -430,6 +432,7 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           commissionRate: parseInt(commissionRate) || 10,
           avgDaysToFirstInquiry: parseInt(avgDaysToFirstInquiry) || 5,
           avgDaysToSell: parseInt(avgDaysToSell) || 45,
+          hotListingThreshold: parseInt(hotListingThreshold) || 5,
           adminNotifyPhone1: adminNotifyPhone1 || null,
           adminNotifyPhone2: adminNotifyPhone2 || null,
           ...(ghlApiToken ? { ghlApiToken } : {}),
@@ -1606,6 +1609,26 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
                 data-testid="input-avg-days-sell"
               />
               <p className="text-xs text-muted-foreground">Average time to sell similar vehicles</p>
+            </div>
+          </div>
+          
+          <div className="pt-4 border-t">
+            <h4 className="font-medium mb-3">Inventory Display</h4>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="hotListingThreshold">Hot Listing Threshold</Label>
+                <Input
+                  id="hotListingThreshold"
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={hotListingThreshold}
+                  onChange={(e) => setHotListingThreshold(e.target.value)}
+                  placeholder="5"
+                  data-testid="input-hot-listing-threshold"
+                />
+                <p className="text-xs text-muted-foreground">Number of inquiries to show "Hot Listing" badge</p>
+              </div>
             </div>
           </div>
         </CardContent>

@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, SlidersHorizontal, X, Scale } from "lucide-react";
+import { Search, SlidersHorizontal, X, Scale, Flame } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import type { InventoryCar } from "@shared/schema";
+import type { InventoryCar, SiteSettings } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
 import { useSEO } from "@/hooks/use-seo";
 import { VehicleAlerts } from "@/components/VehicleAlerts";
@@ -51,14 +51,25 @@ export default function Inventory({ makeSlug, modelSlug }: InventoryProps) {
   const [resolvedMake, setResolvedMake] = useState<string | undefined>(undefined);
   const [resolvedModel, setResolvedModel] = useState<string | undefined>(undefined);
 
-  const { data: inventory = [], isLoading } = useQuery<InventoryCar[]>({
-    queryKey: ["/api/inventory"],
+  const { data: inventory = [], isLoading } = useQuery<(InventoryCar & { inquiryCount?: number })[]>({
+    queryKey: ["/api/inventory", "includeMetrics"],
     queryFn: async () => {
-      const res = await fetch("/api/inventory");
+      const res = await fetch("/api/inventory?includeMetrics=true");
       if (!res.ok) throw new Error("Failed to fetch inventory");
       return res.json();
     },
   });
+
+  const { data: settings } = useQuery<SiteSettings>({
+    queryKey: ["/api/settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/settings");
+      if (!res.ok) throw new Error("Failed to fetch settings");
+      return res.json();
+    },
+  });
+
+  const hotListingThreshold = settings?.hotListingThreshold || 5;
 
   const { data: soldVehicles = [] } = useQuery<InventoryCar[]>({
     queryKey: ["/api/inventory/sold"],
@@ -390,8 +401,18 @@ export default function Inventory({ makeSlug, modelSlug }: InventoryProps) {
                     alt={`${car.make} ${car.model}`}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  <div className="absolute top-4 right-4 rounded bg-black/70 px-3 py-1 text-xs font-medium text-white backdrop-blur-md capitalize">
-                    {car.status}
+                  <div className="absolute top-4 right-4 flex flex-col gap-1.5 items-end">
+                    {car.status === "pending" && (
+                      <div className="rounded bg-amber-500 px-3 py-1 text-xs font-bold text-white shadow-lg" data-testid={`badge-pending-${car.id}`}>
+                        SALE PENDING
+                      </div>
+                    )}
+                    {(car.inquiryCount || 0) >= hotListingThreshold && car.status === "available" && (
+                      <div className="flex items-center gap-1 rounded bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-lg" data-testid={`badge-hot-${car.id}`}>
+                        <Flame className="h-3 w-3" />
+                        HOT LISTING
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={(e) => {

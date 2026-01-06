@@ -109,6 +109,7 @@ export interface IStorage {
   getBuyerInquiry(id: string): Promise<BuyerInquiry | undefined>;
   updateBuyerInquiryStatus(id: string, status: string): Promise<BuyerInquiry | undefined>;
   getInquiriesForCar(carId: string): Promise<BuyerInquiry[]>;
+  getInquiryCountsPerVehicle(): Promise<Record<string, number>>;
   
   createVehicleAlert(data: InsertVehicleAlert): Promise<VehicleAlert>;
   getAllVehicleAlerts(): Promise<VehicleAlert[]>;
@@ -484,6 +485,15 @@ export class DatabaseStorage implements IStorage {
       .from(buyerInquiries)
       .where(eq(buyerInquiries.inventoryCarId, carId))
       .orderBy(desc(buyerInquiries.createdAt));
+  }
+
+  async getInquiryCountsPerVehicle(): Promise<Record<string, number>> {
+    const inquiries = await db.select().from(buyerInquiries);
+    const counts: Record<string, number> = {};
+    for (const inquiry of inquiries) {
+      counts[inquiry.inventoryCarId] = (counts[inquiry.inventoryCarId] || 0) + 1;
+    }
+    return counts;
   }
 
   async createVehicleAlert(data: InsertVehicleAlert): Promise<VehicleAlert> {
