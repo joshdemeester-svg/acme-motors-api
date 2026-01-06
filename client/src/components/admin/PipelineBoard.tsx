@@ -8,9 +8,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Eye, User, Car, Calendar, GripVertical } from "lucide-react";
-import type { BuyerInquiry } from "@shared/schema";
+import type { BuyerInquiry, InventoryCar } from "@shared/schema";
 
 const PIPELINE_STAGES = [
   { id: "new", label: "New", color: "bg-blue-500" },
@@ -23,6 +22,7 @@ const PIPELINE_STAGES = [
 
 interface PipelineBoardProps {
   inquiries: BuyerInquiry[];
+  vehicles?: Record<string, InventoryCar>;
   onStageChange: (id: string, stage: string) => void;
   onViewDetails: (inquiry: BuyerInquiry) => void;
   isLoading?: boolean;
@@ -30,31 +30,39 @@ interface PipelineBoardProps {
 
 interface LeadCardProps {
   inquiry: BuyerInquiry;
+  vehicle?: InventoryCar;
   onViewDetails: (inquiry: BuyerInquiry) => void;
   index: number;
 }
 
-function LeadCard({ inquiry, onViewDetails, index }: LeadCardProps) {
+function LeadCard({ inquiry, vehicle, onViewDetails, index }: LeadCardProps) {
+  const vehicleLabel = vehicle 
+    ? `${vehicle.year} ${vehicle.make} ${vehicle.model}`
+    : inquiry.inventoryCarId 
+      ? `Vehicle #${inquiry.inventoryCarId.slice(0, 8)}...`
+      : null;
+
   return (
     <Draggable draggableId={inquiry.id} index={index}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className={`bg-card border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow mb-2 ${
+          {...provided.dragHandleProps}
+          className={`bg-card border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow mb-2 cursor-grab active:cursor-grabbing ${
             snapshot.isDragging ? "shadow-lg ring-2 ring-primary" : ""
           }`}
+          style={{
+            ...provided.draggableProps.style,
+            touchAction: "none",
+          }}
           data-testid={`pipeline-card-${inquiry.id}`}
         >
           <div className="flex items-start gap-2">
-            <div
-              {...provided.dragHandleProps}
-              className="mt-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
-              style={{ touchAction: "none" }}
-            >
+            <div className="mt-1 text-muted-foreground">
               <GripVertical className="h-4 w-4" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 overflow-hidden">
               <div className="flex items-center gap-2 mb-1">
                 <User className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                 <span className="font-medium text-sm truncate">
@@ -62,10 +70,10 @@ function LeadCard({ inquiry, onViewDetails, index }: LeadCardProps) {
                 </span>
               </div>
               
-              {inquiry.inventoryCarId && (
+              {vehicleLabel && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                   <Car className="h-3 w-3 flex-shrink-0" />
-                  <span className="truncate">Vehicle #{inquiry.inventoryCarId}</span>
+                  <span className="truncate" title={vehicleLabel}>{vehicleLabel}</span>
                 </div>
               )}
               
@@ -79,7 +87,7 @@ function LeadCard({ inquiry, onViewDetails, index }: LeadCardProps) {
               </div>
 
               {inquiry.assignedTo && (
-                <Badge variant="outline" className="text-xs mb-2">
+                <Badge variant="outline" className="text-xs mb-2 block w-fit">
                   {inquiry.assignedTo}
                 </Badge>
               )}
@@ -108,10 +116,11 @@ function LeadCard({ inquiry, onViewDetails, index }: LeadCardProps) {
 interface StageColumnProps {
   stage: typeof PIPELINE_STAGES[number];
   inquiries: BuyerInquiry[];
+  vehicles?: Record<string, InventoryCar>;
   onViewDetails: (inquiry: BuyerInquiry) => void;
 }
 
-function StageColumn({ stage, inquiries, onViewDetails }: StageColumnProps) {
+function StageColumn({ stage, inquiries, vehicles, onViewDetails }: StageColumnProps) {
   return (
     <div
       className="flex flex-col min-w-[280px] max-w-[320px] flex-shrink-0"
@@ -129,35 +138,32 @@ function StageColumn({ stage, inquiries, onViewDetails }: StageColumnProps) {
             </Badge>
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 p-2 pt-0">
+        <CardContent className="flex-1 p-2 pt-0 overflow-hidden">
           <Droppable droppableId={stage.id}>
             {(provided, snapshot) => (
               <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className={`min-h-[100px] h-full rounded-lg transition-colors ${
+                className={`min-h-[100px] h-[calc(100vh-320px)] overflow-y-auto rounded-lg transition-colors p-1 ${
                   snapshot.isDraggingOver ? "bg-primary/10 ring-2 ring-primary ring-dashed" : ""
                 }`}
               >
-                <ScrollArea className="h-[calc(100vh-320px)]">
-                  <div className="pr-2">
-                    {inquiries.length === 0 && !snapshot.isDraggingOver ? (
-                      <div className="text-center text-muted-foreground text-sm py-8 border-2 border-dashed rounded-lg">
-                        Drop leads here
-                      </div>
-                    ) : (
-                      inquiries.map((inquiry, index) => (
-                        <LeadCard
-                          key={inquiry.id}
-                          inquiry={inquiry}
-                          onViewDetails={onViewDetails}
-                          index={index}
-                        />
-                      ))
-                    )}
-                    {provided.placeholder}
+                {inquiries.length === 0 && !snapshot.isDraggingOver ? (
+                  <div className="text-center text-muted-foreground text-sm py-8 border-2 border-dashed rounded-lg">
+                    Drop leads here
                   </div>
-                </ScrollArea>
+                ) : (
+                  inquiries.map((inquiry, index) => (
+                    <LeadCard
+                      key={inquiry.id}
+                      inquiry={inquiry}
+                      vehicle={inquiry.inventoryCarId && vehicles ? vehicles[inquiry.inventoryCarId] : undefined}
+                      onViewDetails={onViewDetails}
+                      index={index}
+                    />
+                  ))
+                )}
+                {provided.placeholder}
               </div>
             )}
           </Droppable>
@@ -169,6 +175,7 @@ function StageColumn({ stage, inquiries, onViewDetails }: StageColumnProps) {
 
 export function PipelineBoard({
   inquiries,
+  vehicles = {},
   onStageChange,
   onViewDetails,
   isLoading,
@@ -232,6 +239,7 @@ export function PipelineBoard({
             key={stage.id}
             stage={stage}
             inquiries={inquiriesByStage[stage.id]}
+            vehicles={vehicles}
             onViewDetails={onViewDetails}
           />
         ))}
