@@ -191,20 +191,20 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
           <nav className="flex-1 p-4 space-y-1">
             {navItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <a
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                    isActive(item.href)
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                  onClick={() => setSidebarOpen(false)}
-                  data-testid={`nav-${item.label.toLowerCase()}`}
-                >
-                  {item.icon}
-                  {item.label}
-                </a>
+              <Link 
+                key={item.href} 
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                  isActive(item.href)
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+                onClick={() => setSidebarOpen(false)}
+                data-testid={`nav-${item.label.toLowerCase()}`}
+              >
+                {item.icon}
+                {item.label}
               </Link>
             ))}
           </nav>

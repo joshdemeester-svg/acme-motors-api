@@ -2169,6 +2169,9 @@ export default function Settings() {
             <DialogTitle>
               {editingTestimonial ? "Edit Testimonial" : "Add Testimonial"}
             </DialogTitle>
+            <DialogDescription>
+              {editingTestimonial ? "Update the testimonial details below" : "Add a new customer testimonial to display on the homepage"}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
