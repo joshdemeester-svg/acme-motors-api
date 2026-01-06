@@ -37,12 +37,12 @@ Preferred communication style: Simple, everyday language.
 ## SEO System
 
 ### URL Structure
-- **Canonical Vehicle URLs**: `/vehicle/{year}-{make}-{model}-{trim}-{city}-{state}-{id}`
+- **Canonical Vehicle URLs**: `/vehicle/{year}-{make}-{model}-{trim}-{city}-{state}-{8-char-id}`
   - Format: slugified lowercase, hyphens replace spaces/punctuation
   - Trim is optional (omitted if empty)
   - City/State from Admin SEO Settings > Dealer Location
-  - UUID always included at end for uniqueness
-  - Example: `/vehicle/2023-rolls-royce-cullinan-black-badge-navarre-fl-cbd18aa4-4480-4c06-a2cc-d5254ed6b90e`
+  - Short ID: First 8 characters of the vehicle's UUID (cleaner URLs)
+  - Example: `/vehicle/2023-rolls-royce-cullinan-black-badge-navarre-fl-9f8201c6`
 
 ### Where to Manage SEO Settings
 - **Admin Panel > Settings > SEO Tab** contains all SEO controls:
@@ -53,7 +53,7 @@ Preferred communication style: Simple, everyday language.
 
 ### How Slugs Are Generated
 1. New vehicles automatically get canonical slugs when created via API
-2. Existing vehicles can be backfilled via `POST /api/inventory/backfill-slugs` (admin only)
+2. Existing vehicles are auto-backfilled on server startup (no manual action needed)
 3. Slug format: `{year}-{make}-{model}[-{trim}][-{city}-{state}]-{uuid}`
 4. All parts are slugified (lowercase, hyphens, no special chars)
 
