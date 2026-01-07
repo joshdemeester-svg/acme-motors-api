@@ -2202,7 +2202,7 @@ export async function registerRoutes(
     try {
       const validatedData = insertInventoryCarSchema.parse(req.body);
       
-      // Generate slug for new vehicle using new canonical format with city/state
+      // Generate slug for new vehicle using entity-based format (no location)
       const settings = await storage.getSiteSettings();
       const car = await storage.createInventoryCar(validatedData);
       
@@ -2212,11 +2212,8 @@ export async function registerRoutes(
         make: validatedData.make,
         model: validatedData.model,
         trim: settings?.slugIncludeTrim !== false ? (validatedData.trim || null) : null,
-        city: settings?.slugIncludeLocation !== false ? (settings?.dealerCity || null) : null,
-        state: settings?.slugIncludeLocation !== false ? (settings?.dealerState || null) : null,
         id: car.id,
         stockNumber: settings?.slugIncludeStock ? (validatedData.stockNumber || null) : null,
-        locationFirst: settings?.slugLocationFirst ?? false,
       });
       
       // Update car with slug
@@ -2241,17 +2238,14 @@ export async function registerRoutes(
       
       let updated = 0;
       for (const car of allCars) {
-        // Generate new canonical slug with ID, respecting admin settings
+        // Generate new canonical slug with ID (entity-based, no location)
         const slug = generateVehicleSlug({
           year: car.year,
           make: car.make,
           model: car.model,
           trim: settings?.slugIncludeTrim !== false ? (car.trim || null) : null,
-          city: settings?.slugIncludeLocation !== false ? (settings?.dealerCity || null) : null,
-          state: settings?.slugIncludeLocation !== false ? (settings?.dealerState || null) : null,
           id: car.id,
           stockNumber: settings?.slugIncludeStock ? (car.stockNumber || null) : null,
-          locationFirst: settings?.slugLocationFirst ?? false,
         });
         
         // Only update if slug changed

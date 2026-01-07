@@ -1973,6 +1973,12 @@ export default function Settings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg mb-4">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <strong>Entity-Based URLs:</strong> Vehicle URLs now use a clean, entity-based format without location in the URL. 
+                    Location info is still included in structured data for local SEO.
+                  </p>
+                </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Include Trim in URL</Label>
@@ -1988,36 +1994,9 @@ export default function Settings() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Include Location in URL</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Add city and state to the URL slug (e.g., navarre-fl)
-                    </p>
-                  </div>
-                  <Switch
-                    checked={(formData as any).slugIncludeLocation ?? true}
-                    onCheckedChange={(checked) => setFormData({ ...formData, slugIncludeLocation: checked } as any)}
-                    data-testid="switch-slug-include-location"
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Location First in URL</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Put location before year/make/model (e.g., navarre-fl-2023-rolls-royce)
-                    </p>
-                  </div>
-                  <Switch
-                    checked={(formData as any).slugLocationFirst ?? false}
-                    onCheckedChange={(checked) => setFormData({ ...formData, slugLocationFirst: checked } as any)}
-                    data-testid="switch-slug-location-first"
-                    disabled={!(formData as any).slugIncludeLocation}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
                     <Label>Include Stock Number in URL</Label>
                     <p className="text-xs text-muted-foreground">
-                      Add stock number to URL instead of ID (e.g., stk5304)
+                      Use stock number instead of ID (e.g., 5304 vs abc12345)
                     </p>
                   </div>
                   <Switch
@@ -2030,19 +2009,15 @@ export default function Settings() {
                   <p className="text-xs text-muted-foreground mb-1">Example URL:</p>
                   <code className="text-xs break-all">
                     {(() => {
-                      const location = (formData as any).slugIncludeLocation ? `${((formData as any).dealerCity || 'navarre').toLowerCase()}-${((formData as any).dealerState || 'fl').toLowerCase()}` : '';
                       const vehicle = `2023-rolls-royce-cullinan${(formData as any).slugIncludeTrim ? '-black-badge' : ''}`;
-                      const id = (formData as any).slugIncludeStock ? 'stk5304' : 'abc12345';
-                      if ((formData as any).slugLocationFirst && location) {
-                        return `/vehicle/${location}-${vehicle}-${id}`;
-                      } else if (location) {
-                        return `/vehicle/${vehicle}-${location}-${id}`;
-                      } else {
-                        return `/vehicle/${vehicle}-${id}`;
-                      }
+                      const id = (formData as any).slugIncludeStock ? '5304' : 'abc12345';
+                      return `/inventory/${vehicle}-${id}`;
                     })()}
                   </code>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Format: /inventory/{'{year}'}-{'{make}'}-{'{model}'}-{'{trim?}'}-{'{stockId}'}
+                </p>
               </CardContent>
               <CardFooter>
                 <Button onClick={handleSave} disabled={saveMutation.isPending}>
