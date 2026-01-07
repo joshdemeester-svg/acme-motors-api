@@ -4550,6 +4550,49 @@ export async function seedDatabaseFromConfig(): Promise<void> {
     } else {
       console.log("[seed] Site settings already configured, skipping seed");
     }
+    
+    // Seed citation directories if none exist
+    const existingDirectories = await storage.getAllCitationDirectories();
+    if (existingDirectories.length === 0) {
+      console.log("[seed] Seeding citation directories...");
+      
+      const citationDirectorySeedData = [
+        // Data Aggregators (submit to these first - they distribute to 100+ sites)
+        { name: "Data Axle", url: "https://www.data-axle.com", category: "Data Aggregator", submissionType: "paid", priority: 1, isAggregator: true, notes: "Major aggregator that feeds Yelp, YP, Superpages, and 100+ directories. Paid service but highest coverage." },
+        { name: "Neustar Localeze", url: "https://www.neustarlocaleze.biz", category: "Data Aggregator", submissionType: "paid", priority: 2, isAggregator: true, notes: "Second largest aggregator. Feeds GPS systems, 411 directories, and search engines." },
+        { name: "Foursquare", url: "https://business.foursquare.com", category: "Data Aggregator", submissionType: "free", priority: 3, isAggregator: true, notes: "Free listing that feeds Apple Maps, Uber, Snapchat, and many apps." },
+        { name: "Factual (Now part of Foursquare)", url: "https://foursquare.com/products/places", category: "Data Aggregator", submissionType: "free", priority: 4, isAggregator: true, notes: "Merged with Foursquare. Data powers Bing, Apple, and Facebook." },
+        
+        // Core Directories (highest priority manual submissions)
+        { name: "Google Business Profile", url: "https://business.google.com", category: "Core", submissionType: "free", priority: 1, isAggregator: false, notes: "Most important! Verify your listing immediately. Affects Google Search and Maps." },
+        { name: "Yelp", url: "https://biz.yelp.com", category: "Core", submissionType: "free", priority: 2, isAggregator: false, notes: "High authority. Claim and complete your profile with photos." },
+        { name: "Facebook Business", url: "https://www.facebook.com/business/pages/set-up", category: "Core", submissionType: "free", priority: 3, isAggregator: false, notes: "Create a Business Page. Enable reviews and keep info current." },
+        { name: "Apple Maps", url: "https://mapsconnect.apple.com", category: "Core", submissionType: "free", priority: 4, isAggregator: false, notes: "Important for iPhone users. Verify through Apple Business Connect." },
+        { name: "Bing Places", url: "https://www.bingplaces.com", category: "Core", submissionType: "free", priority: 5, isAggregator: false, notes: "Second largest search engine. Import from Google Business Profile." },
+        
+        // Business Directories
+        { name: "Better Business Bureau", url: "https://www.bbb.org/get-accredited", category: "Business", submissionType: "paid", priority: 6, isAggregator: false, notes: "Accreditation builds trust. High authority backlink." },
+        { name: "Chamber of Commerce", url: "https://www.uschamber.com/co/chambers", category: "Business", submissionType: "paid", priority: 7, isAggregator: false, notes: "Join your local chamber for a quality citation and networking." },
+        { name: "Yellow Pages", url: "https://www.yellowpages.com/advertise", category: "Business", submissionType: "free", priority: 8, isAggregator: false, notes: "Still relevant for local search. Free basic listing available." },
+        
+        // Automotive-Specific
+        { name: "Cars.com Dealer", url: "https://www.cars.com/sell/", category: "Automotive", submissionType: "paid", priority: 9, isAggregator: false, notes: "Major auto marketplace. Paid dealer subscriptions available." },
+        { name: "Autotrader Dealer", url: "https://www.autotrader.com/dealers", category: "Automotive", submissionType: "paid", priority: 10, isAggregator: false, notes: "Premium auto marketplace. High-quality leads for dealers." },
+        { name: "CarGurus Dealer", url: "https://www.cargurus.com/Cars/forsale", category: "Automotive", submissionType: "paid", priority: 11, isAggregator: false, notes: "Growing platform. Good for price transparency and reviews." },
+        { name: "Edmunds Dealer", url: "https://dealers.edmunds.com", category: "Automotive", submissionType: "paid", priority: 12, isAggregator: false, notes: "Premium auto research site. Dealer program available." },
+        { name: "DealerRater", url: "https://www.dealerrater.com/dealers", category: "Automotive", submissionType: "free", priority: 13, isAggregator: false, notes: "Automotive review site. Claim your free listing." },
+        
+        // Social/Review Sites
+        { name: "LinkedIn Company Page", url: "https://www.linkedin.com/company/setup/new", category: "Social", submissionType: "free", priority: 14, isAggregator: false, notes: "Professional presence. Good for B2B and recruiting." },
+        { name: "Nextdoor Business", url: "https://business.nextdoor.com", category: "Social", submissionType: "free", priority: 15, isAggregator: false, notes: "Hyperlocal community. Great for neighborhood visibility." },
+        { name: "Angi (formerly Angie's List)", url: "https://www.angi.com/pro", category: "Review", submissionType: "free", priority: 16, isAggregator: false, notes: "Service-focused reviews. Relevant if offering maintenance/repairs." },
+      ];
+      
+      for (const dir of citationDirectorySeedData) {
+        await storage.createCitationDirectory(dir);
+      }
+      console.log(`[seed] Created ${citationDirectorySeedData.length} citation directories`);
+    }
   } catch (error) {
     console.error("[seed] Error seeding database:", error);
   }

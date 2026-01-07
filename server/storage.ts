@@ -201,6 +201,7 @@ export interface IStorage {
   getAllCitationDirectories(): Promise<CitationDirectory[]>;
   getCitationDirectoriesByCategory(category: string): Promise<CitationDirectory[]>;
   getAggregatorDirectories(): Promise<CitationDirectory[]>;
+  createCitationDirectory(data: InsertCitationDirectory): Promise<CitationDirectory>;
   
   createCitationSubmission(data: InsertCitationSubmission): Promise<CitationSubmission>;
   getAllCitationSubmissions(): Promise<CitationSubmission[]>;
@@ -910,6 +911,11 @@ export class DatabaseStorage implements IStorage {
 
   async getAggregatorDirectories(): Promise<CitationDirectory[]> {
     return db.select().from(citationDirectories).where(eq(citationDirectories.isAggregator, true)).orderBy(citationDirectories.priority);
+  }
+
+  async createCitationDirectory(data: InsertCitationDirectory): Promise<CitationDirectory> {
+    const [directory] = await db.insert(citationDirectories).values(data).returning();
+    return directory;
   }
 
   async createCitationSubmission(data: InsertCitationSubmission): Promise<CitationSubmission> {

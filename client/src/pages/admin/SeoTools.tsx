@@ -28,8 +28,12 @@ import {
   Mail,
   Link as LinkIcon,
   Loader2,
-  Copy
+  Copy,
+  Info,
+  Lightbulb,
+  Target
 } from "lucide-react";
+import { AdminHelpBox } from "@/components/admin/AdminHelpBox";
 
 type TargetLocation = {
   id: string;
@@ -50,9 +54,11 @@ type CitationDirectory = {
   id: string;
   name: string;
   category: string;
-  submissionUrl?: string | null;
+  url: string;
+  submissionType: string;
   isAggregator?: boolean | null;
   priority?: number | null;
+  notes?: string | null;
 };
 
 type CitationSubmission = {
@@ -356,6 +362,21 @@ export default function SeoTools() {
         </TabsList>
 
         <TabsContent value="locations">
+          <AdminHelpBox
+            title="What are Location Landing Pages?"
+            description="Location pages help you rank in searches from nearby cities. Each page displays your full inventory with location-specific content for better local SEO."
+            icon={MapPin}
+            variant="info"
+            className="mb-6"
+            defaultOpen={false}
+            tips={[
+              "Add cities within your typical service radius (30-50 miles)",
+              "Customize headlines and descriptions for each location",
+              "Pages show your full inventory since all cars are at your dealership",
+              "Primary location is used for default SEO settings"
+            ]}
+          />
+
           <div className="flex justify-between items-center mb-6">
             <div>
               <h2 className="text-xl font-semibold">Target Locations</h2>
@@ -419,6 +440,19 @@ export default function SeoTools() {
         </TabsContent>
 
         <TabsContent value="citations">
+          <AdminHelpBox
+            title="Getting Started with Citations"
+            description="Citations are mentions of your business name, address, and phone (NAP) on other websites. They help search engines verify your business and improve local rankings."
+            icon={Target}
+            variant="info"
+            className="mb-6"
+            steps={[
+              { title: "Check your NAP", description: "Go to NAP Check tab and ensure all info is complete and consistent." },
+              { title: "Submit to Data Aggregators", description: "These distribute your info to 100+ sites automatically. Start here for maximum reach." },
+              { title: "Submit to Manual Directories", description: "High-value sites that require individual submissions. Track status as you go." },
+            ]}
+          />
+
           <div className="grid md:grid-cols-4 gap-4 mb-6">
             <Card>
               <CardContent className="p-4 text-center">
@@ -452,6 +486,20 @@ export default function SeoTools() {
               <CardDescription>Submit to these first - they distribute to 100+ sites</CardDescription>
             </CardHeader>
             <CardContent>
+              <AdminHelpBox
+                title="Why Data Aggregators?"
+                description="Data aggregators are services that distribute your business info to hundreds of directories at once. Submit to these first for maximum efficiency."
+                icon={Lightbulb}
+                variant="tip"
+                className="mb-4"
+                defaultOpen={false}
+                tips={[
+                  "Some aggregators are paid services but offer the best coverage",
+                  "Free options like Foursquare still provide good distribution",
+                  "Have your NAP data ready before submitting",
+                  "Allow 2-4 weeks for data to propagate across networks"
+                ]}
+              />
               <div className="grid md:grid-cols-2 gap-4">
                 {directories.filter(d => d.isAggregator).map((dir) => {
                   const submission = getSubmissionForDirectory(dir.id);
@@ -463,9 +511,9 @@ export default function SeoTools() {
                       </div>
                       <div className="flex items-center gap-2">
                         {submission ? statusBadge(submission.status) : statusBadge("not_started")}
-                        {dir.submissionUrl && (
+                        {dir.url && (
                           <Button variant="ghost" size="sm" asChild>
-                            <a href={dir.submissionUrl} target="_blank" rel="noopener">
+                            <a href={dir.url} target="_blank" rel="noopener">
                               <ExternalLink className="w-4 h-4" />
                             </a>
                           </Button>
@@ -493,6 +541,20 @@ export default function SeoTools() {
               <CardDescription>Submit to these individually for local SEO</CardDescription>
             </CardHeader>
             <CardContent>
+              <AdminHelpBox
+                title="How Manual Submissions Work"
+                description="These directories require individual submissions. Click the link icon to open each site, create your listing, then track your progress here."
+                icon={Info}
+                variant="info"
+                className="mb-4"
+                defaultOpen={false}
+                steps={[
+                  { title: "Click Track", description: "Start tracking a directory submission" },
+                  { title: "Submit on their site", description: "Click the link icon to open the directory, then create your listing" },
+                  { title: "Mark Submitted", description: "After submitting, mark it as submitted to track progress" },
+                  { title: "Confirm when live", description: "Once your listing is verified and live, confirm it" }
+                ]}
+              />
               <div className="space-y-2">
                 {directories.filter(d => !d.isAggregator).map((dir) => {
                   const submission = getSubmissionForDirectory(dir.id);
@@ -506,9 +568,9 @@ export default function SeoTools() {
                       </div>
                       <div className="flex items-center gap-2">
                         {submission ? statusBadge(submission.status) : statusBadge("not_started")}
-                        {dir.submissionUrl && (
+                        {dir.url && (
                           <Button variant="ghost" size="sm" asChild>
-                            <a href={dir.submissionUrl} target="_blank" rel="noopener">
+                            <a href={dir.url} target="_blank" rel="noopener">
                               <ExternalLink className="w-4 h-4" />
                             </a>
                           </Button>
@@ -547,6 +609,21 @@ export default function SeoTools() {
         </TabsContent>
 
         <TabsContent value="nap">
+          <AdminHelpBox
+            title="Why NAP Consistency Matters"
+            description="NAP stands for Name, Address, Phone. Search engines use this info to verify your business identity. Inconsistent NAP across directories confuses search engines and hurts rankings."
+            icon={Building}
+            variant="info"
+            className="mb-6"
+            defaultOpen={false}
+            tips={[
+              "Use the exact same business name everywhere (including Inc., LLC, etc.)",
+              "Format your address consistently (St. vs Street, Suite vs Ste)",
+              "Use the same phone number format across all listings",
+              "Export your NAP data before submitting to directories to ensure consistency"
+            ]}
+          />
+
           <div className="grid md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
