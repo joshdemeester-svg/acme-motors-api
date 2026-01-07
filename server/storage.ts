@@ -46,7 +46,7 @@ import {
   type InsertActivityLog
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gt } from "drizzle-orm";
+import { eq, desc, and, gt, lt } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -128,6 +128,7 @@ export interface IStorage {
   getVehicleViewCount(vehicleId: string): Promise<number>;
   getViewsInRange(startDate: Date, endDate: Date): Promise<VehicleView[]>;
   getTotalViewsCount(): Promise<number>;
+  getMostViewedVehicles(limit?: number): Promise<{ vehicleId: string; viewCount: number }[]>;
   
   createVehicleDocument(data: InsertVehicleDocument): Promise<VehicleDocument>;
   getVehicleDocuments(vehicleId: string): Promise<VehicleDocument[]>;
@@ -575,10 +576,22 @@ export class DatabaseStorage implements IStorage {
   async getViewsInRange(startDate: Date, endDate: Date): Promise<VehicleView[]> {
     return db.select().from(vehicleViews)
       .where(and(
-        gt(vehicleViews.viewedAt, startDate),
-        gt(endDate, vehicleViews.viewedAt!)
+        gt(vehicleViews.viewedAt!, startDate),
+        lt(vehicleViews.viewedAt!, endDate)
       ))
       .orderBy(desc(vehicleViews.viewedAt));
+  }
+  
+  async getMostViewedVehicles(limit: number = 10): Promise<{ vehicleId: string; viewCount: number }[]> {
+    const views = await db.select().from(vehicleViews);
+    const countMap = new Map<string, number>();
+    for (const view of views) {
+      countMap.set(view.vehicleId, (countMap.get(view.vehicleId) || 0) + 1);
+    }
+    return Array.from(countMap.entries())
+      .map(([vehicleId, viewCount]) => ({ vehicleId, viewCount }))
+      .sort((a, b) => b.viewCount - a.viewCount)
+      .slice(0, limit);
   }
 
   async getTotalViewsCount(): Promise<number> {

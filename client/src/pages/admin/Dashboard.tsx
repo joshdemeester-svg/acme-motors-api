@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Car, Users, FileText, DollarSign, TrendingUp, Clock, MessageSquare, Calendar } from "lucide-react";
+import { Car, Users, FileText, DollarSign, TrendingUp, Clock, MessageSquare, Calendar, Eye, BarChart3 } from "lucide-react";
 import type { ConsignmentSubmission, InventoryCar, BuyerInquiry } from "@shared/schema";
 
 interface TradeInSubmission {
@@ -65,6 +65,30 @@ export default function Dashboard() {
     queryFn: async () => {
       const res = await fetch("/api/appointments");
       if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const { data: analytics } = useQuery<{
+    totalViews: number;
+    mostViewed: Array<{
+      vehicleId: string;
+      viewCount: number;
+      vehicle: {
+        id: string;
+        year: number;
+        make: string;
+        model: string;
+        status: string;
+        price: number;
+        photo: string | null;
+      };
+    }>;
+  }>({
+    queryKey: ["/api/analytics"],
+    queryFn: async () => {
+      const res = await fetch("/api/analytics");
+      if (!res.ok) return { totalViews: 0, mostViewed: [] };
       return res.json();
     },
   });
@@ -268,6 +292,72 @@ export default function Dashboard() {
                   <p className="text-xs text-muted-foreground">Appointments</p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                Page View Analytics
+              </CardTitle>
+              <CardDescription>
+                {analytics?.totalViews?.toLocaleString() || 0} total vehicle page views
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center p-4 rounded-lg bg-muted mb-4">
+                <p className="text-4xl font-bold text-primary">{analytics?.totalViews?.toLocaleString() || 0}</p>
+                <p className="text-sm text-muted-foreground">Total Page Views</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Most Viewed Vehicles
+              </CardTitle>
+              <CardDescription>Top vehicles by page views</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {analytics?.mostViewed && analytics.mostViewed.length > 0 ? (
+                <div className="space-y-3">
+                  {analytics.mostViewed.slice(0, 5).map((item, index) => (
+                    <div key={item.vehicleId} className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                        {index + 1}
+                      </div>
+                      {item.vehicle.photo && (
+                        <img 
+                          src={item.vehicle.photo} 
+                          alt={`${item.vehicle.year} ${item.vehicle.make} ${item.vehicle.model}`}
+                          className="w-12 h-8 object-cover rounded"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {item.vehicle.year} {item.vehicle.make} {item.vehicle.model}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          ${item.vehicle.price.toLocaleString()} • {item.vehicle.status}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 text-sm font-semibold">
+                        <Eye className="h-3 w-3" />
+                        {item.viewCount}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No view data yet. Views are tracked when visitors view vehicle details.
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>

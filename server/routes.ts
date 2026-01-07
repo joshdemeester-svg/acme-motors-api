@@ -3143,12 +3143,29 @@ export async function registerRoutes(
       const inquiries = await storage.getAllBuyerInquiries();
       const consignments = await storage.getAllConsignments();
       const alerts = await storage.getAllVehicleAlerts();
+      const mostViewed = await storage.getMostViewedVehicles(10);
       
       const availableCount = inventory.filter(c => c.status === "available").length;
       const soldCount = inventory.filter(c => c.status === "sold").length;
       const pendingConsignments = consignments.filter(c => c.status === "pending").length;
       const newInquiries = inquiries.filter(i => i.status === "new").length;
       const activeAlerts = alerts.filter(a => a.active).length;
+      
+      const mostViewedWithDetails = mostViewed.map(mv => {
+        const vehicle = inventory.find(v => v.id === mv.vehicleId);
+        return {
+          ...mv,
+          vehicle: vehicle ? {
+            id: vehicle.id,
+            year: vehicle.year,
+            make: vehicle.make,
+            model: vehicle.model,
+            status: vehicle.status,
+            price: vehicle.price,
+            photo: vehicle.photos?.[0] || null,
+          } : null
+        };
+      }).filter(mv => mv.vehicle);
       
       res.json({
         totalViews,
@@ -3169,6 +3186,7 @@ export async function registerRoutes(
           total: alerts.length,
           active: activeAlerts,
         },
+        mostViewed: mostViewedWithDetails,
       });
     } catch (error) {
       console.error("Error fetching analytics:", error);
