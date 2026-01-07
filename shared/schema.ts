@@ -700,3 +700,52 @@ export type DirectoryCategory = typeof directoryCategories[number];
 
 export const submissionTypes = ["automatic", "manual", "api"] as const;
 export type SubmissionType = typeof submissionTypes[number];
+
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  
+  preferredMakes: text("preferred_makes").array().default(sql`'{}'::text[]`),
+  notifyNewListings: boolean("notify_new_listings").default(true),
+  notifyPriceDrops: boolean("notify_price_drops").default(true),
+  notifySpecialOffers: boolean("notify_special_offers").default(true),
+  
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+  lastUsed: timestamp("last_used"),
+});
+
+export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({
+  id: true,
+  createdAt: true,
+  lastUsed: true,
+});
+
+export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+
+export const pushNotifications = pgTable("push_notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  url: text("url"),
+  imageUrl: text("image_url"),
+  targetType: text("target_type").notNull().default("all"),
+  targetMakes: text("target_makes").array().default(sql`'{}'::text[]`),
+  sentCount: integer("sent_count").default(0),
+  sentAt: timestamp("sent_at"),
+  createdBy: varchar("created_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPushNotificationSchema = createInsertSchema(pushNotifications).omit({
+  id: true,
+  sentCount: true,
+  sentAt: true,
+  createdAt: true,
+});
+
+export type InsertPushNotification = z.infer<typeof insertPushNotificationSchema>;
+export type PushNotification = typeof pushNotifications.$inferSelect;
