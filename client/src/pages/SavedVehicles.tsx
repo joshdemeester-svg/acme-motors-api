@@ -236,7 +236,7 @@ export default function SavedVehicles() {
                     </div>
                     
                     <div className="mt-4 flex gap-2">
-                      <Link href={`/vehicle/${car.slug || car.id}`} className="flex-1">
+                      <Link href={`/inventory/${car.slug || car.id}`} className="flex-1">
                         <Button className="w-full" data-testid={`btn-view-saved-${car.id}`}>
                           View Details
                         </Button>

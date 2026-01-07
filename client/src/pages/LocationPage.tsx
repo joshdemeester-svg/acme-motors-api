@@ -181,7 +181,7 @@ export default function LocationPage({ slug }: LocationPageProps) {
             </p>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredVehicles.map((car) => (
-                <Link key={car.id} href={`/vehicle/${car.slug || car.id}`}>
+                <Link key={car.id} href={`/inventory/${car.slug || car.id}`}>
                   <Card className="bg-gray-900 border-gray-800 overflow-hidden hover:border-[#D4AF37] transition-colors cursor-pointer" data-testid={`card-vehicle-${car.id}`}>
                     <div className="aspect-[16/10] relative">
                       <img

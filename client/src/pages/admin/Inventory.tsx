@@ -752,7 +752,7 @@ export default function Inventory() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => window.open(`/vehicle/${car.id}`, "_blank")}
+                        onClick={() => window.open(`/inventory/${car.slug || car.id}`, "_blank")}
                         data-testid={`button-view-${car.id}`}
                       >
                         <Eye className="h-4 w-4" />

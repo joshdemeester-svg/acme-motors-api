@@ -2292,17 +2292,14 @@ export async function registerRoutes(
           });
           const car = await storage.createInventoryCar(validatedData);
           
-          // Generate canonical slug with ID, respecting admin settings
+          // Generate canonical slug with ID (entity-based, no location)
           const slug = generateVehicleSlug({
             year: vehicle.year,
             make: vehicle.make,
             model: vehicle.model,
             trim: settings?.slugIncludeTrim !== false ? (vehicle.trim || null) : null,
-            city: settings?.slugIncludeLocation !== false ? (settings?.dealerCity || null) : null,
-            state: settings?.slugIncludeLocation !== false ? (settings?.dealerState || null) : null,
             id: car.id,
             stockNumber: settings?.slugIncludeStock ? (vehicle.stockNumber || null) : null,
-            locationFirst: settings?.slugLocationFirst ?? false,
           });
           await storage.updateInventoryCar(car.id, { slug });
           createdCars.push({ ...car, slug });
@@ -3934,21 +3931,18 @@ Sitemap: ${baseUrl}/sitemap.xml
       // Vehicle pages
       const availableCars = inventory.filter(car => car.status === "available" || car.status === "pending");
       for (const car of availableCars) {
-        // Generate slug on-the-fly if not stored, using current settings
+        // Generate slug on-the-fly if not stored (entity-based, no location)
         const vehicleSlug = car.slug || generateVehicleSlug({
           year: car.year,
           make: car.make,
           model: car.model,
           trim: settings?.slugIncludeTrim !== false ? (car.trim || null) : null,
-          city: settings?.slugIncludeLocation !== false ? (settings?.dealerCity || null) : null,
-          state: settings?.slugIncludeLocation !== false ? (settings?.dealerState || null) : null,
           id: car.id,
           stockNumber: settings?.slugIncludeStock ? (car.stockNumber || null) : null,
-          locationFirst: settings?.slugLocationFirst ?? false,
         });
         urls.push(`
     <url>
-      <loc>${baseUrl}/vehicle/${vehicleSlug}</loc>
+      <loc>${baseUrl}/inventory/${vehicleSlug}</loc>
       <lastmod>${car.createdAt ? new Date(car.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}</lastmod>
       <changefreq>weekly</changefreq>
       <priority>0.8</priority>
@@ -4026,7 +4020,7 @@ ${urls.join('')}
         return res.status(404).json({ error: "Vehicle not found" });
       }
       
-      // Generate canonical slug if needed, using current settings
+      // Generate canonical slug if needed (entity-based, no location)
       let canonicalSlug = car.slug;
       if (!canonicalSlug) {
         canonicalSlug = generateVehicleSlug({
@@ -4034,18 +4028,15 @@ ${urls.join('')}
           make: car.make,
           model: car.model,
           trim: settings?.slugIncludeTrim ? (car.trim || null) : null,
-          city: settings?.slugIncludeLocation ? (settings?.dealerCity || null) : null,
-          state: settings?.slugIncludeLocation ? (settings?.dealerState || null) : null,
           id: car.id,
           stockNumber: settings?.slugIncludeStock ? (car.stockNumber || null) : null,
-          locationFirst: settings?.slugLocationFirst ?? false,
         });
       }
       
       res.json({
         id: car.id,
         slug: canonicalSlug,
-        canonicalUrl: `${baseUrl}/vehicle/${canonicalSlug}`,
+        canonicalUrl: `${baseUrl}/inventory/${canonicalSlug}`,
         needsRedirect: idOrSlug !== canonicalSlug,
       });
     } catch (error) {
@@ -4636,9 +4627,8 @@ export async function autoBackfillSlugs(): Promise<void> {
         make: car.make,
         model: car.model,
         trim: settings?.slugIncludeTrim !== false ? (car.trim || null) : null,
-        city: settings?.slugIncludeLocation !== false ? (settings?.dealerCity || null) : null,
-        state: settings?.slugIncludeLocation !== false ? (settings?.dealerState || null) : null,
         id: car.id,
+        stockNumber: settings?.slugIncludeStock ? (car.stockNumber || null) : null,
       });
       
       // Handle collision by appending more of the ID if needed
