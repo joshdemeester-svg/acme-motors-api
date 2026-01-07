@@ -1,0 +1,161 @@
+You are a senior full-stack engineer updating a car dealer web application to fix SEO issues related to Vehicle Detail Pages (VDPs).
+
+OBJECTIVE
+Standardize vehicle URLs so they are entity-based (vehicle-identity only), NOT location-based, while preserving full local SEO relevance via structured data and internal linking.
+
+DO NOT include city or state in canonical vehicle URLs.
+
+────────────────────────────────────────
+1. CANONICAL VEHICLE URL FORMAT (MANDATORY)
+────────────────────────────────────────
+Canonical VDP URL:
+
+/inventory/{year}-{make}-{model}-{trim?}-{stockId}
+
+Rules:
+- All lowercase
+- Hyphen-separated
+- No city or state anywhere in the slug
+- Omit trim if missing (no double hyphens)
+- stockId is the unique internal ID (not VIN unless specified)
+
+Example:
+✓ /inventory/2023-rolls-royce-cullinan-black-badge-abc12345
+✗ /inventory/2023-rolls-royce-cullinan-black-badge-navarre-fl-abc12345
+
+There must be exactly ONE canonical URL per vehicle.
+
+────────────────────────────────────────
+2. LEGACY URL HANDLING & REDIRECTS
+────────────────────────────────────────
+Support and permanently redirect (301) ALL legacy vehicle URLs to the canonical format, including but not limited to:
+
+/vehicle/{any-slug}
+/vehicle/{year}-{make}-{model}-{trim}-{city}-{state}-{stockId}
+/vehicle/{stockId}
+/{city}-{state}/vehicle/{any-slug}
+
+Redirect behavior:
+- Extract stockId from the LAST hyphen segment OR from the full slug if it matches a stockId pattern
+- Load the vehicle by stockId
+- Build the canonical URL
+- Issue a 301 redirect to the canonical /inventory/... URL
+
+────────────────────────────────────────
+3. ROUTING RULES
+────────────────────────────────────────
+Create a canonical route:
+
+/inventory/:slug
+
+Route logic:
+- Extract stockId from the last hyphen-delimited segment
+- Fetch vehicle by stockId
+- If vehicle does not exist → return 404
+- Build canonical slug from vehicle data
+- If request slug ≠ canonical slug → 301 redirect to canonical
+- Otherwise render the VDP
+
+────────────────────────────────────────
+4. CANONICAL TAG ENFORCEMENT
+────────────────────────────────────────
+Every VDP MUST include:
+
+<link rel="canonical" href="https://{DOMAIN}/inventory/{canonicalSlug}" />
+
+Rules:
+- Use absolute URLs
+- DOMAIN or BASE_URL must come from environment configuration
+- Canonical must match the enforced URL exactly
+
+────────────────────────────────────────
+5. STRUCTURED DATA (LOCAL SEO LIVES HERE)
+────────────────────────────────────────
+Add JSON-LD schema ONLY on VDP pages using @type "Vehicle".
+
+Location MUST be represented ONLY in structured data, NOT in the URL.
+
+Minimum required fields:
+- @type: Vehicle
+- name (e.g. "2023 Rolls-Royce Cullinan Black Badge")
+- brand
+- model
+- vehicleModelDate
+- vehicleConfiguration (trim, if present)
+- vehicleIdentificationNumber (if available)
+- mileageFromOdometer (if available)
+
+Offer:
+- price
+- priceCurrency
+- availability
+- url (must equal canonical VDP URL)
+
+Seller:
+- @type: AutoDealer or Organization
+- name
+- address:
+  - streetAddress
+  - addressLocality (city)
+  - addressRegion (state)
+  - postalCode
+  - addressCountry
+
+DO NOT fabricate data. Include only fields present in the vehicle record.
+
+────────────────────────────────────────
+6. INTERNAL LINKING
+────────────────────────────────────────
+Update ALL internal links to VDPs to use the canonical /inventory/... URL:
+- Inventory cards
+- Search results
+- Featured vehicles
+- Similar vehicles
+- Sitemap entries
+
+No internal links should point to /vehicle/... paths.
+
+────────────────────────────────────────
+7. LOCATION SEO STRATEGY (DO NOT BREAK)
+────────────────────────────────────────
+If the site supports location-based inventory browsing:
+- Keep location pages at:
+  /{city}-{state}/inventory
+- These pages list vehicles and link to canonical VDPs
+- Do NOT duplicate VDPs per location
+
+────────────────────────────────────────
+8. UTILITIES TO IMPLEMENT
+────────────────────────────────────────
+Create reusable helpers:
+- slugify(input)
+- buildVehicleSlug(vehicle)
+- getCanonicalVehicleUrl(vehicle)
+
+slugify rules:
+- lowercase
+- trim whitespace
+- replace "&" with "and"
+- remove punctuation
+- replace spaces with hyphens
+- collapse repeated hyphens
+
+────────────────────────────────────────
+9. TESTING REQUIREMENTS
+────────────────────────────────────────
+Add tests to verify:
+- slugify() output
+- canonical slug generation
+- legacy URLs return 301
+- canonical URLs return 200
+- canonical tag exists and matches URL
+- JSON-LD exists and Offer.url equals canonical URL
+- No city/state appears in canonical VDP URLs
+
+────────────────────────────────────────
+10. OUTPUT
+────────────────────────────────────────
+Provide:
+- Code changes implementing routing, redirects, canonical tags, schema, and internal links
+- A brief summary explaining why location is excluded from vehicle URLs
+- Confirmation that local SEO is handled via structured data and hierarchy
