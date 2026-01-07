@@ -9,8 +9,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { 
   Car, Users, DollarSign, Target, Clock, MessageSquare, Calendar, 
   Eye, BarChart3, CheckCircle, ChevronDown, ChevronUp, ArrowRight,
-  FileText, TrendingUp
+  FileText, TrendingUp, Plus, Bell, Send
 } from "lucide-react";
+import { Link } from "wouter";
 import type { ConsignmentSubmission, InventoryCar, BuyerInquiry } from "@shared/schema";
 
 interface TradeInSubmission {
@@ -146,9 +147,40 @@ export default function Dashboard() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold font-serif">Dashboard</h1>
-          <p className="text-muted-foreground">Your dealership at a glance</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold font-serif">Dashboard</h1>
+            <p className="text-muted-foreground">Your dealership at a glance</p>
+          </div>
+          
+          {/* Quick Actions */}
+          <div className="flex flex-wrap gap-2">
+            <Link href="/admin/inventory?action=add">
+              <Button size="sm" className="gap-2" data-testid="quick-add-vehicle">
+                <Plus className="h-4 w-4" />
+                Add Vehicle
+              </Button>
+            </Link>
+            <Link href="/admin/leads">
+              <Button size="sm" variant="outline" className="gap-2" data-testid="quick-view-leads">
+                <Users className="h-4 w-4" />
+                {newInquiries > 0 && <Badge className="bg-red-500 text-white text-xs px-1.5 py-0">{newInquiries}</Badge>}
+                Leads
+              </Button>
+            </Link>
+            <Link href="/admin/notifications">
+              <Button size="sm" variant="outline" className="gap-2" data-testid="quick-send-notification">
+                <Bell className="h-4 w-4" />
+                Notify
+              </Button>
+            </Link>
+            <Link href="/admin/sms">
+              <Button size="sm" variant="outline" className="gap-2" data-testid="quick-sms">
+                <Send className="h-4 w-4" />
+                SMS
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* SECTION 1: Executive Snapshot - 4 Primary KPIs */}

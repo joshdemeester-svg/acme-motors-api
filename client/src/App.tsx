@@ -22,6 +22,7 @@ import AdminRoadmap from "@/pages/admin/Roadmap";
 import AdminSeoTools from "@/pages/admin/SeoTools";
 import AdminPushNotifications from "@/pages/admin/PushNotifications";
 import AdminSystemCheck from "@/pages/admin/SystemCheck";
+import AdminSmsConversations from "@/pages/admin/SmsConversations";
 import SellerPortal from "@/pages/SellerPortal";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
@@ -68,6 +69,7 @@ function Router() {
       <Route path="/admin/seo-tools" component={AdminSeoTools} />
       <Route path="/admin/notifications" component={AdminPushNotifications} />
       <Route path="/admin/system-check" component={AdminSystemCheck} />
+      <Route path="/admin/sms" component={AdminSmsConversations} />
       <Route path="/admin-legacy" component={Admin} />
       <Route path="/seller-portal" component={SellerPortal} />
       <Route path="/privacy" component={Privacy} />

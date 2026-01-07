@@ -15,7 +15,8 @@ import {
   Map,
   MapPin,
   Bell,
-  Shield
+  Shield,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -30,16 +31,49 @@ interface NavItem {
   masterOnly?: boolean;
 }
 
-const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/admin", icon: <LayoutDashboard className="h-5 w-5" /> },
-  { label: "Inventory", href: "/admin/inventory", icon: <Car className="h-5 w-5" /> },
-  { label: "Leads", href: "/admin/leads", icon: <Users className="h-5 w-5" /> },
-  { label: "Consignments", href: "/admin/consignments", icon: <FileText className="h-5 w-5" /> },
-  { label: "Settings", href: "/admin/settings", icon: <Settings className="h-5 w-5" /> },
-  { label: "SEO Tools", href: "/admin/seo-tools", icon: <MapPin className="h-5 w-5" /> },
-  { label: "Notifications", href: "/admin/notifications", icon: <Bell className="h-5 w-5" /> },
-  { label: "System Check", href: "/admin/system-check", icon: <Shield className="h-5 w-5" />, masterOnly: true },
-  { label: "Roadmap", href: "/admin/roadmap", icon: <Map className="h-5 w-5" />, masterOnly: true },
+interface NavSection {
+  title: string;
+  items: NavItem[];
+  masterOnly?: boolean;
+}
+
+const navSections: NavSection[] = [
+  {
+    title: "Core",
+    items: [
+      { label: "Dashboard", href: "/admin", icon: <LayoutDashboard className="h-5 w-5" /> },
+      { label: "Settings", href: "/admin/settings", icon: <Settings className="h-5 w-5" /> },
+    ],
+  },
+  {
+    title: "Sales",
+    items: [
+      { label: "Inventory", href: "/admin/inventory", icon: <Car className="h-5 w-5" /> },
+      { label: "Leads", href: "/admin/leads", icon: <Users className="h-5 w-5" /> },
+      { label: "Consignments", href: "/admin/consignments", icon: <FileText className="h-5 w-5" /> },
+    ],
+  },
+  {
+    title: "Marketing",
+    items: [
+      { label: "SEO Tools", href: "/admin/seo-tools", icon: <MapPin className="h-5 w-5" /> },
+    ],
+  },
+  {
+    title: "Communications",
+    items: [
+      { label: "Push Notifications", href: "/admin/notifications", icon: <Bell className="h-5 w-5" /> },
+      { label: "SMS Conversations", href: "/admin/sms", icon: <MessageSquare className="h-5 w-5" /> },
+    ],
+  },
+  {
+    title: "Admin Only",
+    masterOnly: true,
+    items: [
+      { label: "System Check", href: "/admin/system-check", icon: <Shield className="h-5 w-5" />, masterOnly: true },
+      { label: "Roadmap", href: "/admin/roadmap", icon: <Map className="h-5 w-5" />, masterOnly: true },
+    ],
+  },
 ];
 
 interface SessionData {
@@ -198,25 +232,38 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <nav className="flex-1 p-4 space-y-1">
-            {navItems
-              .filter(item => !item.masterOnly || session?.role === "master")
-              .map((item) => (
-              <Link 
-                key={item.href} 
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                  isActive(item.href)
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                )}
-                onClick={() => setSidebarOpen(false)}
-                data-testid={`nav-${item.label.toLowerCase()}`}
-              >
-                {item.icon}
-                {item.label}
-              </Link>
+          <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
+            {navSections
+              .filter(section => !section.masterOnly || session?.role === "master")
+              .map((section) => (
+              <div key={section.title}>
+                <div className="px-3 mb-2">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+                    {section.title}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  {section.items
+                    .filter(item => !item.masterOnly || session?.role === "master")
+                    .map((item) => (
+                    <Link 
+                      key={item.href} 
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                        isActive(item.href)
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      )}
+                      onClick={() => setSidebarOpen(false)}
+                      data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                    >
+                      {item.icon}
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
             ))}
           </nav>
 
