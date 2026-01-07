@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { 
   CheckCircle2, 
   Circle, 
@@ -192,8 +195,53 @@ const statusConfig = {
 
 type StatusFilter = "completed" | "in_progress" | "planned" | null;
 
+interface SessionData {
+  isAdmin: boolean;
+  role?: string;
+  username?: string;
+}
+
 export default function Roadmap() {
+  const [, setLocation] = useLocation();
   const [activeStatus, setActiveStatus] = useState<StatusFilter>(null);
+  
+  const { data: session, isLoading: sessionLoading } = useQuery<SessionData | null>({
+    queryKey: ["/api/auth/session"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/session");
+      if (res.status === 401) return null;
+      if (!res.ok) return null;
+      return res.json();
+    },
+  });
+
+  const isMasterAdmin = session?.role === "master";
+
+  useEffect(() => {
+    if (!sessionLoading && !isMasterAdmin) {
+      setLocation("/admin");
+    }
+  }, [sessionLoading, isMasterAdmin, setLocation]);
+
+  if (sessionLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!isMasterAdmin) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </AdminLayout>
+    );
+  }
   
   const filteredItems = activeStatus 
     ? roadmapItems.filter(item => item.status === activeStatus)

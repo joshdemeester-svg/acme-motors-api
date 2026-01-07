@@ -24,6 +24,7 @@ interface NavItem {
   label: string;
   href: string;
   icon: React.ReactNode;
+  masterOnly?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -32,7 +33,7 @@ const navItems: NavItem[] = [
   { label: "Leads", href: "/admin/leads", icon: <Users className="h-5 w-5" /> },
   { label: "Consignments", href: "/admin/consignments", icon: <FileText className="h-5 w-5" /> },
   { label: "Settings", href: "/admin/settings", icon: <Settings className="h-5 w-5" /> },
-  { label: "Roadmap", href: "/admin/roadmap", icon: <Map className="h-5 w-5" /> },
+  { label: "Roadmap", href: "/admin/roadmap", icon: <Map className="h-5 w-5" />, masterOnly: true },
 ];
 
 interface SessionData {
@@ -192,7 +193,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav className="flex-1 p-4 space-y-1">
-            {navItems.map((item) => (
+            {navItems
+              .filter(item => !item.masterOnly || session?.role === "master")
+              .map((item) => (
               <Link 
                 key={item.href} 
                 href={item.href}
