@@ -2215,6 +2215,8 @@ export async function registerRoutes(
         city: settings?.slugIncludeLocation !== false ? (settings?.dealerCity || null) : null,
         state: settings?.slugIncludeLocation !== false ? (settings?.dealerState || null) : null,
         id: car.id,
+        stockNumber: settings?.slugIncludeStock ? (validatedData.stockNumber || null) : null,
+        locationFirst: settings?.slugLocationFirst ?? false,
       });
       
       // Update car with slug
@@ -2248,6 +2250,8 @@ export async function registerRoutes(
           city: settings?.slugIncludeLocation !== false ? (settings?.dealerCity || null) : null,
           state: settings?.slugIncludeLocation !== false ? (settings?.dealerState || null) : null,
           id: car.id,
+          stockNumber: settings?.slugIncludeStock ? (car.stockNumber || null) : null,
+          locationFirst: settings?.slugLocationFirst ?? false,
         });
         
         // Only update if slug changed
@@ -2303,6 +2307,8 @@ export async function registerRoutes(
             city: settings?.slugIncludeLocation !== false ? (settings?.dealerCity || null) : null,
             state: settings?.slugIncludeLocation !== false ? (settings?.dealerState || null) : null,
             id: car.id,
+            stockNumber: settings?.slugIncludeStock ? (vehicle.stockNumber || null) : null,
+            locationFirst: settings?.slugLocationFirst ?? false,
           });
           await storage.updateInventoryCar(car.id, { slug });
           createdCars.push({ ...car, slug });
@@ -3465,11 +3471,21 @@ ${urls.join('')}
         car = await storage.getInventoryCar(idOrSlug);
       }
       
-      // Also try extracting UUID from slug and looking up
+      // Also try extracting UUID/short ID/stock number from slug and looking up
       if (!car) {
         const extractedId = extractIdFromSlug(idOrSlug);
         if (extractedId) {
-          car = await storage.getInventoryCar(extractedId);
+          // Check if it's a stock number reference
+          if (extractedId.startsWith('stk:')) {
+            const stockNum = extractedId.substring(4);
+            car = await storage.getInventoryCarByStockNumber(stockNum);
+          } else if (extractedId.length === 8) {
+            // Short ID format
+            car = await storage.getInventoryCarByShortId(extractedId);
+          } else {
+            // Full UUID format
+            car = await storage.getInventoryCar(extractedId);
+          }
         }
       }
       

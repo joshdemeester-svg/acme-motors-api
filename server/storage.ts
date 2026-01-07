@@ -72,6 +72,7 @@ export interface IStorage {
   getInventoryCar(id: string): Promise<InventoryCar | undefined>;
   getInventoryCarBySlug(slug: string): Promise<InventoryCar | undefined>;
   getInventoryCarByShortId(shortId: string): Promise<InventoryCar | undefined>;
+  getInventoryCarByStockNumber(stockNumber: string): Promise<InventoryCar | undefined>;
   getAllInventoryCarSlugs(): Promise<string[]>;
   getAllInventoryCars(): Promise<InventoryCar[]>;
   getAvailableInventoryCars(): Promise<InventoryCar[]>;
@@ -277,6 +278,11 @@ export class DatabaseStorage implements IStorage {
     // Look up car where ID starts with the short ID prefix
     const allCars = await db.select().from(inventoryCars);
     return allCars.find(car => car.id.startsWith(shortId)) || undefined;
+  }
+
+  async getInventoryCarByStockNumber(stockNumber: string): Promise<InventoryCar | undefined> {
+    const [car] = await db.select().from(inventoryCars).where(eq(inventoryCars.stockNumber, stockNumber));
+    return car || undefined;
   }
 
   async getAllInventoryCarSlugs(): Promise<string[]> {
