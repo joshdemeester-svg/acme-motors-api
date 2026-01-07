@@ -2559,7 +2559,15 @@ export async function registerRoutes(
         locationPageIntro,
         inventoryPageTitle,
         inventoryPageDescription,
-        inventoryPageIntro
+        inventoryPageIntro,
+        // Business settings
+        commissionRate,
+        avgDaysToFirstInquiry,
+        avgDaysToSell,
+        hotListingThreshold,
+        hideSiteNameWithLogo,
+        liveChatEnabled,
+        liveChatWidgetId
       } = req.body;
       
       const updateData: Record<string, any> = {
@@ -2632,7 +2640,15 @@ export async function registerRoutes(
         locationPageIntro,
         inventoryPageTitle,
         inventoryPageDescription,
-        inventoryPageIntro
+        inventoryPageIntro,
+        // Business settings
+        commissionRate,
+        avgDaysToFirstInquiry,
+        avgDaysToSell,
+        hotListingThreshold,
+        hideSiteNameWithLogo,
+        liveChatEnabled,
+        liveChatWidgetId
       };
       
       // Validate GHL credentials whenever both token and location exist
