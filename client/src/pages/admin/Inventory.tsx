@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Plus, Search, Car, DollarSign, Pencil, Trash2, Eye, Loader2, Check, X, Clock, ChevronsUpDown, Upload, Star, CalendarDays, MessageSquare, GripVertical, Flame } from "lucide-react";
+import { Plus, Search, Car, DollarSign, Pencil, Trash2, Eye, Loader2, Check, X, Clock, ChevronsUpDown, Upload, Star, CalendarDays, MessageSquare, GripVertical, Flame, HelpCircle, Camera, Lightbulb } from "lucide-react";
+import { AdminHelpBox } from "@/components/admin/AdminHelpBox";
 import type { InventoryCar, InventoryCarWithMetrics, SiteSettings } from "@shared/schema";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
@@ -637,6 +638,22 @@ export default function Inventory() {
   return (
     <AdminLayout>
       <div className="space-y-6">
+        <AdminHelpBox
+          title="Inventory Management Tips"
+          description="Add and manage your vehicle listings. High-quality photos and complete details help vehicles sell faster."
+          icon={Car}
+          variant="info"
+          defaultOpen={false}
+          className="mb-2"
+          tips={[
+            "Enter a VIN to auto-fill vehicle details (year, make, model, trim)",
+            "First photo becomes the main image - drag to reorder photos",
+            "Mark vehicles as 'Hot Listing' to feature them with a flame badge",
+            "Use CSV import for bulk uploads - download the template first",
+            "Sold vehicles can be kept visible or hidden via settings"
+          ]}
+        />
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold font-serif">Inventory</h1>

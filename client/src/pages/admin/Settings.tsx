@@ -38,8 +38,11 @@ import {
   Crown,
   Monitor,
   Share2,
-  MessageSquare
+  MessageSquare,
+  HelpCircle,
+  Settings2
 } from "lucide-react";
+import { AdminHelpBox } from "@/components/admin/AdminHelpBox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -401,6 +404,23 @@ export default function Settings() {
   return (
     <AdminLayout>
       <div className="space-y-6">
+        <AdminHelpBox
+          title="Settings Overview"
+          description="Customize your dealership website appearance, contact info, and integrations from one place."
+          icon={Settings2}
+          variant="info"
+          defaultOpen={false}
+          className="mb-2"
+          tips={[
+            "Branding: Upload logo, set colors, customize the look and feel",
+            "Contact: Set address, phone, email, and business hours",
+            "Social: Connect Facebook, Instagram, YouTube, and more",
+            "SEO: Configure meta tags, dealer location, and URL settings",
+            "Integrations: Connect to GoHighLevel CRM for SMS and lead sync",
+            "Demo Mode: Toggle sample data for client presentations"
+          ]}
+        />
+
         <div>
           <h1 className="text-2xl font-bold font-serif">Settings</h1>
           <p className="text-muted-foreground">
