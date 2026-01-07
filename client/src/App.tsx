@@ -58,7 +58,8 @@ function Router() {
       <Route path="/inventory">{() => <Inventory />}</Route>
       <Route path="/inventory/make/:make">{(params) => <Inventory makeSlug={params.make} />}</Route>
       <Route path="/inventory/make/:make/model/:model">{(params) => <Inventory makeSlug={params.make} modelSlug={params.model} />}</Route>
-      <Route path="/vehicle/:id">{(params) => <VehicleDetails id={params.id} />}</Route>
+      <Route path="/inventory/:slug">{(params) => <VehicleDetails id={params.slug} />}</Route>
+      <Route path="/vehicle/:id">{(params) => <VehicleDetails id={params.id} legacyRedirect />}</Route>
       <Route path="/consign" component={Consign} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/inventory" component={AdminInventory} />

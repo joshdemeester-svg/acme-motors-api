@@ -112,11 +112,8 @@ export interface VehicleSlugOptions {
   make: string;
   model: string;
   trim?: string | null;
-  city?: string | null;
-  state?: string | null;
   id: string;
   stockNumber?: string | null;
-  locationFirst?: boolean;
 }
 
 export function slugify(text: string): string {
@@ -124,6 +121,7 @@ export function slugify(text: string): string {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
+    .replace(/&/g, 'and')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '');
@@ -134,32 +132,25 @@ export function matchSlug(slug: string, source: string): boolean {
 }
 
 export function generateVehicleSlug(options: VehicleSlugOptions): string {
-  const { year, make, model, trim, city, state, id, stockNumber, locationFirst } = options;
+  const { year, make, model, trim, id, stockNumber } = options;
   
   const parts: string[] = [];
-  
-  // Location first format: {city}-{state}-{year}-{make}-{model}-{trim}-{stock/id}
-  // Default format: {year}-{make}-{model}-{trim}-{city}-{state}-{stock/id}
-  
-  if (locationFirst && city && state) {
-    parts.push(city, state);
-  }
   
   parts.push(year.toString(), make, model);
   if (trim) parts.push(trim);
   
-  if (!locationFirst && city) parts.push(city);
-  if (!locationFirst && state) parts.push(state);
-  
-  // Use stock number if provided, otherwise use short ID
   if (stockNumber) {
-    parts.push(`stk${stockNumber}`);
+    parts.push(stockNumber);
   } else {
     const shortId = id.split('-')[0] || id.substring(0, 8);
     parts.push(shortId);
   }
   
   return parts.map(p => slugify(p)).filter(Boolean).join('-');
+}
+
+export function getCanonicalVehicleUrl(baseUrl: string, slug: string): string {
+  return `${baseUrl}/inventory/${slug}`;
 }
 
 export function generateVehicleSlugLegacy(year: number, make: string, model: string, existingSlugs: string[] = []): string {

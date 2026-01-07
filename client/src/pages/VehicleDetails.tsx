@@ -349,7 +349,7 @@ function FinancingCalculator({ price }: { price: number }) {
   );
 }
 
-export default function VehicleDetails({ id }: { id: string }) {
+export default function VehicleDetails({ id, legacyRedirect }: { id: string; legacyRedirect?: boolean }) {
   const [, setLocation] = useLocation();
   const [contactOpen, setContactOpen] = useState(false);
   const [contactSuccess, setContactSuccess] = useState(false);
@@ -397,6 +397,12 @@ export default function VehicleDetails({ id }: { id: string }) {
       return res.json();
     },
   });
+
+  useEffect(() => {
+    if (legacyRedirect && car?.slug) {
+      setLocation(`/inventory/${car.slug}`, { replace: true });
+    }
+  }, [legacyRedirect, car?.slug, setLocation]);
 
   const { data: allInventory = [] } = useQuery<InventoryCar[]>({
     queryKey: ["/api/inventory"],
