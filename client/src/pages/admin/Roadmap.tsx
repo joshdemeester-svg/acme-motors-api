@@ -218,42 +218,42 @@ export default function Roadmap() {
         </div>
 
         <div className="grid gap-4 grid-cols-3">
-          <Card>
+          <Card data-testid="card-roadmap-completed">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center">
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{completedCount}</p>
+                  <p className="text-2xl font-bold" data-testid="text-roadmap-count-completed">{completedCount}</p>
                   <p className="text-sm text-muted-foreground">Completed</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-testid="card-roadmap-in-progress">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
                   <Clock className="h-5 w-5 text-blue-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{inProgressCount}</p>
+                  <p className="text-2xl font-bold" data-testid="text-roadmap-count-in-progress">{inProgressCount}</p>
                   <p className="text-sm text-muted-foreground">In Progress</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-testid="card-roadmap-planned">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-gray-500/10 flex items-center justify-center">
                   <Circle className="h-5 w-5 text-gray-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{plannedCount}</p>
+                  <p className="text-2xl font-bold" data-testid="text-roadmap-count-planned">{plannedCount}</p>
                   <p className="text-sm text-muted-foreground">Planned</p>
                 </div>
               </div>
@@ -310,6 +310,7 @@ export default function Roadmap() {
               {filteredItems.map((item, index) => (
                 <div 
                   key={index} 
+                  data-testid={`card-roadmap-item-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
                   className={`flex items-start gap-4 p-4 rounded-lg border ${
                     item.status === "completed" ? "bg-green-500/5 border-green-500/20" :
                     item.status === "in_progress" ? "bg-blue-500/5 border-blue-500/20" :
