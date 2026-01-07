@@ -4105,13 +4105,13 @@ ${urls.join('')}
     // 6. Inventory count
     try {
       const inventory = await storage.getAllInventoryCars();
+      const total = inventory.length;
       const available = inventory.filter(c => c.status === "available").length;
       const sold = inventory.filter(c => c.status === "sold").length;
       checks.push({
         name: "Inventory Data",
-        status: inventory.length > 0 ? "pass" : "warning",
-        message: `${inventory.length} vehicles (${available} available, ${sold} sold)`,
-        details: { total: inventory.length, available, sold },
+        status: total > 0 ? "pass" : "warning",
+        message: `${total} vehicles (${available} available, ${sold} sold)`,
       });
     } catch (error: any) {
       checks.push({
@@ -4130,7 +4130,6 @@ ${urls.join('')}
         name: "Admin Users",
         status: masterCount > 0 ? "pass" : "fail",
         message: `${masterCount} master admin(s), ${adminCount} regular admin(s)`,
-        details: { masterCount, adminCount },
       });
     } catch (error: any) {
       checks.push({
@@ -4147,7 +4146,6 @@ ${urls.join('')}
         name: "Push Subscribers",
         status: "pass",
         message: `${count} active subscriber(s)`,
-        details: { count },
       });
     } catch (error: any) {
       checks.push({
