@@ -22,6 +22,7 @@ import {
   pushSubscriptions,
   pushNotifications,
   smsMessages,
+  vehicleSaves,
   type User, 
   type InsertUser,
   type ConsignmentSubmission,
@@ -64,7 +65,9 @@ import {
   type PushNotification,
   type InsertPushNotification,
   type SmsMessage,
-  type InsertSmsMessage
+  type InsertSmsMessage,
+  type VehicleSave,
+  type InsertVehicleSave
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, lt } from "drizzle-orm";
@@ -226,6 +229,13 @@ export interface IStorage {
   getConversationsWithUnread(): Promise<{ inquiryId: string; phone: string; unreadCount: number; lastMessageAt: Date }[]>;
   markSmsMessagesAsRead(phone: string): Promise<void>;
   getAllSmsConversations(): Promise<any[]>;
+  
+  // Vehicle Saves
+  toggleVehicleSave(vehicleId: string, sessionId: string): Promise<boolean>;
+  getVehicleSavesBySession(sessionId: string): Promise<VehicleSave[]>;
+  getVehicleSaveCount(vehicleId: string): Promise<number>;
+  getTotalSavesCount(): Promise<number>;
+  getTopSavedVehicles(limit?: number): Promise<{ vehicleId: string; saveCount: number }[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1093,6 +1103,48 @@ export class DatabaseStorage implements IStorage {
     }
     
     return conversations;
+  }
+
+  // Vehicle Saves implementation
+  async toggleVehicleSave(vehicleId: string, sessionId: string): Promise<boolean> {
+    const [existing] = await db.select().from(vehicleSaves)
+      .where(and(eq(vehicleSaves.vehicleId, vehicleId), eq(vehicleSaves.sessionId, sessionId)));
+    
+    if (existing) {
+      await db.delete(vehicleSaves).where(eq(vehicleSaves.id, existing.id));
+      return false; // Unsaved
+    } else {
+      await db.insert(vehicleSaves).values({ vehicleId, sessionId });
+      return true; // Saved
+    }
+  }
+
+  async getVehicleSavesBySession(sessionId: string): Promise<VehicleSave[]> {
+    return db.select().from(vehicleSaves).where(eq(vehicleSaves.sessionId, sessionId));
+  }
+
+  async getVehicleSaveCount(vehicleId: string): Promise<number> {
+    const result = await db.select().from(vehicleSaves).where(eq(vehicleSaves.vehicleId, vehicleId));
+    return result.length;
+  }
+
+  async getTotalSavesCount(): Promise<number> {
+    const result = await db.select().from(vehicleSaves);
+    return result.length;
+  }
+
+  async getTopSavedVehicles(limit: number = 10): Promise<{ vehicleId: string; saveCount: number }[]> {
+    const all = await db.select().from(vehicleSaves);
+    const countMap = new Map<string, number>();
+    
+    for (const save of all) {
+      countMap.set(save.vehicleId, (countMap.get(save.vehicleId) || 0) + 1);
+    }
+    
+    return Array.from(countMap.entries())
+      .map(([vehicleId, saveCount]) => ({ vehicleId, saveCount }))
+      .sort((a, b) => b.saveCount - a.saveCount)
+      .slice(0, limit);
   }
 }
 
