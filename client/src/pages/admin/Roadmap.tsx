@@ -190,23 +190,26 @@ const statusConfig = {
   },
 };
 
+type StatusFilter = "completed" | "in_progress" | "planned" | null;
+
 export default function Roadmap() {
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeStatus, setActiveStatus] = useState<StatusFilter>(null);
   
-  const categories = Array.from(new Set(roadmapItems.map(item => item.category)));
-  
-  const filteredItems = activeCategory 
-    ? roadmapItems.filter(item => item.category === activeCategory)
+  const filteredItems = activeStatus 
+    ? roadmapItems.filter(item => item.status === activeStatus)
     : roadmapItems;
   
   const completedCount = roadmapItems.filter(item => item.status === "completed").length;
   const inProgressCount = roadmapItems.filter(item => item.status === "in_progress").length;
   const plannedCount = roadmapItems.filter(item => item.status === "planned").length;
 
-  const getCategoryCount = (category: string) => {
-    const items = roadmapItems.filter(item => item.category === category);
-    const completed = items.filter(item => item.status === "completed").length;
-    return { total: items.length, completed };
+  const handleCardClick = (status: StatusFilter) => {
+    setActiveStatus(activeStatus === status ? null : status);
+  };
+
+  const getStatusLabel = () => {
+    if (!activeStatus) return "All Features";
+    return statusConfig[activeStatus].label;
   };
 
   return (
@@ -218,7 +221,11 @@ export default function Roadmap() {
         </div>
 
         <div className="grid gap-4 grid-cols-3">
-          <Card data-testid="card-roadmap-completed">
+          <Card 
+            data-testid="card-roadmap-completed"
+            className={`cursor-pointer transition-all hover:shadow-md ${activeStatus === "completed" ? "ring-2 ring-green-500" : ""}`}
+            onClick={() => handleCardClick("completed")}
+          >
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center">
@@ -232,7 +239,11 @@ export default function Roadmap() {
             </CardContent>
           </Card>
 
-          <Card data-testid="card-roadmap-in-progress">
+          <Card 
+            data-testid="card-roadmap-in-progress"
+            className={`cursor-pointer transition-all hover:shadow-md ${activeStatus === "in_progress" ? "ring-2 ring-blue-500" : ""}`}
+            onClick={() => handleCardClick("in_progress")}
+          >
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
@@ -246,7 +257,11 @@ export default function Roadmap() {
             </CardContent>
           </Card>
 
-          <Card data-testid="card-roadmap-planned">
+          <Card 
+            data-testid="card-roadmap-planned"
+            className={`cursor-pointer transition-all hover:shadow-md ${activeStatus === "planned" ? "ring-2 ring-gray-500" : ""}`}
+            onClick={() => handleCardClick("planned")}
+          >
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-gray-500/10 flex items-center justify-center">
@@ -261,48 +276,31 @@ export default function Roadmap() {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Filter by Category</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={activeCategory === null ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActiveCategory(null)}
-                data-testid="filter-all"
-              >
-                All ({roadmapItems.length})
-              </Button>
-              {categories.map((category) => {
-                const { total, completed } = getCategoryCount(category);
-                return (
-                  <Button
-                    key={category}
-                    variant={activeCategory === category ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setActiveCategory(category)}
-                    data-testid={`filter-${category.toLowerCase().replace(/\s+/g, '-')}`}
-                  >
-                    {category} ({completed}/{total})
-                  </Button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+        {activeStatus && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Filtering by:</span>
+            <Badge variant="secondary" className="gap-1">
+              {statusConfig[activeStatus].icon}
+              {statusConfig[activeStatus].label}
+            </Badge>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setActiveStatus(null)}
+              data-testid="button-clear-filter"
+            >
+              Clear
+            </Button>
+          </div>
+        )}
 
         <Card>
           <CardHeader>
             <CardTitle>
-              {activeCategory || "All Features"}
+              {getStatusLabel()}
             </CardTitle>
             <CardDescription>
-              {activeCategory 
-                ? `${getCategoryCount(activeCategory).completed} of ${getCategoryCount(activeCategory).total} completed`
-                : `${completedCount} of ${roadmapItems.length} completed`
-              }
+              {filteredItems.length} feature{filteredItems.length !== 1 ? 's' : ''}
             </CardDescription>
           </CardHeader>
           <CardContent>
