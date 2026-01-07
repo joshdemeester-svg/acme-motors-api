@@ -1648,54 +1648,6 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           </Button>
         </CardFooter>
       </Card>
-
-      <Card className="border-white border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5" /> Live Chat Widget
-          </CardTitle>
-          <CardDescription>Enable HighLevel chat widget for customer support on your website</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="liveChatEnabled">Enable Live Chat</Label>
-              <p className="text-xs text-muted-foreground">Show the chat widget on all public pages</p>
-            </div>
-            <Switch
-              id="liveChatEnabled"
-              checked={liveChatEnabled}
-              onCheckedChange={setLiveChatEnabled}
-              data-testid="switch-live-chat-enabled"
-            />
-          </div>
-          
-          {liveChatEnabled && (
-            <div className="space-y-2 pt-2 border-t">
-              <Label htmlFor="liveChatWidgetId">HighLevel Widget ID</Label>
-              <Input
-                id="liveChatWidgetId"
-                value={liveChatWidgetId}
-                onChange={(e) => setLiveChatWidgetId(e.target.value)}
-                placeholder="Enter your widget ID from HighLevel"
-                data-testid="input-live-chat-widget-id"
-              />
-              <p className="text-xs text-muted-foreground">
-                Find this in HighLevel: Sites &gt; Chat Widget &gt; Get Code &gt; copy the data-widget-id value
-              </p>
-            </div>
-          )}
-        </CardContent>
-        <CardFooter>
-          <Button 
-            onClick={() => updateMutation.mutate()} 
-            disabled={updateMutation.isPending}
-            data-testid="button-save-live-chat"
-          >
-            {updateMutation.isPending ? "Saving..." : "Save Live Chat Settings"}
-          </Button>
-        </CardFooter>
-      </Card>
       </TabsContent>
 
       <TabsContent value="notifications" className="space-y-6">
@@ -2065,6 +2017,55 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
             </Button>
           </CardFooter>
         </Card>
+
+        <Card className="border-white border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" /> Live Chat Widget
+            </CardTitle>
+            <CardDescription>Enable HighLevel chat widget for customer support on your website</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="liveChatEnabled">Enable Live Chat</Label>
+                <p className="text-xs text-muted-foreground">Show the chat widget on all public pages</p>
+              </div>
+              <Switch
+                id="liveChatEnabled"
+                checked={liveChatEnabled}
+                onCheckedChange={setLiveChatEnabled}
+                data-testid="switch-live-chat-enabled"
+              />
+            </div>
+            
+            {liveChatEnabled && (
+              <div className="space-y-2 pt-2 border-t">
+                <Label htmlFor="liveChatWidgetId">HighLevel Widget ID</Label>
+                <Input
+                  id="liveChatWidgetId"
+                  value={liveChatWidgetId}
+                  onChange={(e) => setLiveChatWidgetId(e.target.value)}
+                  placeholder="Enter your widget ID from HighLevel"
+                  data-testid="input-live-chat-widget-id"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Find this in HighLevel: Sites &gt; Chat Widget &gt; Get Code &gt; copy the data-widget-id value
+                </p>
+              </div>
+            )}
+          </CardContent>
+          <CardFooter>
+            <Button 
+              onClick={() => updateMutation.mutate()} 
+              disabled={updateMutation.isPending}
+              data-testid="button-save-live-chat"
+            >
+              {updateMutation.isPending ? "Saving..." : "Save Live Chat Settings"}
+            </Button>
+          </CardFooter>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
