@@ -163,7 +163,7 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
         const state = settings?.dealerState || "";
         const trim = car.trim || "";
         
-        // Generate canonical slug with full format
+        // Generate canonical slug with full format including new options
         const canonicalSlug = car.slug || generateVehicleSlug({
           year: car.year,
           make: car.make,
@@ -172,6 +172,8 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
           city: settings?.slugIncludeLocation ? city : null,
           state: settings?.slugIncludeLocation ? state : null,
           id: car.id,
+          stockNumber: settings?.slugIncludeStock ? car.stockNumber : null,
+          locationFirst: settings?.slugLocationFirst ?? false,
         });
         const canonicalUrl = `${baseUrl}/vehicle/${canonicalSlug}`;
         
