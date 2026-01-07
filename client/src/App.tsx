@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SettingsProvider } from "@/contexts/SettingsContext";
+import { SavedVehiclesProvider } from "@/contexts/SavedVehiclesContext";
 import { useFavicon } from "@/hooks/use-favicon";
 import { useLiveChat } from "@/hooks/use-live-chat";
 import NotFound from "@/pages/not-found";
@@ -24,6 +25,7 @@ import TradeIn from "@/pages/TradeIn";
 import Compare from "@/pages/Compare";
 import Appointments from "@/pages/Appointments";
 import CreditApp from "@/pages/CreditApp";
+import SavedVehicles from "@/pages/SavedVehicles";
 
 function FaviconLoader() {
   useFavicon();
@@ -57,6 +59,7 @@ function Router() {
       <Route path="/compare" component={Compare} />
       <Route path="/appointments" component={Appointments} />
       <Route path="/get-approved" component={CreditApp} />
+      <Route path="/saved" component={SavedVehicles} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -66,12 +69,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <SettingsProvider>
-        <TooltipProvider>
-          <FaviconLoader />
-          <LiveChatLoader />
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <SavedVehiclesProvider>
+          <TooltipProvider>
+            <FaviconLoader />
+            <LiveChatLoader />
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </SavedVehiclesProvider>
       </SettingsProvider>
     </QueryClientProvider>
   );

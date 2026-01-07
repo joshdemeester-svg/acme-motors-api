@@ -11,13 +11,35 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, Car, Fuel, Gauge, Calendar, Palette, FileText, Settings, MapPin, Shield, Zap, Users, Factory, Cog, DollarSign, Weight, CircleDot, Lightbulb, Battery, Loader2, CheckCircle, MessageSquare, Search, Calculator, Phone, Flame } from "lucide-react";
+import { ArrowLeft, Car, Fuel, Gauge, Calendar, Palette, FileText, Settings, MapPin, Shield, Zap, Users, Factory, Cog, DollarSign, Weight, CircleDot, Lightbulb, Battery, Loader2, CheckCircle, MessageSquare, Search, Calculator, Phone, Flame, Heart } from "lucide-react";
 import { Link } from "wouter";
 import type { InventoryCar, SiteSettings, BuyerInquiry } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
 import { useSEO, generateVehicleSchema } from "@/hooks/use-seo";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useToast } from "@/hooks/use-toast";
+import { useSavedVehicles } from "@/hooks/use-saved-vehicles";
+
+function SaveButton({ vehicleId }: { vehicleId: string }) {
+  const { toggleSaved, isSaved } = useSavedVehicles();
+  const saved = isSaved(vehicleId);
+  
+  return (
+    <button
+      onClick={() => toggleSaved(vehicleId)}
+      className={`absolute top-4 left-4 flex items-center gap-2 rounded-lg px-3 py-2 shadow-lg cursor-pointer transition-all border font-semibold ${
+        saved
+          ? 'bg-red-500 text-white border-red-500'
+          : 'bg-black/80 text-white hover:bg-black border-white/30'
+      }`}
+      data-testid="btn-save-vehicle"
+      title={saved ? 'Remove from saved' : 'Save vehicle'}
+    >
+      <Heart className={`h-4 w-4 ${saved ? 'fill-current' : ''}`} />
+      {saved ? 'Saved' : 'Save'}
+    </button>
+  );
+}
 
 interface VinData {
   Make?: string;
@@ -687,6 +709,7 @@ export default function VehicleDetails({ id }: { id: string }) {
                   </Badge>
                 )}
               </div>
+              <SaveButton vehicleId={car.id} />
             </div>
 
             {additionalPhotos.length > 0 && (

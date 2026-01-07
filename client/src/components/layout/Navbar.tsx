@@ -1,18 +1,20 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Car, Menu, Settings, LogIn } from "lucide-react";
+import { Car, Menu, Settings, LogIn, Heart } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useQuery } from "@tanstack/react-query";
 import { LoginModal } from "@/components/auth/LoginModal";
+import { useSavedVehicles } from "@/hooks/use-saved-vehicles";
 
 export function Navbar() {
   const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const { settings } = useSettings();
+  const { savedCount } = useSavedVehicles();
 
   const { data: session } = useQuery({
     queryKey: ["/api/auth/session"],
@@ -103,6 +105,16 @@ export function Navbar() {
               <LogIn className="h-4 w-4" /> Login
             </Button>
           )}
+          <Link href="/saved" className="relative" data-testid="link-saved-vehicles">
+            <Button variant="ghost" size="icon" className="text-foreground">
+              <Heart className={cn("h-5 w-5", savedCount > 0 && "text-red-500")} />
+              {savedCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs font-bold text-white flex items-center justify-center">
+                  {savedCount > 9 ? '9+' : savedCount}
+                </span>
+              )}
+            </Button>
+          </Link>
           <Button className="btn-contact ml-4">
             Contact Us
           </Button>
@@ -172,6 +184,18 @@ export function Navbar() {
                     <LogIn className="h-5 w-5" /> Login
                   </Button>
                 )}
+                <Link
+                  href="/saved"
+                  className={cn(
+                    "flex items-center gap-2 text-lg font-medium transition-colors",
+                    location === "/saved" ? "nav-link" : "nav-link-inactive"
+                  )}
+                  onClick={() => setIsOpen(false)}
+                  data-testid="link-mobile-saved"
+                >
+                  <Heart className={cn("h-5 w-5", savedCount > 0 && "text-red-500 fill-red-500")} />
+                  Saved {savedCount > 0 && `(${savedCount})`}
+                </Link>
               </div>
             </div>
           </SheetContent>

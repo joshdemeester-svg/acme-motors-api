@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, SlidersHorizontal, X, Scale, Flame } from "lucide-react";
+import { Search, SlidersHorizontal, X, Scale, Flame, Heart } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +14,7 @@ import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.j
 import { useSEO } from "@/hooks/use-seo";
 import { VehicleAlerts } from "@/components/VehicleAlerts";
 import { slugify, matchSlug } from "@shared/schema";
+import { useSavedVehicles } from "@/hooks/use-saved-vehicles";
 
 interface Filters {
   make: string;
@@ -50,6 +51,7 @@ export default function Inventory({ makeSlug, modelSlug }: InventoryProps) {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [resolvedMake, setResolvedMake] = useState<string | undefined>(undefined);
   const [resolvedModel, setResolvedModel] = useState<string | undefined>(undefined);
+  const { toggleSaved, isSaved } = useSavedVehicles();
 
   const { data: inventory = [], isLoading } = useQuery<(InventoryCar & { inquiryCount?: number })[]>({
     queryKey: ["/api/inventory", "includeMetrics"],
@@ -414,25 +416,42 @@ export default function Inventory({ makeSlug, modelSlug }: InventoryProps) {
                       </div>
                     )}
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (compareIds.includes(car.id)) {
-                        setCompareIds(compareIds.filter(id => id !== car.id));
-                      } else if (compareIds.length < 3) {
-                        setCompareIds([...compareIds, car.id]);
-                      }
-                    }}
-                    className={`absolute top-2 left-2 sm:top-4 sm:left-4 flex items-center gap-1.5 sm:gap-2 rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-semibold shadow-lg cursor-pointer transition-all border ${
-                      compareIds.includes(car.id)
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-black/80 text-white hover:bg-black border-white/30'
-                    }`}
-                    data-testid={`btn-compare-${car.id}`}
-                  >
-                    <Scale className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    {compareIds.includes(car.id) ? 'Selected' : 'Compare'}
-                  </button>
+                  <div className="absolute top-2 left-2 sm:top-4 sm:left-4 flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (compareIds.includes(car.id)) {
+                          setCompareIds(compareIds.filter(id => id !== car.id));
+                        } else if (compareIds.length < 3) {
+                          setCompareIds([...compareIds, car.id]);
+                        }
+                      }}
+                      className={`flex items-center gap-1.5 sm:gap-2 rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-semibold shadow-lg cursor-pointer transition-all border ${
+                        compareIds.includes(car.id)
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-black/80 text-white hover:bg-black border-white/30'
+                      }`}
+                      data-testid={`btn-compare-${car.id}`}
+                    >
+                      <Scale className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      {compareIds.includes(car.id) ? 'Selected' : 'Compare'}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toggleSaved(car.id);
+                      }}
+                      className={`flex items-center justify-center rounded-lg p-2 shadow-lg cursor-pointer transition-all border ${
+                        isSaved(car.id)
+                          ? 'bg-red-500 text-white border-red-500'
+                          : 'bg-black/80 text-white hover:bg-black border-white/30'
+                      }`}
+                      data-testid={`btn-save-${car.id}`}
+                      title={isSaved(car.id) ? 'Remove from saved' : 'Save vehicle'}
+                    >
+                      <Heart className={`h-4 w-4 ${isSaved(car.id) ? 'fill-current' : ''}`} />
+                    </button>
+                  </div>
                 </div>
                 <div className="p-6">
                   <div className="mb-2 text-sm font-medium text-white">{car.year} {car.make}</div>
