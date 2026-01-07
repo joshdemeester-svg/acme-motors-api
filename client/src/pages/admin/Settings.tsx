@@ -37,7 +37,8 @@ import {
   Key,
   Crown,
   Monitor,
-  Share2
+  Share2,
+  MessageSquare
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -1486,6 +1487,58 @@ export default function Settings() {
                   ) : (
                     "Test Connection"
                   )}
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" /> Live Chat Widget
+                </CardTitle>
+                <CardDescription>Enable GoHighLevel live chat on your public website</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
+                  <div className="flex items-center gap-3">
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                      formData.liveChatEnabled ? "bg-green-500/10" : "bg-muted"
+                    }`}>
+                      <MessageSquare className={`h-5 w-5 ${
+                        formData.liveChatEnabled ? "text-green-500" : "text-muted-foreground"
+                      }`} />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Chat Widget Status</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {formData.liveChatEnabled ? "Visible on public pages" : "Currently disabled"}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={formData.liveChatEnabled || false}
+                    onCheckedChange={(checked) => setFormData({ ...formData, liveChatEnabled: checked })}
+                    data-testid="switch-live-chat-enabled"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="liveChatWidgetId">Chat Widget ID</Label>
+                  <Input
+                    id="liveChatWidgetId"
+                    value={formData.liveChatWidgetId || ""}
+                    onChange={(e) => setFormData({ ...formData, liveChatWidgetId: e.target.value })}
+                    placeholder="Enter your GHL Chat Widget ID"
+                    data-testid="input-live-chat-widget-id"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Find this in GHL → Sites → Chat Widget → Settings → Widget ID
+                  </p>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving..." : "Save Changes"}
                 </Button>
               </CardFooter>
             </Card>
