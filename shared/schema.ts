@@ -711,11 +711,15 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
   notifyNewListings: boolean("notify_new_listings").default(true),
   notifyPriceDrops: boolean("notify_price_drops").default(true),
   notifySpecialOffers: boolean("notify_special_offers").default(true),
+  notifyHotListings: boolean("notify_hot_listings").default(true),
   
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at").defaultNow(),
   lastUsed: timestamp("last_used"),
 });
+
+export const notificationCategories = ["all", "new_listings", "price_drops", "special_offers", "hot_listings"] as const;
+export type NotificationCategory = typeof notificationCategories[number];
 
 export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({
   id: true,
@@ -733,6 +737,7 @@ export const pushNotifications = pgTable("push_notifications", {
   url: text("url"),
   imageUrl: text("image_url"),
   targetType: text("target_type").notNull().default("all"),
+  targetCategory: text("target_category").default("all"),
   targetMakes: text("target_makes").array().default(sql`'{}'::text[]`),
   sentCount: integer("sent_count").default(0),
   sentAt: timestamp("sent_at"),
