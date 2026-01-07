@@ -9,7 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { 
   Car, Users, DollarSign, Target, Clock, MessageSquare, Calendar, 
   Eye, BarChart3, CheckCircle, ChevronDown, ChevronUp, ArrowRight,
-  FileText, TrendingUp, Plus, Bell, Send
+  FileText, TrendingUp, Plus, Bell, Send, Heart
 } from "lucide-react";
 import { Link } from "wouter";
 import type { ConsignmentSubmission, InventoryCar, BuyerInquiry } from "@shared/schema";
@@ -82,9 +82,23 @@ export default function Dashboard() {
 
   const { data: analytics } = useQuery<{
     totalViews: number;
+    totalSaves: number;
     mostViewed: Array<{
       vehicleId: string;
       viewCount: number;
+      vehicle: {
+        id: string;
+        year: number;
+        make: string;
+        model: string;
+        status: string;
+        price: number;
+        photo: string | null;
+      };
+    }>;
+    topSaved: Array<{
+      vehicleId: string;
+      saveCount: number;
       vehicle: {
         id: string;
         year: number;
@@ -117,7 +131,7 @@ export default function Dashboard() {
     queryKey: ["/api/analytics"],
     queryFn: async () => {
       const res = await fetch("/api/analytics");
-      if (!res.ok) return { totalViews: 0, mostViewed: [], conversions: { vehiclesWithInquiries: 0, soldWithInquiries: 0, overallConversionRate: 0, topVehicles: [] } };
+      if (!res.ok) return { totalViews: 0, totalSaves: 0, mostViewed: [], topSaved: [], conversions: { vehiclesWithInquiries: 0, soldWithInquiries: 0, overallConversionRate: 0, topVehicles: [] } };
       return res.json();
     },
   });
@@ -374,6 +388,9 @@ export default function Dashboard() {
                     <Badge variant="outline" className="ml-2">
                       {analytics?.totalViews?.toLocaleString() || 0} views
                     </Badge>
+                    <Badge variant="outline" className="text-red-600 border-red-200">
+                      {analytics?.totalSaves?.toLocaleString() || 0} saves
+                    </Badge>
                   </div>
                   <Button variant="ghost" size="sm" className="gap-1">
                     {analyticsOpen ? (
@@ -399,10 +416,14 @@ export default function Dashboard() {
                   </TabsList>
 
                   <TabsContent value="views" className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <div className="text-center p-4 rounded-lg bg-muted">
                         <p className="text-3xl font-bold text-primary">{analytics?.totalViews?.toLocaleString() || 0}</p>
                         <p className="text-sm text-muted-foreground">Total Views</p>
+                      </div>
+                      <div className="text-center p-4 rounded-lg bg-muted">
+                        <p className="text-3xl font-bold text-red-500">{analytics?.totalSaves?.toLocaleString() || 0}</p>
+                        <p className="text-sm text-muted-foreground">Total Saves</p>
                       </div>
                       <div className="text-center p-4 rounded-lg bg-muted">
                         <p className="text-3xl font-bold">{analytics?.mostViewed?.length || 0}</p>
@@ -443,6 +464,43 @@ export default function Dashboard() {
                       ) : (
                         <p className="text-sm text-muted-foreground text-center py-4">
                           No view data yet
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <Heart className="h-4 w-4 text-red-500" /> Top Saved Vehicles
+                      </h4>
+                      {analytics?.topSaved && analytics.topSaved.length > 0 ? (
+                        <div className="space-y-2">
+                          {analytics.topSaved.slice(0, 5).map((item, index) => (
+                            <div key={item.vehicleId} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
+                              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-red-100 flex items-center justify-center text-xs font-bold text-red-600">
+                                {index + 1}
+                              </div>
+                              {item.vehicle.photo && (
+                                <img 
+                                  src={item.vehicle.photo} 
+                                  alt={`${item.vehicle.year} ${item.vehicle.make} ${item.vehicle.model}`}
+                                  className="w-12 h-8 object-cover rounded"
+                                />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">
+                                  {item.vehicle.year} {item.vehicle.make} {item.vehicle.model}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1 text-sm font-semibold text-red-600">
+                                <Heart className="h-3 w-3 fill-current" />
+                                {item.saveCount}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          No saves yet
                         </p>
                       )}
                     </div>
