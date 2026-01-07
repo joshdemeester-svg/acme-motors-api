@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { 
   CheckCircle2, 
   Circle, 
@@ -15,7 +17,15 @@ import {
   Eye,
   Target,
   MessageSquare,
-  Zap
+  Sparkles,
+  Camera,
+  FileSignature,
+  Crown,
+  Truck,
+  FileText,
+  Brain,
+  Video,
+  Shield
 } from "lucide-react";
 
 interface RoadmapItem {
@@ -97,6 +107,69 @@ const roadmapItems: RoadmapItem[] = [
     icon: <ShoppingCart className="h-5 w-5" />,
     category: "Listing Syndication"
   },
+  {
+    title: "AI-Powered Pricing",
+    description: "Automated valuations using VIN data, market comps, and demand forecasting with confidence bands",
+    status: "planned",
+    icon: <Brain className="h-5 w-5" />,
+    category: "Elite Features"
+  },
+  {
+    title: "360° Vehicle Spins",
+    description: "Immersive media with 360° photo spins, AR overlays, and virtual walk-around tours",
+    status: "planned",
+    icon: <Camera className="h-5 w-5" />,
+    category: "Elite Features"
+  },
+  {
+    title: "Virtual Concierge Booking",
+    description: "Live video walk-arounds, test-drive scheduling, and personalized ownership briefings",
+    status: "planned",
+    icon: <Video className="h-5 w-5" />,
+    category: "Elite Features"
+  },
+  {
+    title: "Seller Concierge Portal",
+    description: "Milestone tracker (inspection → detailing → photos → live → sale → payout) with vendor scheduling",
+    status: "planned",
+    icon: <Sparkles className="h-5 w-5" />,
+    category: "Seller Experience"
+  },
+  {
+    title: "Document Vault & E-Sign",
+    description: "Secure storage for titles and consignment agreements with digital signatures and reminders",
+    status: "planned",
+    icon: <FileSignature className="h-5 w-5" />,
+    category: "Seller Experience"
+  },
+  {
+    title: "Payout Calculator",
+    description: "Model commission options and net proceeds for consignors with transparent breakdowns",
+    status: "planned",
+    icon: <FileText className="h-5 w-5" />,
+    category: "Seller Experience"
+  },
+  {
+    title: "VIP Buyer Access",
+    description: "Tiered membership, early access to limited-run drops, invitation management for exclusive listings",
+    status: "planned",
+    icon: <Crown className="h-5 w-5" />,
+    category: "Elite Features"
+  },
+  {
+    title: "Lifestyle Services Marketplace",
+    description: "Insurance, transport, PPF, storage quotes with in-app booking and partner attribution",
+    status: "planned",
+    icon: <Truck className="h-5 w-5" />,
+    category: "Elite Features"
+  },
+  {
+    title: "Executive Reports",
+    description: "C-level dashboards with pipeline velocity, marketing ROI, and automated investor-ready PDF/CSV exports",
+    status: "planned",
+    icon: <Shield className="h-5 w-5" />,
+    category: "Admin Experience"
+  },
 ];
 
 const statusConfig = {
@@ -118,11 +191,23 @@ const statusConfig = {
 };
 
 export default function Roadmap() {
-  const categories = [...new Set(roadmapItems.map(item => item.category))];
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  
+  const categories = Array.from(new Set(roadmapItems.map(item => item.category)));
+  
+  const filteredItems = activeCategory 
+    ? roadmapItems.filter(item => item.category === activeCategory)
+    : roadmapItems;
   
   const completedCount = roadmapItems.filter(item => item.status === "completed").length;
   const inProgressCount = roadmapItems.filter(item => item.status === "in_progress").length;
   const plannedCount = roadmapItems.filter(item => item.status === "planned").length;
+
+  const getCategoryCount = (category: string) => {
+    const items = roadmapItems.filter(item => item.category === category);
+    const completed = items.filter(item => item.status === "completed").length;
+    return { total: items.length, completed };
+  };
 
   return (
     <AdminLayout>
@@ -176,54 +261,89 @@ export default function Roadmap() {
           </Card>
         </div>
 
-        {categories.map((category) => (
-          <Card key={category}>
-            <CardHeader>
-              <CardTitle>{category}</CardTitle>
-              <CardDescription>
-                {roadmapItems.filter(item => item.category === category && item.status === "completed").length} of{" "}
-                {roadmapItems.filter(item => item.category === category).length} completed
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {roadmapItems
-                  .filter(item => item.category === category)
-                  .map((item, index) => (
-                    <div 
-                      key={index} 
-                      className={`flex items-start gap-4 p-4 rounded-lg border ${
-                        item.status === "completed" ? "bg-green-500/5 border-green-500/20" :
-                        item.status === "in_progress" ? "bg-blue-500/5 border-blue-500/20" :
-                        "bg-muted/50"
-                      }`}
-                    >
-                      <div className={`h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        item.status === "completed" ? "bg-green-500/10 text-green-500" :
-                        item.status === "in_progress" ? "bg-blue-500/10 text-blue-500" :
-                        "bg-muted text-muted-foreground"
-                      }`}>
-                        {item.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium">{item.title}</h4>
-                          <Badge 
-                            variant={item.status === "completed" ? "default" : "secondary"}
-                            className={`text-xs ${item.status === "completed" ? "bg-green-500" : ""}`}
-                          >
-                            {statusConfig[item.status].icon}
-                            <span className="ml-1">{statusConfig[item.status].label}</span>
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{item.description}</p>
-                      </div>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Filter by Category</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={activeCategory === null ? "default" : "outline"}
+                size="sm"
+                onClick={() => setActiveCategory(null)}
+                data-testid="filter-all"
+              >
+                All ({roadmapItems.length})
+              </Button>
+              {categories.map((category) => {
+                const { total, completed } = getCategoryCount(category);
+                return (
+                  <Button
+                    key={category}
+                    variant={activeCategory === category ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setActiveCategory(category)}
+                    data-testid={`filter-${category.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    {category} ({completed}/{total})
+                  </Button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {activeCategory || "All Features"}
+            </CardTitle>
+            <CardDescription>
+              {activeCategory 
+                ? `${getCategoryCount(activeCategory).completed} of ${getCategoryCount(activeCategory).total} completed`
+                : `${completedCount} of ${roadmapItems.length} completed`
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {filteredItems.map((item, index) => (
+                <div 
+                  key={index} 
+                  className={`flex items-start gap-4 p-4 rounded-lg border ${
+                    item.status === "completed" ? "bg-green-500/5 border-green-500/20" :
+                    item.status === "in_progress" ? "bg-blue-500/5 border-blue-500/20" :
+                    "bg-muted/50"
+                  }`}
+                >
+                  <div className={`h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    item.status === "completed" ? "bg-green-500/10 text-green-500" :
+                    item.status === "in_progress" ? "bg-blue-500/10 text-blue-500" :
+                    "bg-muted text-muted-foreground"
+                  }`}>
+                    {item.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center flex-wrap gap-2 mb-1">
+                      <h4 className="font-medium">{item.title}</h4>
+                      <Badge variant="outline" className="text-xs">
+                        {item.category}
+                      </Badge>
+                      <Badge 
+                        variant={item.status === "completed" ? "default" : "secondary"}
+                        className={`text-xs ${item.status === "completed" ? "bg-green-500" : ""}`}
+                      >
+                        {statusConfig[item.status].icon}
+                        <span className="ml-1">{statusConfig[item.status].label}</span>
+                      </Badge>
                     </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                    <p className="text-sm text-muted-foreground">{item.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </AdminLayout>
   );
