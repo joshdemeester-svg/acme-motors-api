@@ -48,6 +48,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import type { SiteSettings, Testimonial } from "@shared/schema";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import { Upload } from "lucide-react";
 
 type AdminUser = {
   id: string;
@@ -533,14 +535,55 @@ export default function Settings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="logoUrl">Logo URL</Label>
-                  <Input
-                    id="logoUrl"
-                    value={formData.logoUrl || ""}
-                    onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
-                    placeholder="https://example.com/logo.png"
-                    data-testid="input-logo-url"
-                  />
+                  <Label htmlFor="logoUrl">Logo</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="logoUrl"
+                      value={formData.logoUrl || ""}
+                      onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+                      placeholder="https://example.com/logo.png or upload"
+                      className="flex-1"
+                      data-testid="input-logo-url"
+                    />
+                    <ObjectUploader
+                      maxNumberOfFiles={1}
+                      maxFileSize={5242880}
+                      onGetUploadParameters={async (file) => {
+                        const res = await fetch("/api/uploads/request-url", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            name: `logo-${Date.now()}-${file.name}`,
+                            size: file.size,
+                            contentType: file.type,
+                          }),
+                        });
+                        if (!res.ok) throw new Error("Failed to get upload URL");
+                        const { uploadURL, objectPath } = await res.json();
+                        // Store objectPath in file meta for onComplete
+                        file.meta.objectPath = objectPath;
+                        return { method: "PUT" as const, url: uploadURL };
+                      }}
+                      onComplete={(result) => {
+                        const uploadedFile = result.successful?.[0];
+                        if (uploadedFile) {
+                          // Use the objectPath stored in meta (e.g., /objects/uploads/uuid)
+                          const objectPath = uploadedFile.meta?.objectPath as string;
+                          if (objectPath) {
+                            setFormData(prev => ({ ...prev, logoUrl: objectPath }));
+                            toast({ title: "Logo uploaded successfully" });
+                          }
+                        }
+                      }}
+                      buttonClassName="shrink-0"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload
+                    </ObjectUploader>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Upload an image or paste a URL. Recommended: PNG or SVG with transparent background.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="logoWidth">Desktop Logo Width (px)</Label>
