@@ -627,3 +627,76 @@ export type ActivityLog = typeof activityLog.$inferSelect;
 
 export const leadPipelineStages = ["new", "contacted", "qualified", "negotiating", "sold", "lost"] as const;
 export type LeadPipelineStage = typeof leadPipelineStages[number];
+
+export const targetLocations = pgTable("target_locations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  slug: text("slug").notNull().unique(),
+  headline: text("headline"),
+  description: text("description"),
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
+  radius: integer("radius").default(50),
+  isActive: boolean("is_active").default(true),
+  isPrimary: boolean("is_primary").default(false),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertTargetLocationSchema = createInsertSchema(targetLocations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTargetLocation = z.infer<typeof insertTargetLocationSchema>;
+export type TargetLocation = typeof targetLocations.$inferSelect;
+
+export const citationDirectories = pgTable("citation_directories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  url: text("url").notNull(),
+  category: text("category").notNull(),
+  submissionType: text("submission_type").notNull(),
+  priority: integer("priority").default(1),
+  isAggregator: boolean("is_aggregator").default(false),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCitationDirectorySchema = createInsertSchema(citationDirectories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertCitationDirectory = z.infer<typeof insertCitationDirectorySchema>;
+export type CitationDirectory = typeof citationDirectories.$inferSelect;
+
+export const citationSubmissions = pgTable("citation_submissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  directoryId: varchar("directory_id").references(() => citationDirectories.id),
+  directoryName: text("directory_name").notNull(),
+  status: text("status").notNull().default("pending"),
+  submittedAt: timestamp("submitted_at"),
+  confirmedAt: timestamp("confirmed_at"),
+  listingUrl: text("listing_url"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCitationSubmissionSchema = createInsertSchema(citationSubmissions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertCitationSubmission = z.infer<typeof insertCitationSubmissionSchema>;
+export type CitationSubmission = typeof citationSubmissions.$inferSelect;
+
+export const citationStatuses = ["pending", "submitted", "confirmed", "rejected", "needs_update"] as const;
+export type CitationStatus = typeof citationStatuses[number];
+
+export const directoryCategories = ["aggregator", "automotive", "local", "business", "review", "social"] as const;
+export type DirectoryCategory = typeof directoryCategories[number];
+
+export const submissionTypes = ["automatic", "manual", "api"] as const;
+export type SubmissionType = typeof submissionTypes[number];
