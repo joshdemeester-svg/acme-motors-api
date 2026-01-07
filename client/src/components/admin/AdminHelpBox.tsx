@@ -42,15 +42,21 @@ export function AdminHelpBox({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   const variantStyles = {
-    info: "bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800",
-    tip: "bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800",
-    warning: "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800",
+    info: "bg-blue-900/50 border-blue-700 text-blue-100",
+    tip: "bg-amber-900/50 border-amber-700 text-amber-100",
+    warning: "bg-red-900/50 border-red-700 text-red-100",
   };
 
   const iconStyles = {
-    info: "text-blue-600 dark:text-blue-400",
-    tip: "text-amber-600 dark:text-amber-400",
-    warning: "text-red-600 dark:text-red-400",
+    info: "text-blue-300",
+    tip: "text-amber-300",
+    warning: "text-red-300",
+  };
+
+  const textStyles = {
+    info: "text-blue-200",
+    tip: "text-amber-200",
+    warning: "text-red-200",
   };
 
   return (
@@ -84,19 +90,23 @@ export function AdminHelpBox({
 
           {(isOpen || !collapsible) && (
             <div className="mt-2 space-y-3">
-              <p className="text-sm text-muted-foreground">{description}</p>
+              <p className={cn("text-sm", textStyles[variant])}>{description}</p>
 
               {steps && steps.length > 0 && (
                 <ol className="space-y-2 text-sm">
                   {steps.map((step, index) => (
                     <li key={index} className="flex gap-2">
-                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
+                      <span className={cn("flex-shrink-0 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center", 
+                        variant === "info" ? "bg-blue-700 text-blue-100" :
+                        variant === "tip" ? "bg-amber-700 text-amber-100" :
+                        "bg-red-700 text-red-100"
+                      )}>
                         {index + 1}
                       </span>
                       <div>
                         <span className="font-medium">{step.title}</span>
                         {step.description && (
-                          <p className="text-muted-foreground mt-0.5">{step.description}</p>
+                          <p className={cn("mt-0.5", textStyles[variant])}>{step.description}</p>
                         )}
                       </div>
                     </li>
@@ -108,8 +118,8 @@ export function AdminHelpBox({
                 <ul className="space-y-1 text-sm">
                   {tips.map((tip, index) => (
                     <li key={index} className="flex gap-2">
-                      <span className="text-primary">•</span>
-                      <span className="text-muted-foreground">{tip}</span>
+                      <span className={iconStyles[variant]}>•</span>
+                      <span className={textStyles[variant]}>{tip}</span>
                     </li>
                   ))}
                 </ul>
@@ -123,7 +133,7 @@ export function AdminHelpBox({
                       href={link.url}
                       target={link.external ? "_blank" : undefined}
                       rel={link.external ? "noopener noreferrer" : undefined}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                      className={cn("inline-flex items-center gap-1 text-xs font-medium hover:underline", iconStyles[variant])}
                     >
                       {link.label}
                       {link.external && <ExternalLink className="h-3 w-3" />}
