@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -24,7 +24,7 @@ interface PriceAlert {
 }
 
 export default function SavedVehicles() {
-  const { savedIds, toggleSaved, clearSaved } = useSavedVehicles();
+  const { savedIds, toggleSaved, clearSaved, pruneSavedIds } = useSavedVehicles();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -46,6 +46,13 @@ export default function SavedVehicles() {
       return res.json();
     },
   });
+
+  useEffect(() => {
+    if (allInventory.length > 0 && savedIds.length > 0) {
+      const validIds = allInventory.map(car => car.id);
+      pruneSavedIds(validIds);
+    }
+  }, [allInventory, pruneSavedIds]);
 
   const { data: myAlerts = [] } = useQuery<PriceAlert[]>({
     queryKey: ["/api/price-alerts/my", alertEmail],

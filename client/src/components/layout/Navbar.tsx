@@ -1,20 +1,21 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Car, Menu, Settings, LogIn, Heart } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useQuery } from "@tanstack/react-query";
 import { LoginModal } from "@/components/auth/LoginModal";
 import { useSavedVehicles } from "@/hooks/use-saved-vehicles";
+import type { InventoryCar } from "@shared/schema";
 
 export function Navbar() {
   const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const { settings } = useSettings();
-  const { savedCount } = useSavedVehicles();
+  const { savedCount, savedIds, pruneSavedIds } = useSavedVehicles();
 
   const { data: session } = useQuery({
     queryKey: ["/api/auth/session"],
@@ -24,6 +25,23 @@ export function Navbar() {
     },
     staleTime: 1000 * 60 * 5,
   });
+
+  const { data: inventory = [] } = useQuery<InventoryCar[]>({
+    queryKey: ["/api/inventory"],
+    queryFn: async () => {
+      const res = await fetch("/api/inventory");
+      if (!res.ok) return [];
+      return res.json();
+    },
+    staleTime: 1000 * 60 * 2,
+  });
+
+  useEffect(() => {
+    if (inventory.length > 0 && savedIds.length > 0) {
+      const validIds = inventory.map(car => car.id);
+      pruneSavedIds(validIds);
+    }
+  }, [inventory, savedIds.length, pruneSavedIds]);
 
   const isAdmin = session?.authenticated && session?.isAdmin;
   const siteName = settings?.siteName || "PRESTIGE";
