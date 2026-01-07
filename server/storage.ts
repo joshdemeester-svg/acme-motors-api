@@ -16,6 +16,9 @@ import {
   leadNotes,
   activityLog,
   priceAlerts,
+  targetLocations,
+  citationDirectories,
+  citationSubmissions,
   type User, 
   type InsertUser,
   type ConsignmentSubmission,
@@ -46,7 +49,13 @@ import {
   type ActivityLog,
   type InsertActivityLog,
   type PriceAlert,
-  type InsertPriceAlert
+  type InsertPriceAlert,
+  type TargetLocation,
+  type InsertTargetLocation,
+  type CitationDirectory,
+  type InsertCitationDirectory,
+  type CitationSubmission,
+  type InsertCitationSubmission
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, lt } from "drizzle-orm";
@@ -168,6 +177,23 @@ export interface IStorage {
   updatePriceAlertNotified(id: string): Promise<PriceAlert | undefined>;
   deactivatePriceAlert(id: string): Promise<boolean>;
   deletePriceAlert(id: string): Promise<boolean>;
+  
+  createTargetLocation(data: InsertTargetLocation): Promise<TargetLocation>;
+  getTargetLocation(id: string): Promise<TargetLocation | undefined>;
+  getTargetLocationBySlug(slug: string): Promise<TargetLocation | undefined>;
+  getAllTargetLocations(): Promise<TargetLocation[]>;
+  getActiveTargetLocations(): Promise<TargetLocation[]>;
+  updateTargetLocation(id: string, data: Partial<InsertTargetLocation>): Promise<TargetLocation | undefined>;
+  deleteTargetLocation(id: string): Promise<boolean>;
+  
+  getAllCitationDirectories(): Promise<CitationDirectory[]>;
+  getCitationDirectoriesByCategory(category: string): Promise<CitationDirectory[]>;
+  getAggregatorDirectories(): Promise<CitationDirectory[]>;
+  
+  createCitationSubmission(data: InsertCitationSubmission): Promise<CitationSubmission>;
+  getAllCitationSubmissions(): Promise<CitationSubmission[]>;
+  updateCitationSubmission(id: string, data: Partial<InsertCitationSubmission>): Promise<CitationSubmission | undefined>;
+  getCitationStats(): Promise<{ pending: number; submitted: number; confirmed: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -793,6 +819,82 @@ export class DatabaseStorage implements IStorage {
   async deletePriceAlert(id: string): Promise<boolean> {
     const result = await db.delete(priceAlerts).where(eq(priceAlerts.id, id)).returning();
     return result.length > 0;
+  }
+
+  async createTargetLocation(data: InsertTargetLocation): Promise<TargetLocation> {
+    const [location] = await db.insert(targetLocations).values(data).returning();
+    return location;
+  }
+
+  async getTargetLocation(id: string): Promise<TargetLocation | undefined> {
+    const [location] = await db.select().from(targetLocations).where(eq(targetLocations.id, id));
+    return location || undefined;
+  }
+
+  async getTargetLocationBySlug(slug: string): Promise<TargetLocation | undefined> {
+    const [location] = await db.select().from(targetLocations).where(eq(targetLocations.slug, slug));
+    return location || undefined;
+  }
+
+  async getAllTargetLocations(): Promise<TargetLocation[]> {
+    return db.select().from(targetLocations).orderBy(targetLocations.sortOrder);
+  }
+
+  async getActiveTargetLocations(): Promise<TargetLocation[]> {
+    return db.select().from(targetLocations).where(eq(targetLocations.isActive, true)).orderBy(targetLocations.sortOrder);
+  }
+
+  async updateTargetLocation(id: string, data: Partial<InsertTargetLocation>): Promise<TargetLocation | undefined> {
+    const [updated] = await db
+      .update(targetLocations)
+      .set(data)
+      .where(eq(targetLocations.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteTargetLocation(id: string): Promise<boolean> {
+    const result = await db.delete(targetLocations).where(eq(targetLocations.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getAllCitationDirectories(): Promise<CitationDirectory[]> {
+    return db.select().from(citationDirectories).orderBy(citationDirectories.priority);
+  }
+
+  async getCitationDirectoriesByCategory(category: string): Promise<CitationDirectory[]> {
+    return db.select().from(citationDirectories).where(eq(citationDirectories.category, category)).orderBy(citationDirectories.priority);
+  }
+
+  async getAggregatorDirectories(): Promise<CitationDirectory[]> {
+    return db.select().from(citationDirectories).where(eq(citationDirectories.isAggregator, true)).orderBy(citationDirectories.priority);
+  }
+
+  async createCitationSubmission(data: InsertCitationSubmission): Promise<CitationSubmission> {
+    const [submission] = await db.insert(citationSubmissions).values(data).returning();
+    return submission;
+  }
+
+  async getAllCitationSubmissions(): Promise<CitationSubmission[]> {
+    return db.select().from(citationSubmissions).orderBy(desc(citationSubmissions.createdAt));
+  }
+
+  async updateCitationSubmission(id: string, data: Partial<InsertCitationSubmission>): Promise<CitationSubmission | undefined> {
+    const [updated] = await db
+      .update(citationSubmissions)
+      .set(data)
+      .where(eq(citationSubmissions.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async getCitationStats(): Promise<{ pending: number; submitted: number; confirmed: number }> {
+    const all = await db.select().from(citationSubmissions);
+    return {
+      pending: all.filter(s => s.status === 'pending').length,
+      submitted: all.filter(s => s.status === 'submitted').length,
+      confirmed: all.filter(s => s.status === 'confirmed').length,
+    };
   }
 }
 
