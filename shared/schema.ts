@@ -457,6 +457,30 @@ export const vehicleViews = pgTable("vehicle_views", {
 
 export type VehicleView = typeof vehicleViews.$inferSelect;
 
+export const priceAlerts = pgTable("price_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  vehicleId: varchar("vehicle_id").notNull().references(() => inventoryCars.id),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  name: text("name"),
+  priceAtSubscription: integer("price_at_subscription").notNull(),
+  notifyEmail: boolean("notify_email").default(true),
+  notifySms: boolean("notify_sms").default(false),
+  active: boolean("active").default(true),
+  lastNotifiedAt: timestamp("last_notified_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPriceAlertSchema = createInsertSchema(priceAlerts).omit({
+  id: true,
+  createdAt: true,
+  active: true,
+  lastNotifiedAt: true,
+});
+
+export type InsertPriceAlert = z.infer<typeof insertPriceAlertSchema>;
+export type PriceAlert = typeof priceAlerts.$inferSelect;
+
 export const vehicleDocuments = pgTable("vehicle_documents", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   vehicleId: varchar("vehicle_id").notNull().references(() => inventoryCars.id),
