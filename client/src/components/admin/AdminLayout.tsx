@@ -16,8 +16,10 @@ import {
   MapPin,
   Bell,
   Shield,
-  MessageSquare
+  MessageSquare,
+  HelpCircle
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -184,16 +186,51 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             <span className="font-serif font-bold truncate">{settings?.siteName || "Admin"}</span>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-muted-foreground hover:text-destructive"
-          onClick={() => logoutMutation.mutate()}
-          disabled={logoutMutation.isPending}
-          data-testid="button-logout-mobile"
-        >
-          <LogOut className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-muted-foreground" data-testid="button-help-mobile">
+                <HelpCircle className="h-5 w-5" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Admin Panel Help</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 text-sm">
+                <div>
+                  <h4 className="font-medium mb-1">Quick Navigation</h4>
+                  <ul className="text-muted-foreground space-y-1">
+                    <li>• <strong>Dashboard</strong> - Overview and quick actions</li>
+                    <li>• <strong>Inventory</strong> - Add/edit vehicles</li>
+                    <li>• <strong>Leads</strong> - Manage buyer inquiries</li>
+                    <li>• <strong>Consignments</strong> - Review submissions</li>
+                    <li>• <strong>SEO Tools</strong> - Local SEO & citations</li>
+                    <li>• <strong>Settings</strong> - Site branding & config</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-1">Tips</h4>
+                  <ul className="text-muted-foreground space-y-1">
+                    <li>• Look for blue help boxes on each page</li>
+                    <li>• Check the Getting Started checklist</li>
+                    <li>• Use keyboard shortcuts where available</li>
+                  </ul>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-destructive"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+            data-testid="button-logout-mobile"
+          >
+            <LogOut className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
       {sidebarOpen && (

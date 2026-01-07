@@ -9,10 +9,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { 
   Car, Users, DollarSign, Target, Clock, MessageSquare, Calendar, 
   Eye, BarChart3, CheckCircle, ChevronDown, ChevronUp, ArrowRight,
-  FileText, TrendingUp, Plus, Bell, Send, Heart
+  FileText, TrendingUp, Plus, Bell, Send, Heart, Rocket, Image, MapPin, Settings
 } from "lucide-react";
+import { AdminHelpBox } from "@/components/admin/AdminHelpBox";
 import { Link } from "wouter";
-import type { ConsignmentSubmission, InventoryCar, BuyerInquiry } from "@shared/schema";
+import type { ConsignmentSubmission, InventoryCar, BuyerInquiry, SiteSettings } from "@shared/schema";
 
 interface TradeInSubmission {
   id: string;
@@ -34,6 +35,16 @@ interface Appointment {
 
 export default function Dashboard() {
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [showChecklist, setShowChecklist] = useState(true);
+
+  const { data: settings } = useQuery<SiteSettings>({
+    queryKey: ["/api/settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/settings");
+      if (!res.ok) return null;
+      return res.json();
+    },
+  });
 
   const { data: inventory = [] } = useQuery<InventoryCar[]>({
     queryKey: ["/api/inventory"],
@@ -196,6 +207,90 @@ export default function Dashboard() {
             </Link>
           </div>
         </div>
+
+        {/* Getting Started Checklist */}
+        {showChecklist && (
+          <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+            <Collapsible defaultOpen={!settings?.logoUrl || inventory.length === 0}>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Rocket className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">Getting Started</CardTitle>
+                    <Badge variant="outline" className="ml-2">
+                      {[
+                        settings?.logoUrl,
+                        settings?.contactPhone,
+                        inventory.length > 0,
+                        settings?.googleMapUrl
+                      ].filter(Boolean).length}/4 complete
+                    </Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <Button variant="ghost" size="sm" onClick={() => setShowChecklist(false)} title="Dismiss">
+                      ×
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <Link href="/admin/settings">
+                      <div className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${settings?.logoUrl ? 'border-green-200 bg-green-50/50' : 'border-dashed'}`}>
+                        <div className={`p-2 rounded-full ${settings?.logoUrl ? 'bg-green-100 text-green-600' : 'bg-muted'}`}>
+                          {settings?.logoUrl ? <CheckCircle className="h-4 w-4" /> : <Image className="h-4 w-4" />}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Upload Logo</p>
+                          <p className="text-xs text-muted-foreground">Brand your site</p>
+                        </div>
+                      </div>
+                    </Link>
+                    <Link href="/admin/settings">
+                      <div className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${settings?.contactPhone ? 'border-green-200 bg-green-50/50' : 'border-dashed'}`}>
+                        <div className={`p-2 rounded-full ${settings?.contactPhone ? 'bg-green-100 text-green-600' : 'bg-muted'}`}>
+                          {settings?.contactPhone ? <CheckCircle className="h-4 w-4" /> : <Settings className="h-4 w-4" />}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Contact Info</p>
+                          <p className="text-xs text-muted-foreground">Phone & address</p>
+                        </div>
+                      </div>
+                    </Link>
+                    <Link href="/admin/inventory">
+                      <div className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${inventory.length > 0 ? 'border-green-200 bg-green-50/50' : 'border-dashed'}`}>
+                        <div className={`p-2 rounded-full ${inventory.length > 0 ? 'bg-green-100 text-green-600' : 'bg-muted'}`}>
+                          {inventory.length > 0 ? <CheckCircle className="h-4 w-4" /> : <Car className="h-4 w-4" />}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Add Vehicles</p>
+                          <p className="text-xs text-muted-foreground">{inventory.length > 0 ? `${inventory.length} added` : 'List inventory'}</p>
+                        </div>
+                      </div>
+                    </Link>
+                    <Link href="/admin/seo-tools">
+                      <div className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${settings?.googleMapUrl ? 'border-green-200 bg-green-50/50' : 'border-dashed'}`}>
+                        <div className={`p-2 rounded-full ${settings?.googleMapUrl ? 'bg-green-100 text-green-600' : 'bg-muted'}`}>
+                          {settings?.googleMapUrl ? <CheckCircle className="h-4 w-4" /> : <MapPin className="h-4 w-4" />}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Local SEO</p>
+                          <p className="text-xs text-muted-foreground">Set up citations</p>
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
+        )}
 
         {/* SECTION 1: Executive Snapshot - 4 Primary KPIs */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">

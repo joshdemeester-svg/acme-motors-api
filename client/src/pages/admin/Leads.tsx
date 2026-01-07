@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Users, MessageSquare, Car, Calendar, Phone, Mail, Loader2, Clock, Check, X, ExternalLink, CreditCard, DollarSign, Briefcase, Eye, LayoutGrid, List } from "lucide-react";
+import { Search, Users, MessageSquare, Car, Calendar, Phone, Mail, Loader2, Clock, Check, X, ExternalLink, CreditCard, DollarSign, Briefcase, Eye, LayoutGrid, List, Target, HelpCircle } from "lucide-react";
+import { AdminHelpBox } from "@/components/admin/AdminHelpBox";
 import type { BuyerInquiry, CreditApplication, InventoryCar } from "@shared/schema";
 import { LeadDetailDialog } from "@/components/admin/LeadDetailDialog";
 import { PipelineBoard } from "@/components/admin/PipelineBoard";
@@ -292,6 +293,28 @@ export default function Leads() {
   return (
     <AdminLayout>
       <div className="space-y-6">
+        <AdminHelpBox
+          title="Lead Management Pipeline"
+          description="Track every buyer touchpoint from initial inquiry to sale. Use the pipeline view to visualize where each lead stands in your sales process."
+          icon={Target}
+          variant="info"
+          defaultOpen={false}
+          className="mb-2"
+          steps={[
+            { title: "New", description: "Fresh leads that just came in. Respond quickly!" },
+            { title: "Contacted", description: "You've reached out. Waiting for response." },
+            { title: "Qualified", description: "Serious buyer with budget and timeline confirmed." },
+            { title: "Negotiating", description: "Active discussions on pricing or terms." },
+            { title: "Won/Lost", description: "Deal closed or lead moved on." },
+          ]}
+          tips={[
+            "Drag leads between columns in Pipeline view to update their status",
+            "Click any lead to see full details, add notes, and send SMS",
+            "Assign leads to team members for accountability",
+            "Vehicle inquiries auto-link to the inventory item"
+          ]}
+        />
+
         <div>
           <h1 className="text-2xl font-bold font-serif">Leads</h1>
           <p className="text-muted-foreground">

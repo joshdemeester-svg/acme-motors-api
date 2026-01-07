@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, FileText, Check, X, Clock, DollarSign, Loader2, Phone, Mail, Eye, Car } from "lucide-react";
+import { Search, FileText, Check, X, Clock, DollarSign, Loader2, Phone, Mail, Eye, Car, HelpCircle, ArrowRight } from "lucide-react";
+import { AdminHelpBox } from "@/components/admin/AdminHelpBox";
 import type { ConsignmentSubmission } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
 
@@ -82,6 +83,26 @@ export default function Consignments() {
   return (
     <AdminLayout>
       <div className="space-y-6">
+        <AdminHelpBox
+          title="Consignment Workflow"
+          description="When sellers submit vehicles for consignment, they appear here for your review. You control the entire process from submission to sale."
+          icon={HelpCircle}
+          variant="info"
+          defaultOpen={false}
+          className="mb-2"
+          steps={[
+            { title: "Pending", description: "New submissions awaiting your review. Verify vehicle details and photos." },
+            { title: "Approved", description: "You've accepted the vehicle. Now add pricing and prepare for listing." },
+            { title: "Listed", description: "Vehicle is live on your website. Click 'Convert to Inventory' to add it." },
+            { title: "Sold", description: "Vehicle has been sold. Finalize with the seller." },
+          ]}
+          tips={[
+            "Use 'Convert to Inventory' to create a full vehicle listing with your pricing",
+            "Rejected submissions notify the seller via SMS automatically",
+            "Photos uploaded by sellers are preserved when converting to inventory"
+          ]}
+        />
+
         <div>
           <h1 className="text-2xl font-bold font-serif">Consignments</h1>
           <p className="text-muted-foreground">

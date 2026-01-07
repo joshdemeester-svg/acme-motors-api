@@ -17,8 +17,10 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  Filter
+  Filter,
+  HelpCircle
 } from "lucide-react";
+import { AdminHelpBox } from "@/components/admin/AdminHelpBox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 
@@ -149,6 +151,22 @@ export default function PushNotifications() {
   return (
     <AdminLayout>
       <div className="space-y-6">
+        <AdminHelpBox
+          title="Push Notification Targeting"
+          description="Send browser notifications to customers who've subscribed on your website. Target specific audiences based on their interests."
+          icon={Bell}
+          variant="info"
+          defaultOpen={false}
+          className="mb-2"
+          tips={[
+            "New Listings: People who want to know when you add vehicles",
+            "Price Drops: Bargain hunters watching for deals",
+            "Hot Listings: Shoppers interested in your most popular vehicles",
+            "Special Offers: Customers who want promotions and incentives",
+            "All Subscribers: Everyone who's opted in to notifications"
+          ]}
+        />
+
         <div>
           <h1 className="text-2xl font-bold font-serif">Push Notifications</h1>
           <p className="text-muted-foreground">Send instant alerts to subscribed customers</p>
