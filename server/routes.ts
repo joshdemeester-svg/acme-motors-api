@@ -2382,6 +2382,19 @@ export async function registerRoutes(
     }
   });
 
+  app.delete("/api/inventory/:id", requireAdmin, async (req, res) => {
+    try {
+      const deleted = await storage.deleteInventoryCar(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Car not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting inventory car:", error);
+      res.status(500).json({ error: "Failed to delete car" });
+    }
+  });
+
   app.post("/api/consignments/:id/approve", requireAdmin, async (req, res) => {
     try {
       const { price } = req.body;

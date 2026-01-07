@@ -101,6 +101,7 @@ export interface IStorage {
   getSoldInventoryCars(): Promise<InventoryCar[]>;
   updateInventoryCarStatus(id: string, status: string): Promise<InventoryCar | undefined>;
   updateInventoryCar(id: string, data: Partial<InsertInventoryCar>): Promise<InventoryCar | undefined>;
+  deleteInventoryCar(id: string): Promise<boolean>;
   
   getSiteSettings(): Promise<SiteSettings | undefined>;
   updateSiteSettings(data: InsertSiteSettings): Promise<SiteSettings>;
@@ -391,6 +392,19 @@ export class DatabaseStorage implements IStorage {
       .where(eq(inventoryCars.id, id))
       .returning();
     return updated || undefined;
+  }
+
+  async deleteInventoryCar(id: string): Promise<boolean> {
+    // Delete related records first to avoid foreign key constraint errors
+    await db.delete(buyerInquiries).where(eq(buyerInquiries.inventoryCarId, id));
+    await db.delete(vehicleViews).where(eq(vehicleViews.vehicleId, id));
+    await db.delete(priceAlerts).where(eq(priceAlerts.vehicleId, id));
+    await db.delete(vehicleDocuments).where(eq(vehicleDocuments.vehicleId, id));
+    await db.delete(vehicleSaves).where(eq(vehicleSaves.vehicleId, id));
+    
+    // Now delete the inventory car
+    const result = await db.delete(inventoryCars).where(eq(inventoryCars.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getSiteSettings(): Promise<SiteSettings | undefined> {
