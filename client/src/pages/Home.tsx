@@ -97,7 +97,7 @@ export default function Home() {
 
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {featuredCars.map((car) => (
-                <Link key={car.id} href={`/vehicle/${car.slug || car.id}`} data-testid={`link-featured-car-${car.id}`}>
+                <Link key={car.id} href={`/inventory/${car.slug || car.id}`} data-testid={`link-featured-car-${car.id}`}>
                   <div className="group overflow-hidden rounded-lg bg-card transition-all hover:shadow-xl hover:shadow-primary/5 cursor-pointer">
                     <div className="relative aspect-[16/9] overflow-hidden">
                       <img 

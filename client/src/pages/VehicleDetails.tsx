@@ -662,7 +662,7 @@ export default function VehicleDetails({ id, legacyRedirect }: { id: string; leg
             {searchFocused && searchResults.length > 0 && (
               <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-md border bg-popover shadow-lg">
                 {searchResults.map((v) => (
-                  <Link key={v.id} href={`/vehicle/${v.id}`}>
+                  <Link key={v.id} href={`/inventory/${v.slug || v.id}`}>
                     <div 
                       className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-accent"
                       onClick={() => {

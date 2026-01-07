@@ -37,24 +37,25 @@ Preferred communication style: Simple, everyday language.
 ## SEO System
 
 ### URL Structure
-- **Canonical Vehicle URLs**: `/vehicle/{year}-{make}-{model}-{trim}-{city}-{state}-{8-char-id}`
+- **Canonical Vehicle URLs**: `/inventory/{year}-{make}-{model}-{trim?}-{stockId}`
   - Format: slugified lowercase, hyphens replace spaces/punctuation
+  - Entity-based format (no city/state in URL)
   - Trim is optional (omitted if empty)
-  - City/State from Admin SEO Settings > Dealer Location
-  - Short ID: First 8 characters of the vehicle's UUID (cleaner URLs)
-  - Example: `/vehicle/2023-rolls-royce-cullinan-black-badge-navarre-fl-9f8201c6`
+  - Stock ID: Either custom stock number or first 8 characters of UUID
+  - Example: `/inventory/2023-rolls-royce-cullinan-black-badge-abc12345`
+  - Location info is preserved in structured data (JSON-LD) for local SEO
 
 ### Where to Manage SEO Settings
 - **Admin Panel > Settings > SEO Tab** contains all SEO controls:
   - Social Sharing (OG title, description, image, Twitter handle)
   - Dealer Location (city, state, address, hours, Google Map URL, base URL)
-  - Vehicle URL Settings (toggle trim/location in slugs)
+  - Vehicle URL Settings (toggle trim/stock number in slugs)
   - Sold Vehicle Behavior (keep live, redirect, or noindex after X days)
 
 ### How Slugs Are Generated
 1. New vehicles automatically get canonical slugs when created via API
 2. Existing vehicles are auto-backfilled on server startup (no manual action needed)
-3. Slug format: `{year}-{make}-{model}[-{trim}][-{city}-{state}]-{uuid}`
+3. Slug format: `{year}-{make}-{model}[-{trim}]-{stockId}`
 4. All parts are slugified (lowercase, hyphens, no special chars)
 
 ### Endpoints
@@ -65,9 +66,10 @@ Preferred communication style: Simple, everyday language.
 ### Structured Data
 - Vehicle pages include JSON-LD with Vehicle/Product schema
 - Includes: name, brand, model, year, mileage, VIN, price, condition, images, seller info
+- Location (city, state, address) is included in seller info for local SEO relevance
 
 ### Backward Compatibility
-- Legacy UUID-only URLs (`/vehicle/{uuid}`) still work
+- Legacy `/vehicle/{slug}` URLs automatically redirect (301) to `/inventory/{slug}`
 - SEO data injection handles both slug and UUID lookups
 
 ## Local SEO System

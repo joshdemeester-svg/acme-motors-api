@@ -468,7 +468,7 @@ export default function Inventory({ makeSlug, modelSlug }: InventoryProps) {
                     </div>
                   </div>
                   
-                  <Link href={`/vehicle/${car.slug || car.id}`}>
+                  <Link href={`/inventory/${car.slug || car.id}`}>
                     <Button className="mt-6 w-full" data-testid={`button-view-${car.id}`}>View Details</Button>
                   </Link>
                 </div>
