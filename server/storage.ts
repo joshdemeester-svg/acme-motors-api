@@ -19,6 +19,8 @@ import {
   targetLocations,
   citationDirectories,
   citationSubmissions,
+  pushSubscriptions,
+  pushNotifications,
   type User, 
   type InsertUser,
   type ConsignmentSubmission,
@@ -55,7 +57,11 @@ import {
   type CitationDirectory,
   type InsertCitationDirectory,
   type CitationSubmission,
-  type InsertCitationSubmission
+  type InsertCitationSubmission,
+  type PushSubscription,
+  type InsertPushSubscription,
+  type PushNotification,
+  type InsertPushNotification
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, lt } from "drizzle-orm";
@@ -194,6 +200,19 @@ export interface IStorage {
   getAllCitationSubmissions(): Promise<CitationSubmission[]>;
   updateCitationSubmission(id: string, data: Partial<InsertCitationSubmission>): Promise<CitationSubmission | undefined>;
   getCitationStats(): Promise<{ pending: number; submitted: number; confirmed: number }>;
+
+  createPushSubscription(data: InsertPushSubscription): Promise<PushSubscription>;
+  getPushSubscriptionByEndpoint(endpoint: string): Promise<PushSubscription | undefined>;
+  getAllPushSubscriptions(): Promise<PushSubscription[]>;
+  getPushSubscriptionsByMake(make: string): Promise<PushSubscription[]>;
+  updatePushSubscription(id: string, data: Partial<InsertPushSubscription>): Promise<PushSubscription | undefined>;
+  deletePushSubscription(endpoint: string): Promise<boolean>;
+  getPushSubscriptionCount(): Promise<number>;
+  
+  createPushNotification(data: InsertPushNotification): Promise<PushNotification>;
+  getPushNotification(id: string): Promise<PushNotification | undefined>;
+  getAllPushNotifications(): Promise<PushNotification[]>;
+  updatePushNotificationSentCount(id: string, count: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -895,6 +914,60 @@ export class DatabaseStorage implements IStorage {
       submitted: all.filter(s => s.status === 'submitted').length,
       confirmed: all.filter(s => s.status === 'confirmed').length,
     };
+  }
+
+  async createPushSubscription(data: InsertPushSubscription): Promise<PushSubscription> {
+    const [subscription] = await db.insert(pushSubscriptions).values(data).returning();
+    return subscription;
+  }
+
+  async getPushSubscriptionByEndpoint(endpoint: string): Promise<PushSubscription | undefined> {
+    const [subscription] = await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint));
+    return subscription || undefined;
+  }
+
+  async getAllPushSubscriptions(): Promise<PushSubscription[]> {
+    return db.select().from(pushSubscriptions).orderBy(desc(pushSubscriptions.createdAt));
+  }
+
+  async getPushSubscriptionsByMake(make: string): Promise<PushSubscription[]> {
+    const all = await db.select().from(pushSubscriptions);
+    return all.filter(sub => 
+      !sub.preferredMakes || sub.preferredMakes.length === 0 || sub.preferredMakes.includes(make)
+    );
+  }
+
+  async updatePushSubscription(id: string, data: Partial<InsertPushSubscription>): Promise<PushSubscription | undefined> {
+    const [subscription] = await db.update(pushSubscriptions).set(data).where(eq(pushSubscriptions.id, id)).returning();
+    return subscription || undefined;
+  }
+
+  async deletePushSubscription(endpoint: string): Promise<boolean> {
+    const result = await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint)).returning();
+    return result.length > 0;
+  }
+
+  async getPushSubscriptionCount(): Promise<number> {
+    const all = await db.select().from(pushSubscriptions);
+    return all.length;
+  }
+
+  async createPushNotification(data: InsertPushNotification): Promise<PushNotification> {
+    const [notification] = await db.insert(pushNotifications).values(data).returning();
+    return notification;
+  }
+
+  async getPushNotification(id: string): Promise<PushNotification | undefined> {
+    const [notification] = await db.select().from(pushNotifications).where(eq(pushNotifications.id, id));
+    return notification || undefined;
+  }
+
+  async getAllPushNotifications(): Promise<PushNotification[]> {
+    return db.select().from(pushNotifications).orderBy(desc(pushNotifications.createdAt));
+  }
+
+  async updatePushNotificationSentCount(id: string, count: number): Promise<void> {
+    await db.update(pushNotifications).set({ sentCount: count, sentAt: new Date() }).where(eq(pushNotifications.id, id));
   }
 }
 

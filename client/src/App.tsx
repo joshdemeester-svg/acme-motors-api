@@ -20,6 +20,7 @@ import AdminConsignments from "@/pages/admin/Consignments";
 import AdminSettings from "@/pages/admin/Settings";
 import AdminRoadmap from "@/pages/admin/Roadmap";
 import AdminSeoTools from "@/pages/admin/SeoTools";
+import AdminPushNotifications from "@/pages/admin/PushNotifications";
 import SellerPortal from "@/pages/SellerPortal";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
@@ -29,6 +30,8 @@ import Appointments from "@/pages/Appointments";
 import CreditApp from "@/pages/CreditApp";
 import SavedVehicles from "@/pages/SavedVehicles";
 import LocationPage from "@/pages/LocationPage";
+import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
+import { useLocation } from "wouter";
 
 function FaviconLoader() {
   useFavicon();
@@ -38,6 +41,12 @@ function FaviconLoader() {
 function LiveChatLoader() {
   useLiveChat();
   return null;
+}
+
+function PushNotificationPromptWrapper() {
+  const [location] = useLocation();
+  if (location.startsWith('/admin')) return null;
+  return <PushNotificationPrompt />;
 }
 
 function Router() {
@@ -56,6 +65,7 @@ function Router() {
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/roadmap" component={AdminRoadmap} />
       <Route path="/admin/seo-tools" component={AdminSeoTools} />
+      <Route path="/admin/notifications" component={AdminPushNotifications} />
       <Route path="/admin-legacy" component={Admin} />
       <Route path="/seller-portal" component={SellerPortal} />
       <Route path="/privacy" component={Privacy} />
@@ -81,6 +91,7 @@ function App() {
             <LiveChatLoader />
             <Toaster />
             <Router />
+            <PushNotificationPromptWrapper />
           </TooltipProvider>
         </SavedVehiclesProvider>
       </SettingsProvider>
