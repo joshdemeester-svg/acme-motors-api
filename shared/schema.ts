@@ -98,6 +98,7 @@ export const inventoryCars = pgTable("inventory_cars", {
   status: text("status").notNull().default("available"),
   featured: boolean("featured").default(false),
   soldDate: timestamp("sold_date"),
+  stockNumber: text("stock_number"),
   
   consignmentId: varchar("consignment_id").references(() => consignmentSubmissions.id),
   
@@ -114,6 +115,8 @@ export interface VehicleSlugOptions {
   city?: string | null;
   state?: string | null;
   id: string;
+  stockNumber?: string | null;
+  locationFirst?: boolean;
 }
 
 export function slugify(text: string): string {
@@ -131,15 +134,30 @@ export function matchSlug(slug: string, source: string): boolean {
 }
 
 export function generateVehicleSlug(options: VehicleSlugOptions): string {
-  const { year, make, model, trim, city, state, id } = options;
+  const { year, make, model, trim, city, state, id, stockNumber, locationFirst } = options;
   
-  const parts = [year.toString(), make, model];
+  const parts: string[] = [];
+  
+  // Location first format: {city}-{state}-{year}-{make}-{model}-{trim}-{stock/id}
+  // Default format: {year}-{make}-{model}-{trim}-{city}-{state}-{stock/id}
+  
+  if (locationFirst && city && state) {
+    parts.push(city, state);
+  }
+  
+  parts.push(year.toString(), make, model);
   if (trim) parts.push(trim);
-  if (city) parts.push(city);
-  if (state) parts.push(state);
-  // Use only first 8 characters of UUID for cleaner URLs
-  const shortId = id.split('-')[0] || id.substring(0, 8);
-  parts.push(shortId);
+  
+  if (!locationFirst && city) parts.push(city);
+  if (!locationFirst && state) parts.push(state);
+  
+  // Use stock number if provided, otherwise use short ID
+  if (stockNumber) {
+    parts.push(`stk${stockNumber}`);
+  } else {
+    const shortId = id.split('-')[0] || id.substring(0, 8);
+    parts.push(shortId);
+  }
   
   return parts.map(p => slugify(p)).filter(Boolean).join('-');
 }
@@ -170,7 +188,18 @@ export function extractIdFromSlug(slug: string): string | null {
   // Try short ID (8 hex chars at end - new format)
   const shortIdPattern = /-([a-f0-9]{8})$/i;
   const shortMatch = slug.match(shortIdPattern);
-  return shortMatch ? shortMatch[1] : null;
+  if (shortMatch) return shortMatch[1];
+  
+  // Try stock number format (stk followed by alphanumeric)
+  const stockPattern = /-stk([a-z0-9]+)$/i;
+  const stockMatch = slug.match(stockPattern);
+  return stockMatch ? `stk:${stockMatch[1]}` : null;
+}
+
+export function extractStockFromSlug(slug: string): string | null {
+  const stockPattern = /-stk([a-z0-9]+)$/i;
+  const stockMatch = slug.match(stockPattern);
+  return stockMatch ? stockMatch[1] : null;
 }
 
 export const insertInventoryCarSchema = createInsertSchema(inventoryCars).omit({
@@ -259,6 +288,8 @@ export const siteSettings = pgTable("site_settings", {
   
   slugIncludeTrim: boolean("slug_include_trim").default(true),
   slugIncludeLocation: boolean("slug_include_location").default(true),
+  slugLocationFirst: boolean("slug_location_first").default(false),
+  slugIncludeStock: boolean("slug_include_stock").default(false),
   
   soldVehicleBehavior: text("sold_vehicle_behavior").default("keep_live"),
   soldVehicleNoindexDays: integer("sold_vehicle_noindex_days").default(30),

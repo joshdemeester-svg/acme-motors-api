@@ -3395,7 +3395,7 @@ Sitemap: ${baseUrl}/sitemap.xml
       // Vehicle pages
       const availableCars = inventory.filter(car => car.status === "available" || car.status === "pending");
       for (const car of availableCars) {
-        // Generate slug on-the-fly if not stored
+        // Generate slug on-the-fly if not stored, using current settings
         const vehicleSlug = car.slug || generateVehicleSlug({
           year: car.year,
           make: car.make,
@@ -3404,6 +3404,8 @@ Sitemap: ${baseUrl}/sitemap.xml
           city: settings?.slugIncludeLocation !== false ? (settings?.dealerCity || null) : null,
           state: settings?.slugIncludeLocation !== false ? (settings?.dealerState || null) : null,
           id: car.id,
+          stockNumber: settings?.slugIncludeStock ? (car.stockNumber || null) : null,
+          locationFirst: settings?.slugLocationFirst ?? false,
         });
         urls.push(`
     <url>
@@ -3475,17 +3477,19 @@ ${urls.join('')}
         return res.status(404).json({ error: "Vehicle not found" });
       }
       
-      // Generate canonical slug if needed
+      // Generate canonical slug if needed, using current settings
       let canonicalSlug = car.slug;
       if (!canonicalSlug) {
         canonicalSlug = generateVehicleSlug({
           year: car.year,
           make: car.make,
           model: car.model,
-          trim: car.trim || null,
+          trim: settings?.slugIncludeTrim ? (car.trim || null) : null,
           city: settings?.slugIncludeLocation ? (settings?.dealerCity || null) : null,
           state: settings?.slugIncludeLocation ? (settings?.dealerState || null) : null,
           id: car.id,
+          stockNumber: settings?.slugIncludeStock ? (car.stockNumber || null) : null,
+          locationFirst: settings?.slugLocationFirst ?? false,
         });
       }
       
