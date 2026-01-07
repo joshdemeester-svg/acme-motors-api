@@ -1946,10 +1946,48 @@ export default function Settings() {
                     data-testid="switch-slug-include-location"
                   />
                 </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Location First in URL</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Put location before year/make/model (e.g., navarre-fl-2023-rolls-royce)
+                    </p>
+                  </div>
+                  <Switch
+                    checked={(formData as any).slugLocationFirst ?? false}
+                    onCheckedChange={(checked) => setFormData({ ...formData, slugLocationFirst: checked } as any)}
+                    data-testid="switch-slug-location-first"
+                    disabled={!(formData as any).slugIncludeLocation}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Include Stock Number in URL</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Add stock number to URL instead of ID (e.g., stk5304)
+                    </p>
+                  </div>
+                  <Switch
+                    checked={(formData as any).slugIncludeStock ?? false}
+                    onCheckedChange={(checked) => setFormData({ ...formData, slugIncludeStock: checked } as any)}
+                    data-testid="switch-slug-include-stock"
+                  />
+                </div>
                 <div className="p-3 bg-muted rounded-lg">
                   <p className="text-xs text-muted-foreground mb-1">Example URL:</p>
-                  <code className="text-xs">
-                    /vehicle/2023-rolls-royce-cullinan{(formData as any).slugIncludeTrim ? '-black-badge' : ''}{(formData as any).slugIncludeLocation ? `-${((formData as any).dealerCity || 'navarre').toLowerCase()}-${((formData as any).dealerState || 'fl').toLowerCase()}` : ''}-abc123
+                  <code className="text-xs break-all">
+                    {(() => {
+                      const location = (formData as any).slugIncludeLocation ? `${((formData as any).dealerCity || 'navarre').toLowerCase()}-${((formData as any).dealerState || 'fl').toLowerCase()}` : '';
+                      const vehicle = `2023-rolls-royce-cullinan${(formData as any).slugIncludeTrim ? '-black-badge' : ''}`;
+                      const id = (formData as any).slugIncludeStock ? 'stk5304' : 'abc12345';
+                      if ((formData as any).slugLocationFirst && location) {
+                        return `/vehicle/${location}-${vehicle}-${id}`;
+                      } else if (location) {
+                        return `/vehicle/${vehicle}-${location}-${id}`;
+                      } else {
+                        return `/vehicle/${vehicle}-${id}`;
+                      }
+                    })()}
                   </code>
                 </div>
               </CardContent>
