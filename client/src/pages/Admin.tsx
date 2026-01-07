@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare, Link, Bell, Plug, FileText, Download, ExternalLink, Eye, EyeOff, Users, Shield, UserPlus, Calculator, BarChart3, ChevronsUpDown, Loader2, Menu } from "lucide-react";
+import { Check, X, Clock, DollarSign, Lock, LogOut, Settings, Palette, Image, Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, Pencil, Plus, Search, Upload, Trash2, Car, Star, MessageSquare, MessageCircle, Link, Bell, Plug, FileText, Download, ExternalLink, Eye, EyeOff, Users, Shield, UserPlus, Calculator, BarChart3, ChevronsUpDown, Loader2, Menu } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -307,6 +307,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
   const [avgDaysToFirstInquiry, setAvgDaysToFirstInquiry] = useState("5");
   const [avgDaysToSell, setAvgDaysToSell] = useState("45");
   const [hotListingThreshold, setHotListingThreshold] = useState("5");
+  const [liveChatEnabled, setLiveChatEnabled] = useState(false);
+  const [liveChatWidgetId, setLiveChatWidgetId] = useState("");
   const [adminNotifyPhone1, setAdminNotifyPhone1] = useState("");
   const [adminNotifyPhone2, setAdminNotifyPhone2] = useState("");
   const [ghlApiToken, setGhlApiToken] = useState("");
@@ -373,6 +375,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
       setAvgDaysToFirstInquiry(String(settings.avgDaysToFirstInquiry || 5));
       setAvgDaysToSell(String(settings.avgDaysToSell || 45));
       setHotListingThreshold(String(settings.hotListingThreshold || 5));
+      setLiveChatEnabled(settings.liveChatEnabled || false);
+      setLiveChatWidgetId(settings.liveChatWidgetId || "");
       setAdminNotifyPhone1(settings.adminNotifyPhone1 || "");
       setAdminNotifyPhone2(settings.adminNotifyPhone2 || "");
       setGhlLocationId(settings.ghlLocationId || "");
@@ -433,6 +437,8 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
           avgDaysToFirstInquiry: parseInt(avgDaysToFirstInquiry) || 5,
           avgDaysToSell: parseInt(avgDaysToSell) || 45,
           hotListingThreshold: parseInt(hotListingThreshold) || 5,
+          liveChatEnabled,
+          liveChatWidgetId: liveChatWidgetId || null,
           adminNotifyPhone1: adminNotifyPhone1 || null,
           adminNotifyPhone2: adminNotifyPhone2 || null,
           ...(ghlApiToken ? { ghlApiToken } : {}),
@@ -1639,6 +1645,54 @@ function SettingsPanel({ onRegisterSave }: { onRegisterSave: (handler: { save: (
             data-testid="button-save-consignment"
           >
             {updateMutation.isPending ? "Saving..." : "Save Consignment Settings"}
+          </Button>
+        </CardFooter>
+      </Card>
+
+      <Card className="border-white border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageCircle className="h-5 w-5" /> Live Chat Widget
+          </CardTitle>
+          <CardDescription>Enable HighLevel chat widget for customer support on your website</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="liveChatEnabled">Enable Live Chat</Label>
+              <p className="text-xs text-muted-foreground">Show the chat widget on all public pages</p>
+            </div>
+            <Switch
+              id="liveChatEnabled"
+              checked={liveChatEnabled}
+              onCheckedChange={setLiveChatEnabled}
+              data-testid="switch-live-chat-enabled"
+            />
+          </div>
+          
+          {liveChatEnabled && (
+            <div className="space-y-2 pt-2 border-t">
+              <Label htmlFor="liveChatWidgetId">HighLevel Widget ID</Label>
+              <Input
+                id="liveChatWidgetId"
+                value={liveChatWidgetId}
+                onChange={(e) => setLiveChatWidgetId(e.target.value)}
+                placeholder="Enter your widget ID from HighLevel"
+                data-testid="input-live-chat-widget-id"
+              />
+              <p className="text-xs text-muted-foreground">
+                Find this in HighLevel: Sites &gt; Chat Widget &gt; Get Code &gt; copy the data-widget-id value
+              </p>
+            </div>
+          )}
+        </CardContent>
+        <CardFooter>
+          <Button 
+            onClick={() => updateMutation.mutate()} 
+            disabled={updateMutation.isPending}
+            data-testid="button-save-live-chat"
+          >
+            {updateMutation.isPending ? "Saving..." : "Save Live Chat Settings"}
           </Button>
         </CardFooter>
       </Card>
