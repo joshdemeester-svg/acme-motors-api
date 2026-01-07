@@ -16,12 +16,23 @@ import {
   History,
   Loader2,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Filter
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
+
+const NOTIFICATION_CATEGORIES = [
+  { value: "all", label: "All Subscribers", description: "Send to everyone" },
+  { value: "new_listings", label: "New Listings", description: "Interested in new inventory" },
+  { value: "price_drops", label: "Price Drops", description: "Want to know about price reductions" },
+  { value: "special_offers", label: "Special Offers", description: "Interested in deals & promotions" },
+  { value: "hot_listings", label: "Hot Listings", description: "Want alerts on popular vehicles" },
+];
 
 type PushStats = {
   subscriberCount: number;
+  categoryCounts?: Record<string, number>;
   notificationsSent: number;
   lastNotification: any | null;
 };
@@ -44,6 +55,7 @@ type PushSubscription = {
   notifyNewListings?: boolean;
   notifyPriceDrops?: boolean;
   notifySpecialOffers?: boolean;
+  notifyHotListings?: boolean;
   userAgent?: string;
   createdAt: string;
 };
@@ -53,6 +65,7 @@ export default function PushNotifications() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [url, setUrl] = useState("");
+  const [targetCategory, setTargetCategory] = useState("all");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -84,7 +97,7 @@ export default function PushNotifications() {
   });
 
   const sendMutation = useMutation({
-    mutationFn: async (data: { title: string; body: string; url?: string }) => {
+    mutationFn: async (data: { title: string; body: string; url?: string; targetCategory?: string }) => {
       const res = await fetch("/api/push/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -106,6 +119,7 @@ export default function PushNotifications() {
       setTitle("");
       setBody("");
       setUrl("");
+      setTargetCategory("all");
     },
     onError: (error: Error) => {
       toast({
@@ -116,6 +130,10 @@ export default function PushNotifications() {
     },
   });
 
+  const recipientCount = targetCategory === "all" 
+    ? (stats?.subscriberCount || 0) 
+    : (stats?.categoryCounts?.[targetCategory] || 0);
+
   const handleSend = () => {
     if (!title.trim() || !body.trim()) {
       toast({
@@ -125,7 +143,7 @@ export default function PushNotifications() {
       });
       return;
     }
-    sendMutation.mutate({ title, body, url: url || undefined });
+    sendMutation.mutate({ title, body, url: url || undefined, targetCategory });
   };
 
   return (
@@ -185,9 +203,35 @@ export default function PushNotifications() {
             <Card>
               <CardHeader>
                 <CardTitle>Send Push Notification</CardTitle>
-                <CardDescription>Compose and send a notification to all subscribers</CardDescription>
+                <CardDescription>Target specific subscriber groups based on their preferences</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="category" className="flex items-center gap-2">
+                    <Filter className="w-4 h-4" />
+                    Send To
+                  </Label>
+                  <Select value={targetCategory} onValueChange={setTargetCategory}>
+                    <SelectTrigger data-testid="select-notification-category">
+                      <SelectValue placeholder="Select audience" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {NOTIFICATION_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat.value} value={cat.value}>
+                          <div className="flex items-center justify-between gap-4">
+                            <span>{cat.label}</span>
+                            <Badge variant="secondary" className="text-xs">
+                              {stats?.categoryCounts?.[cat.value] ?? stats?.subscriberCount ?? 0}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {NOTIFICATION_CATEGORIES.find(c => c.value === targetCategory)?.description}
+                  </p>
+                </div>
                 <div>
                   <Label htmlFor="title">Title</Label>
                   <Input
@@ -226,7 +270,7 @@ export default function PushNotifications() {
                 </div>
                 <Button 
                   onClick={handleSend} 
-                  disabled={sendMutation.isPending || !title.trim() || !body.trim()}
+                  disabled={sendMutation.isPending || !title.trim() || !body.trim() || recipientCount === 0}
                   className="w-full"
                   data-testid="button-send-notification"
                 >
@@ -235,7 +279,7 @@ export default function PushNotifications() {
                   ) : (
                     <Send className="w-4 h-4 mr-2" />
                   )}
-                  Send to {stats?.subscriberCount || 0} Subscribers
+                  Send to {recipientCount} Subscriber{recipientCount !== 1 ? 's' : ''}
                 </Button>
               </CardContent>
             </Card>
@@ -297,10 +341,11 @@ export default function PushNotifications() {
                             Joined {format(new Date(sub.createdAt), "MMM d, yyyy")}
                           </p>
                         </div>
-                        <div className="flex gap-1">
+                        <div className="flex flex-wrap gap-1">
                           {sub.notifyNewListings && <Badge variant="outline" className="text-xs">New</Badge>}
                           {sub.notifyPriceDrops && <Badge variant="outline" className="text-xs">Drops</Badge>}
                           {sub.notifySpecialOffers && <Badge variant="outline" className="text-xs">Offers</Badge>}
+                          {sub.notifyHotListings && <Badge variant="outline" className="text-xs">Hot</Badge>}
                         </div>
                       </div>
                     ))}
