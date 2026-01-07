@@ -3986,6 +3986,171 @@ ${urls.join('')}
     }
   });
 
+  // ====================== SMS CONVERSATIONS ======================
+
+  // Get all SMS conversations
+  app.get("/api/sms/conversations", requireAdmin, async (req, res) => {
+    try {
+      const conversations = await storage.getAllSmsConversations();
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error fetching SMS conversations:", error);
+      res.status(500).json({ error: "Failed to fetch conversations" });
+    }
+  });
+
+  // Send SMS reply
+  app.post("/api/sms/send", requireAdmin, async (req, res) => {
+    try {
+      const { phone, body, inquiryId } = req.body;
+      
+      if (!phone || !body) {
+        return res.status(400).json({ error: "Phone and message body are required" });
+      }
+
+      // Get GHL credentials
+      const { locationId, apiToken } = await getGHLCredentials();
+      
+      if (!locationId || !apiToken) {
+        return res.status(400).json({ error: "GoHighLevel not configured" });
+      }
+
+      // Send SMS via GHL
+      // First, find or create contact
+      let ghlContactId: string | undefined;
+      
+      try {
+        // Search for contact by phone
+        const searchRes = await fetch(
+          `https://services.leadconnectorhq.com/contacts/search?locationId=${locationId}&query=${encodeURIComponent(phone)}`,
+          {
+            headers: {
+              "Authorization": `Bearer ${apiToken}`,
+              "Version": "2021-07-28",
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        
+        if (searchRes.ok) {
+          const searchData = await searchRes.json();
+          if (searchData.contacts && searchData.contacts.length > 0) {
+            ghlContactId = searchData.contacts[0].id;
+          }
+        }
+      } catch (e) {
+        console.error("Error searching GHL contact:", e);
+      }
+
+      if (!ghlContactId) {
+        return res.status(400).json({ error: "Contact not found in GoHighLevel" });
+      }
+
+      // Send message via GHL Conversations API
+      const sendRes = await fetch(
+        `https://services.leadconnectorhq.com/conversations/messages`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiToken}`,
+            "Version": "2021-04-15",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            type: "SMS",
+            contactId: ghlContactId,
+            message: body,
+          }),
+        }
+      );
+
+      if (!sendRes.ok) {
+        const errText = await sendRes.text();
+        console.error("GHL send error:", errText);
+        return res.status(500).json({ error: "Failed to send SMS via GoHighLevel" });
+      }
+
+      const sendData = await sendRes.json();
+
+      // Store the outbound message
+      const message = await storage.createSmsMessage({
+        inquiryId: inquiryId || null,
+        ghlContactId,
+        ghlMessageId: sendData.messageId,
+        direction: "outbound",
+        body,
+        phone,
+        status: "sent",
+        isRead: true,
+      });
+
+      res.json({ success: true, message });
+    } catch (error) {
+      console.error("Error sending SMS:", error);
+      res.status(500).json({ error: "Failed to send SMS" });
+    }
+  });
+
+  // Webhook for incoming SMS from GoHighLevel
+  app.post("/api/webhooks/ghl/sms", async (req, res) => {
+    try {
+      const payload = req.body;
+      
+      console.log("Received GHL SMS webhook:", JSON.stringify(payload, null, 2));
+
+      // GHL webhook payload structure for inbound messages
+      const contactId = payload.contactId || payload.contact_id;
+      const messageBody = payload.body || payload.message || payload.text;
+      const phone = payload.phone || payload.from || payload.contactPhone;
+      const messageId = payload.messageId || payload.message_id;
+      const conversationId = payload.conversationId || payload.conversation_id;
+
+      if (!messageBody || !phone) {
+        console.log("Incomplete SMS webhook payload");
+        return res.status(200).json({ received: true });
+      }
+
+      // Try to match to an existing inquiry by phone
+      const inquiries = await storage.getAllBuyerInquiries();
+      const matchingInquiry = inquiries.find(i => 
+        i.buyerPhone.replace(/\D/g, '') === phone.replace(/\D/g, '')
+      );
+
+      // Store the inbound message
+      await storage.createSmsMessage({
+        inquiryId: matchingInquiry?.id || null,
+        ghlContactId: contactId,
+        ghlConversationId: conversationId,
+        ghlMessageId: messageId,
+        direction: "inbound",
+        body: messageBody,
+        phone: phone.replace(/\D/g, ''),
+        status: "delivered",
+        isRead: false,
+      });
+
+      res.status(200).json({ received: true });
+    } catch (error) {
+      console.error("Error processing SMS webhook:", error);
+      res.status(200).json({ received: true }); // Always return 200 to prevent retries
+    }
+  });
+
+  // Mark messages as read
+  app.post("/api/sms/mark-read", requireAdmin, async (req, res) => {
+    try {
+      const { phone } = req.body;
+      if (!phone) {
+        return res.status(400).json({ error: "Phone number required" });
+      }
+      await storage.markSmsMessagesAsRead(phone);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+      res.status(500).json({ error: "Failed to mark messages as read" });
+    }
+  });
+
   // ====================== SYSTEM CHECK (Master Admin Only) ======================
   
   app.get("/api/system-check", requireMasterAdmin, async (req, res) => {

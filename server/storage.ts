@@ -21,6 +21,7 @@ import {
   citationSubmissions,
   pushSubscriptions,
   pushNotifications,
+  smsMessages,
   type User, 
   type InsertUser,
   type ConsignmentSubmission,
@@ -61,7 +62,9 @@ import {
   type PushSubscription,
   type InsertPushSubscription,
   type PushNotification,
-  type InsertPushNotification
+  type InsertPushNotification,
+  type SmsMessage,
+  type InsertSmsMessage
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, lt } from "drizzle-orm";
@@ -213,6 +216,14 @@ export interface IStorage {
   getPushNotification(id: string): Promise<PushNotification | undefined>;
   getAllPushNotifications(): Promise<PushNotification[]>;
   updatePushNotificationSentCount(id: string, count: number): Promise<void>;
+  
+  // SMS Messages
+  createSmsMessage(data: InsertSmsMessage): Promise<SmsMessage>;
+  getSmsMessagesByPhone(phone: string): Promise<SmsMessage[]>;
+  getSmsMessagesByInquiry(inquiryId: string): Promise<SmsMessage[]>;
+  getConversationsWithUnread(): Promise<{ inquiryId: string; phone: string; unreadCount: number; lastMessageAt: Date }[]>;
+  markSmsMessagesAsRead(phone: string): Promise<void>;
+  getAllSmsConversations(): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -968,6 +979,98 @@ export class DatabaseStorage implements IStorage {
 
   async updatePushNotificationSentCount(id: string, count: number): Promise<void> {
     await db.update(pushNotifications).set({ sentCount: count, sentAt: new Date() }).where(eq(pushNotifications.id, id));
+  }
+
+  // SMS Messages
+  async createSmsMessage(data: InsertSmsMessage): Promise<SmsMessage> {
+    const [message] = await db.insert(smsMessages).values(data).returning();
+    return message;
+  }
+
+  async getSmsMessagesByPhone(phone: string): Promise<SmsMessage[]> {
+    return db.select().from(smsMessages).where(eq(smsMessages.phone, phone)).orderBy(smsMessages.createdAt);
+  }
+
+  async getSmsMessagesByInquiry(inquiryId: string): Promise<SmsMessage[]> {
+    return db.select().from(smsMessages).where(eq(smsMessages.inquiryId, inquiryId)).orderBy(smsMessages.createdAt);
+  }
+
+  async getConversationsWithUnread(): Promise<{ inquiryId: string; phone: string; unreadCount: number; lastMessageAt: Date }[]> {
+    const messages = await db.select().from(smsMessages).orderBy(desc(smsMessages.createdAt));
+    
+    const conversationMap = new Map<string, { inquiryId: string; phone: string; unreadCount: number; lastMessageAt: Date }>();
+    
+    for (const msg of messages) {
+      const key = msg.phone;
+      if (!conversationMap.has(key)) {
+        conversationMap.set(key, {
+          inquiryId: msg.inquiryId || '',
+          phone: msg.phone,
+          unreadCount: 0,
+          lastMessageAt: msg.createdAt || new Date(),
+        });
+      }
+      if (msg.direction === 'inbound' && !msg.isRead) {
+        const conv = conversationMap.get(key)!;
+        conv.unreadCount++;
+      }
+    }
+    
+    return Array.from(conversationMap.values());
+  }
+
+  async markSmsMessagesAsRead(phone: string): Promise<void> {
+    await db.update(smsMessages)
+      .set({ isRead: true })
+      .where(and(eq(smsMessages.phone, phone), eq(smsMessages.direction, 'inbound')));
+  }
+
+  async getAllSmsConversations(): Promise<any[]> {
+    const messages = await db.select().from(smsMessages).orderBy(desc(smsMessages.createdAt));
+    const inquiries = await db.select().from(buyerInquiries);
+    
+    const inquiryMap = new Map(inquiries.map(i => [i.id, i]));
+    const phoneToInquiryMap = new Map(inquiries.map(i => [i.buyerPhone, i]));
+    
+    const conversationMap = new Map<string, {
+      id: string;
+      name: string;
+      phone: string;
+      lastMessageAt: string;
+      unreadCount: number;
+      messages: SmsMessage[];
+    }>();
+    
+    for (const msg of messages) {
+      const key = msg.phone;
+      if (!conversationMap.has(key)) {
+        const inquiry = msg.inquiryId ? inquiryMap.get(msg.inquiryId) : phoneToInquiryMap.get(msg.phone);
+        conversationMap.set(key, {
+          id: msg.inquiryId || msg.phone,
+          name: inquiry?.buyerName || 'Unknown',
+          phone: msg.phone,
+          lastMessageAt: (msg.createdAt || new Date()).toISOString(),
+          unreadCount: 0,
+          messages: [],
+        });
+      }
+      
+      const conv = conversationMap.get(key)!;
+      conv.messages.push(msg);
+      if (msg.direction === 'inbound' && !msg.isRead) {
+        conv.unreadCount++;
+      }
+    }
+    
+    // Sort messages chronologically within each conversation
+    const conversations = Array.from(conversationMap.values());
+    for (const conv of conversations) {
+      conv.messages.sort((a: SmsMessage, b: SmsMessage) => 
+        new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+      );
+    }
+    
+    return conversations;
   }
 }
 

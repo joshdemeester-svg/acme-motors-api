@@ -749,3 +749,26 @@ export const insertPushNotificationSchema = createInsertSchema(pushNotifications
 
 export type InsertPushNotification = z.infer<typeof insertPushNotificationSchema>;
 export type PushNotification = typeof pushNotifications.$inferSelect;
+
+// SMS Messages for two-way communication
+export const smsMessages = pgTable("sms_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  inquiryId: varchar("inquiry_id").references(() => buyerInquiries.id),
+  ghlContactId: text("ghl_contact_id"),
+  ghlConversationId: text("ghl_conversation_id"),
+  ghlMessageId: text("ghl_message_id"),
+  direction: text("direction").notNull(), // 'inbound' or 'outbound'
+  body: text("body").notNull(),
+  phone: text("phone").notNull(),
+  status: text("status").default("delivered"), // 'pending', 'sent', 'delivered', 'failed'
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertSmsMessageSchema = createInsertSchema(smsMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertSmsMessage = z.infer<typeof insertSmsMessageSchema>;
+export type SmsMessage = typeof smsMessages.$inferSelect;
