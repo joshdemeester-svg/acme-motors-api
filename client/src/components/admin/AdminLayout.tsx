@@ -13,7 +13,8 @@ import {
   Loader2,
   Monitor,
   Map,
-  MapPin
+  MapPin,
+  Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,7 @@ const navItems: NavItem[] = [
   { label: "Consignments", href: "/admin/consignments", icon: <FileText className="h-5 w-5" /> },
   { label: "Settings", href: "/admin/settings", icon: <Settings className="h-5 w-5" /> },
   { label: "SEO Tools", href: "/admin/seo-tools", icon: <MapPin className="h-5 w-5" /> },
+  { label: "Notifications", href: "/admin/notifications", icon: <Bell className="h-5 w-5" /> },
   { label: "Roadmap", href: "/admin/roadmap", icon: <Map className="h-5 w-5" />, masterOnly: true },
 ];
 

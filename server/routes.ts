@@ -3556,6 +3556,199 @@ export async function registerRoutes(
     }
   });
 
+  // ====================== PUSH NOTIFICATIONS ======================
+  
+  // Get VAPID public key for client subscription
+  app.get("/api/push/vapid-key", (req, res) => {
+    const publicKey = process.env.VAPID_PUBLIC_KEY;
+    if (!publicKey) {
+      return res.status(500).json({ error: "VAPID key not configured" });
+    }
+    res.send(publicKey);
+  });
+
+  // Subscribe to push notifications
+  app.post("/api/push/subscribe", async (req, res) => {
+    try {
+      const { subscription, preferences } = req.body;
+      
+      if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+        return res.status(400).json({ error: "Invalid subscription data" });
+      }
+
+      // Check if already subscribed
+      const existing = await storage.getPushSubscriptionByEndpoint(subscription.endpoint);
+      if (existing) {
+        // Update preferences
+        await storage.updatePushSubscription(existing.id, {
+          preferredMakes: preferences?.preferredMakes || [],
+          notifyNewListings: preferences?.notifyNewListings ?? true,
+          notifyPriceDrops: preferences?.notifyPriceDrops ?? true,
+          notifySpecialOffers: preferences?.notifySpecialOffers ?? true,
+        });
+        return res.json({ success: true, message: "Preferences updated" });
+      }
+
+      await storage.createPushSubscription({
+        endpoint: subscription.endpoint,
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth,
+        preferredMakes: preferences?.preferredMakes || [],
+        notifyNewListings: preferences?.notifyNewListings ?? true,
+        notifyPriceDrops: preferences?.notifyPriceDrops ?? true,
+        notifySpecialOffers: preferences?.notifySpecialOffers ?? true,
+        userAgent: req.get('user-agent') || null,
+      });
+
+      res.status(201).json({ success: true, message: "Subscribed to notifications" });
+    } catch (error) {
+      console.error("Error subscribing to push:", error);
+      res.status(500).json({ error: "Failed to subscribe" });
+    }
+  });
+
+  // Unsubscribe from push notifications
+  app.post("/api/push/unsubscribe", async (req, res) => {
+    try {
+      const { endpoint } = req.body;
+      if (!endpoint) {
+        return res.status(400).json({ error: "Endpoint required" });
+      }
+      await storage.deletePushSubscription(endpoint);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error unsubscribing:", error);
+      res.status(500).json({ error: "Failed to unsubscribe" });
+    }
+  });
+
+  // Get subscription count (admin)
+  app.get("/api/push/stats", requireAdmin, async (req, res) => {
+    try {
+      const count = await storage.getPushSubscriptionCount();
+      const notifications = await storage.getAllPushNotifications();
+      res.json({ 
+        subscriberCount: count,
+        notificationsSent: notifications.length,
+        lastNotification: notifications[0] || null,
+      });
+    } catch (error) {
+      console.error("Error fetching push stats:", error);
+      res.status(500).json({ error: "Failed to fetch stats" });
+    }
+  });
+
+  // Get all subscriptions (admin)
+  app.get("/api/push/subscriptions", requireAdmin, async (req, res) => {
+    try {
+      const subscriptions = await storage.getAllPushSubscriptions();
+      res.json(subscriptions);
+    } catch (error) {
+      console.error("Error fetching subscriptions:", error);
+      res.status(500).json({ error: "Failed to fetch subscriptions" });
+    }
+  });
+
+  // Get notification history (admin)
+  app.get("/api/push/notifications", requireAdmin, async (req, res) => {
+    try {
+      const notifications = await storage.getAllPushNotifications();
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  // Send push notification (admin)
+  app.post("/api/push/send", requireAdmin, async (req, res) => {
+    try {
+      const { title, body, url, imageUrl, targetType, targetMakes } = req.body;
+      
+      if (!title || !body) {
+        return res.status(400).json({ error: "Title and body required" });
+      }
+
+      // Import web-push dynamically
+      const webpush = await import('web-push');
+      
+      const publicKey = process.env.VAPID_PUBLIC_KEY;
+      const privateKey = process.env.VAPID_PRIVATE_KEY;
+      
+      if (!publicKey || !privateKey) {
+        return res.status(500).json({ error: "VAPID keys not configured" });
+      }
+
+      const settings = await storage.getSiteSettings();
+      webpush.setVapidDetails(
+        `mailto:${settings?.contactEmail || 'admin@example.com'}`,
+        publicKey,
+        privateKey
+      );
+
+      // Get subscriptions based on target
+      let subscriptions = await storage.getAllPushSubscriptions();
+      
+      if (targetType === 'make' && targetMakes?.length > 0) {
+        subscriptions = subscriptions.filter(sub => 
+          !sub.preferredMakes || sub.preferredMakes.length === 0 ||
+          sub.preferredMakes.some((m: string) => targetMakes.includes(m))
+        );
+      }
+
+      // Save notification record
+      const notification = await storage.createPushNotification({
+        title,
+        body,
+        url,
+        imageUrl,
+        targetType: targetType || 'all',
+        targetMakes: targetMakes || [],
+        createdBy: req.user?.id,
+      });
+
+      // Send to all subscriptions
+      const payload = JSON.stringify({
+        title,
+        body,
+        url: url || '/',
+        image: imageUrl,
+        tag: notification.id,
+      });
+
+      let successCount = 0;
+      let failedEndpoints: string[] = [];
+
+      for (const sub of subscriptions) {
+        try {
+          await webpush.sendNotification({
+            endpoint: sub.endpoint,
+            keys: { p256dh: sub.p256dh, auth: sub.auth }
+          }, payload);
+          successCount++;
+        } catch (error: any) {
+          if (error.statusCode === 410) {
+            // Subscription expired, remove it
+            await storage.deletePushSubscription(sub.endpoint);
+          }
+          failedEndpoints.push(sub.endpoint);
+        }
+      }
+
+      await storage.updatePushNotificationSentCount(notification.id, successCount);
+
+      res.json({ 
+        success: true, 
+        sent: successCount, 
+        failed: failedEndpoints.length,
+        notificationId: notification.id,
+      });
+    } catch (error) {
+      console.error("Error sending push notification:", error);
+      res.status(500).json({ error: "Failed to send notifications" });
+    }
+  });
+
   // ====================== SEO ENDPOINTS ======================
   
   // robots.txt - dynamic based on settings
