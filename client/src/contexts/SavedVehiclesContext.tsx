@@ -7,6 +7,7 @@ interface SavedVehiclesContextType {
   toggleSaved: (vehicleId: string) => void;
   isSaved: (vehicleId: string) => boolean;
   clearSaved: () => void;
+  pruneSavedIds: (validIds: string[]) => void;
   savedCount: number;
 }
 
@@ -60,12 +61,24 @@ export function SavedVehiclesProvider({ children }: { children: ReactNode }) {
     setSavedIds([]);
   }, []);
 
+  const pruneSavedIds = useCallback((validIds: string[]) => {
+    setSavedIds(prev => {
+      const validSet = new Set(validIds);
+      const pruned = prev.filter(id => validSet.has(id));
+      if (pruned.length !== prev.length) {
+        return pruned;
+      }
+      return prev;
+    });
+  }, []);
+
   return (
     <SavedVehiclesContext.Provider value={{
       savedIds,
       toggleSaved,
       isSaved,
       clearSaved,
+      pruneSavedIds,
       savedCount: savedIds.length,
     }}>
       {children}
