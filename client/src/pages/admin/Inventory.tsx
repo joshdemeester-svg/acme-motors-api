@@ -14,8 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Plus, Search, Car, DollarSign, Pencil, Trash2, Eye, Loader2, Check, X, Clock, ChevronsUpDown, Upload, Star, CalendarDays, MessageSquare, GripVertical } from "lucide-react";
-import type { InventoryCar, InventoryCarWithMetrics } from "@shared/schema";
+import { Plus, Search, Car, DollarSign, Pencil, Trash2, Eye, Loader2, Check, X, Clock, ChevronsUpDown, Upload, Star, CalendarDays, MessageSquare, GripVertical, Flame } from "lucide-react";
+import type { InventoryCar, InventoryCarWithMetrics, SiteSettings } from "@shared/schema";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -205,6 +205,17 @@ export default function Inventory() {
       return res.json();
     },
   });
+
+  const { data: settings } = useQuery<SiteSettings>({
+    queryKey: ["/api/settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/settings");
+      if (!res.ok) throw new Error("Failed to fetch settings");
+      return res.json();
+    },
+  });
+
+  const hotListingThreshold = settings?.hotListingThreshold || 5;
 
   const { data: makes = [], isLoading: isLoadingMakes } = useQuery<NHTSAMake[]>({
     queryKey: ["vehicleMakes"],
@@ -685,8 +696,14 @@ export default function Inventory() {
                       (e.target as HTMLImageElement).src = placeholderCar;
                     }}
                   />
-                  <div className="absolute top-2 right-2">
+                  <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
                     <StatusBadge status={car.status} />
+                    {settings && (car.inquiryCount || 0) >= hotListingThreshold && car.status === "available" && (
+                      <Badge className="bg-red-600 hover:bg-red-600 text-white gap-1" data-testid={`badge-hot-${car.id}`}>
+                        <Flame className="h-3 w-3" />
+                        HOT
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 <CardContent className="p-4">
