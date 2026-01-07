@@ -1713,6 +1713,39 @@ export default function Settings() {
                 </Button>
               </CardFooter>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Inventory Display</CardTitle>
+                <CardDescription>Settings for how vehicles appear on the public site</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="hotListingThreshold">Hot Listing Threshold</Label>
+                  <Input
+                    id="hotListingThreshold"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={formData.hotListingThreshold ?? ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData({ ...formData, hotListingThreshold: val === "" ? undefined : parseInt(val) });
+                    }}
+                    placeholder="5"
+                    data-testid="input-hot-listing-threshold"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Number of inquiries required to display the "Hot Listing" badge on a vehicle (default: 5)
+                  </p>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardFooter>
+            </Card>
           </TabsContent>
 
           <TabsContent value="seo" className="mt-6 space-y-6">
