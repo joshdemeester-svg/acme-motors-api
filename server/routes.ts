@@ -3147,6 +3147,43 @@ export async function registerRoutes(
     }
   });
 
+  // Vehicle Save Toggle (for tracking favorites)
+  app.post("/api/vehicles/:id/save", async (req, res) => {
+    try {
+      const vehicleId = req.params.id;
+      // Use session ID if authenticated, otherwise generate/use anonymous session
+      let sessionId = (req.session as any)?.sessionId;
+      if (!sessionId) {
+        // Use a session-based identifier or generate one from request
+        sessionId = req.headers['x-session-id'] as string || 
+          `anon-${req.ip}-${req.headers['user-agent']?.slice(0, 50) || 'unknown'}`;
+      }
+      
+      const isSaved = await storage.toggleVehicleSave(vehicleId, sessionId);
+      res.json({ success: true, saved: isSaved });
+    } catch (error) {
+      console.error("Error toggling vehicle save:", error);
+      res.status(500).json({ error: "Failed to toggle save" });
+    }
+  });
+
+  // Get saved vehicles for session
+  app.get("/api/saved-vehicles", async (req, res) => {
+    try {
+      let sessionId = (req.session as any)?.sessionId;
+      if (!sessionId) {
+        sessionId = req.headers['x-session-id'] as string || 
+          `anon-${req.ip}-${req.headers['user-agent']?.slice(0, 50) || 'unknown'}`;
+      }
+      
+      const saves = await storage.getVehicleSavesBySession(sessionId);
+      res.json({ vehicleIds: saves.map(s => s.vehicleId) });
+    } catch (error) {
+      console.error("Error fetching saved vehicles:", error);
+      res.status(500).json({ error: "Failed to fetch saved vehicles" });
+    }
+  });
+
   // SMS Blast
   app.post("/api/sms/blast", requireAdmin, async (req, res) => {
     try {
@@ -3230,11 +3267,13 @@ export async function registerRoutes(
   app.get("/api/analytics", requireAdmin, async (req, res) => {
     try {
       const totalViews = await storage.getTotalViewsCount();
+      const totalSaves = await storage.getTotalSavesCount();
       const inventory = await storage.getAllInventoryCars();
       const inquiries = await storage.getAllBuyerInquiries();
       const consignments = await storage.getAllConsignments();
       const alerts = await storage.getAllVehicleAlerts();
       const mostViewed = await storage.getMostViewedVehicles(10);
+      const topSaved = await storage.getTopSavedVehicles(10);
       
       const availableCount = inventory.filter(c => c.status === "available").length;
       const soldCount = inventory.filter(c => c.status === "sold").length;
@@ -3257,6 +3296,22 @@ export async function registerRoutes(
           } : null
         };
       }).filter(mv => mv.vehicle);
+      
+      const topSavedWithDetails = topSaved.map(ts => {
+        const vehicle = inventory.find(v => v.id === ts.vehicleId);
+        return {
+          ...ts,
+          vehicle: vehicle ? {
+            id: vehicle.id,
+            year: vehicle.year,
+            make: vehicle.make,
+            model: vehicle.model,
+            status: vehicle.status,
+            price: vehicle.price,
+            photo: vehicle.photos?.[0] || null,
+          } : null
+        };
+      }).filter(ts => ts.vehicle);
       
       // Conversion tracking: calculate inquiry-to-sale rates
       const vehiclesWithInquiries = inventory.filter(v => 
@@ -3299,6 +3354,7 @@ export async function registerRoutes(
       
       res.json({
         totalViews,
+        totalSaves,
         inventory: {
           total: inventory.length,
           available: availableCount,
@@ -3317,6 +3373,7 @@ export async function registerRoutes(
           active: activeAlerts,
         },
         mostViewed: mostViewedWithDetails,
+        topSaved: topSavedWithDetails,
         conversions: {
           vehiclesWithInquiries: vehiclesWithInquiries.length,
           soldWithInquiries: soldWithInquiries.length,
