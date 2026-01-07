@@ -3986,6 +3986,224 @@ ${urls.join('')}
     }
   });
 
+  // ====================== SYSTEM CHECK (Master Admin Only) ======================
+  
+  app.get("/api/system-check", requireMasterAdmin, async (req, res) => {
+    const checks: { name: string; status: "pass" | "fail" | "warning"; message: string; details?: any }[] = [];
+    
+    // 1. Database connectivity
+    try {
+      const settings = await storage.getSiteSettings();
+      checks.push({
+        name: "Database Connection",
+        status: "pass",
+        message: "PostgreSQL database is connected and responsive",
+      });
+    } catch (error: any) {
+      checks.push({
+        name: "Database Connection",
+        status: "fail",
+        message: `Database connection failed: ${error.message}`,
+      });
+    }
+
+    // 2. Site Settings configured
+    try {
+      const settings = await storage.getSiteSettings();
+      const requiredFields = ["siteName", "contactPhone", "contactEmail"];
+      const missingFields = requiredFields.filter(f => !settings?.[f as keyof typeof settings]);
+      
+      if (missingFields.length === 0) {
+        checks.push({
+          name: "Site Settings",
+          status: "pass",
+          message: "Required site settings are configured",
+        });
+      } else {
+        checks.push({
+          name: "Site Settings",
+          status: "warning",
+          message: `Missing settings: ${missingFields.join(", ")}`,
+          details: { missingFields },
+        });
+      }
+    } catch (error: any) {
+      checks.push({
+        name: "Site Settings",
+        status: "fail",
+        message: error.message,
+      });
+    }
+
+    // 3. VAPID Keys for Push Notifications
+    const vapidPublic = process.env.VAPID_PUBLIC_KEY;
+    const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
+    if (vapidPublic && vapidPrivate) {
+      checks.push({
+        name: "Push Notification Keys",
+        status: "pass",
+        message: "VAPID keys are configured",
+      });
+    } else {
+      checks.push({
+        name: "Push Notification Keys",
+        status: "warning",
+        message: "VAPID keys not configured - push notifications won't work",
+        details: { publicKey: !!vapidPublic, privateKey: !!vapidPrivate },
+      });
+    }
+
+    // 4. GoHighLevel Integration
+    try {
+      const { locationId, apiToken, source } = await getGHLCredentials();
+      if (locationId && apiToken) {
+        const testResult = await testGHLCredentials(apiToken, locationId);
+        if (testResult.success) {
+          checks.push({
+            name: "GoHighLevel CRM",
+            status: "pass",
+            message: `Connected to ${testResult.locationName || "GoHighLevel"} (via ${source})`,
+          });
+        } else {
+          checks.push({
+            name: "GoHighLevel CRM",
+            status: "fail",
+            message: `GHL configured but connection failed: ${testResult.error}`,
+          });
+        }
+      } else {
+        checks.push({
+          name: "GoHighLevel CRM",
+          status: "warning",
+          message: "GoHighLevel not configured - SMS notifications won't work",
+        });
+      }
+    } catch (error: any) {
+      checks.push({
+        name: "GoHighLevel CRM",
+        status: "fail",
+        message: `GHL check failed: ${error.message}`,
+      });
+    }
+
+    // 5. Object Storage
+    const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+    if (bucketId) {
+      checks.push({
+        name: "Object Storage",
+        status: "pass",
+        message: "Object storage bucket is configured",
+      });
+    } else {
+      checks.push({
+        name: "Object Storage",
+        status: "warning",
+        message: "Object storage not configured - file uploads may not persist",
+      });
+    }
+
+    // 6. Inventory count
+    try {
+      const inventory = await storage.getAllInventoryCars();
+      const available = inventory.filter(c => c.status === "available").length;
+      const sold = inventory.filter(c => c.status === "sold").length;
+      checks.push({
+        name: "Inventory Data",
+        status: inventory.length > 0 ? "pass" : "warning",
+        message: `${inventory.length} vehicles (${available} available, ${sold} sold)`,
+        details: { total: inventory.length, available, sold },
+      });
+    } catch (error: any) {
+      checks.push({
+        name: "Inventory Data",
+        status: "fail",
+        message: error.message,
+      });
+    }
+
+    // 7. Admin users
+    try {
+      const users = await storage.getAllUsers();
+      const masterCount = users.filter(u => u.role === "master").length;
+      const adminCount = users.filter(u => u.role === "admin").length;
+      checks.push({
+        name: "Admin Users",
+        status: masterCount > 0 ? "pass" : "fail",
+        message: `${masterCount} master admin(s), ${adminCount} regular admin(s)`,
+        details: { masterCount, adminCount },
+      });
+    } catch (error: any) {
+      checks.push({
+        name: "Admin Users",
+        status: "fail",
+        message: error.message,
+      });
+    }
+
+    // 8. Push Notification Subscribers
+    try {
+      const count = await storage.getPushSubscriptionCount();
+      checks.push({
+        name: "Push Subscribers",
+        status: "pass",
+        message: `${count} active subscriber(s)`,
+        details: { count },
+      });
+    } catch (error: any) {
+      checks.push({
+        name: "Push Subscribers",
+        status: "warning",
+        message: `Could not fetch subscriber count: ${error.message}`,
+      });
+    }
+
+    // 9. SEO Configuration
+    try {
+      const settings = await storage.getSiteSettings();
+      const seoFields = ["baseUrl", "dealerCity", "dealerState"];
+      const configured = seoFields.filter(f => settings?.[f as keyof typeof settings]);
+      
+      if (configured.length === seoFields.length) {
+        checks.push({
+          name: "SEO Configuration",
+          status: "pass",
+          message: "Local SEO settings are configured",
+        });
+      } else {
+        const missing = seoFields.filter(f => !settings?.[f as keyof typeof settings]);
+        checks.push({
+          name: "SEO Configuration",
+          status: "warning",
+          message: `Missing SEO settings: ${missing.join(", ")}`,
+          details: { missing },
+        });
+      }
+    } catch (error: any) {
+      checks.push({
+        name: "SEO Configuration",
+        status: "fail",
+        message: error.message,
+      });
+    }
+
+    // Summary
+    const passed = checks.filter(c => c.status === "pass").length;
+    const warnings = checks.filter(c => c.status === "warning").length;
+    const failed = checks.filter(c => c.status === "fail").length;
+
+    res.json({
+      timestamp: new Date().toISOString(),
+      summary: {
+        total: checks.length,
+        passed,
+        warnings,
+        failed,
+        overall: failed > 0 ? "fail" : warnings > 0 ? "warning" : "pass",
+      },
+      checks,
+    });
+  });
+
   return httpServer;
 }
 
