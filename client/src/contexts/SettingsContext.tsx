@@ -102,7 +102,7 @@ function loadCachedSettings(): Partial<SiteSettings> | null {
 
 function saveCachedSettings(settings: SiteSettings) {
   try {
-    const colorSettings = {
+    const cachedSettings = {
       primaryColor: settings.primaryColor,
       backgroundColor: settings.backgroundColor,
       mainMenuColor: settings.mainMenuColor,
@@ -122,8 +122,13 @@ function saveCachedSettings(settings: SiteSettings) {
       calculatorBgColor: settings.calculatorBgColor,
       calculatorTextColor: settings.calculatorTextColor,
       calculatorSliderColor: settings.calculatorSliderColor,
+      logoUrl: settings.logoUrl,
+      logoWidth: settings.logoWidth,
+      mobileLogoWidth: settings.mobileLogoWidth,
+      siteName: settings.siteName,
+      hideSiteNameWithLogo: settings.hideSiteNameWithLogo,
     };
-    localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(colorSettings));
+    localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(cachedSettings));
   } catch {}
 }
 
@@ -140,6 +145,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       return res.json();
     },
     staleTime: 1000 * 60 * 5,
+    placeholderData: cachedSettings as SiteSettings | undefined,
   });
 
   useEffect(() => {
@@ -150,7 +156,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [settings]);
 
   return (
-    <SettingsContext.Provider value={{ settings: settings || null, isLoading }}>
+    <SettingsContext.Provider value={{ settings: settings || (cachedSettings as SiteSettings | null), isLoading }}>
       {children}
     </SettingsContext.Provider>
   );
