@@ -70,6 +70,34 @@ Preferred communication style: Simple, everyday language.
 - Legacy UUID-only URLs (`/vehicle/{uuid}`) still work
 - SEO data injection handles both slug and UUID lookups
 
+## Local SEO System
+
+### Location Landing Pages
+- **Purpose**: Capture local search traffic from nearby cities within the dealership's service area
+- **URL Format**: `/location/{city-state-slug}` (e.g., `/location/miami-fl`, `/location/pensacola-fl`)
+- **Database Table**: `target_locations` stores city, state, slug, custom headlines, descriptions, meta tags, and radius
+- **Admin UI**: Admin Panel > SEO Tools > Target Locations
+
+### Design Rationale
+For a single-location dealership, all location landing pages display the full available inventory rather than filtering by location because:
+1. All vehicles are physically at the same dealership location
+2. SEO value comes from location-specific content (headlines, descriptions, meta tags, LocalBusiness schema)
+3. Customers searching from nearby cities should see the same inventory options
+4. Artificial filtering would hide desirable vehicles and reduce conversion opportunities
+
+### Citation Management (Hybrid Option C)
+The platform uses a hybrid approach to citation building:
+- **Data Aggregators**: 4 major aggregators (Neustar Localeze, Data Axle, Foursquare, Factual) that distribute to 100+ sites
+- **Manual Directories**: 16 high-value directories requiring individual submissions
+- **NAP Consistency**: Built-in checker verifies Name, Address, Phone consistency before submissions
+- **Export Tools**: CSV and JSON export for copy/paste into manual submission forms
+
+### Admin SEO Tools Page
+Located at `/admin/seo-tools` with three tabs:
+1. **Target Locations**: Create and manage location landing pages
+2. **Citations**: Track submission status across all directories
+3. **NAP Check**: Verify business info consistency and export data
+
 ## External Dependencies
 
 - **Database**: PostgreSQL.

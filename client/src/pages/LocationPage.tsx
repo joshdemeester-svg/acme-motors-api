@@ -174,8 +174,11 @@ export default function LocationPage({ slug }: LocationPageProps) {
         <section className="py-16 bg-black">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl font-serif text-white mb-8 text-center">
-              Featured Vehicles Near {location.city}
+              Luxury Vehicles Available Near {location.city}, {location.state}
             </h2>
+            <p className="text-gray-400 text-center mb-8 max-w-2xl mx-auto">
+              Browse our curated selection of premium vehicles available for purchase. We serve customers within {location.radius || 50} miles of {location.city}.
+            </p>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredVehicles.map((car) => (
                 <Link key={car.id} href={`/vehicle/${car.slug || car.id}`}>
