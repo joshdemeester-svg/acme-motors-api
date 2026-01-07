@@ -3639,12 +3639,11 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
     setVinLookupLoading(true);
     try {
       const res = await fetch(`/api/vin-decode/${vinToLookup}`);
-      if (!res.ok) throw new Error("Failed to decode VIN");
       const data = await res.json();
       
-      if (data.ErrorCode && data.ErrorCode !== "0") {
+      if (!res.ok || !data.valid) {
         if (!vin) {
-          toast({ title: "VIN Not Found", description: "Could not find vehicle information for this VIN.", variant: "destructive" });
+          toast({ title: "VIN Not Found", description: data.error || "Could not find vehicle information for this VIN.", variant: "destructive" });
         }
         return;
       }
@@ -3656,7 +3655,7 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
       toast({ title: "VIN Decoded", description: `Found: ${data.ModelYear} ${data.Make} ${data.Model}` });
     } catch {
       if (!vin) {
-        toast({ title: "Error", description: "Failed to lookup VIN.", variant: "destructive" });
+        toast({ title: "Error", description: "Failed to lookup VIN. Please try again.", variant: "destructive" });
       }
     } finally {
       setVinLookupLoading(false);
@@ -3669,10 +3668,9 @@ function AdminDashboard({ onLogout, userRole }: { onLogout: () => void; userRole
     setEditVinLoading(true);
     try {
       const res = await fetch(`/api/vin-decode/${vin}`);
-      if (!res.ok) throw new Error("Failed to decode VIN");
       const data = await res.json();
       
-      if (data.ErrorCode && data.ErrorCode !== "0") {
+      if (!res.ok || !data.valid) {
         return;
       }
       

@@ -456,12 +456,11 @@ export default function Inventory() {
     setVinLoading(true);
     try {
       const res = await fetch(`/api/vin-decode/${vinToLookup}`);
-      if (!res.ok) throw new Error("Failed to decode VIN");
       const data = await res.json();
       
-      if (data.ErrorCode && data.ErrorCode !== "0") {
+      if (!res.ok || !data.valid) {
         if (!vinValue) {
-          toast({ title: "VIN Not Found", description: "Could not find vehicle information for this VIN.", variant: "destructive" });
+          toast({ title: "VIN Not Found", description: data.error || "Could not find vehicle information for this VIN.", variant: "destructive" });
         }
         return;
       }
@@ -473,7 +472,7 @@ export default function Inventory() {
       toast({ title: "VIN Decoded", description: `Found: ${data.ModelYear} ${data.Make} ${data.Model}` });
     } catch {
       if (!vinValue) {
-        toast({ title: "Error", description: "Failed to lookup VIN.", variant: "destructive" });
+        toast({ title: "Error", description: "Failed to lookup VIN. Please try again.", variant: "destructive" });
       }
     } finally {
       setVinLoading(false);
@@ -489,11 +488,10 @@ export default function Inventory() {
     setEditVinLoading(true);
     try {
       const res = await fetch(`/api/vin-decode/${editVin}`);
-      if (!res.ok) throw new Error("Failed to decode VIN");
       const data = await res.json();
       
-      if (data.ErrorCode && data.ErrorCode !== "0") {
-        toast({ title: "VIN Not Found", description: "Could not find vehicle information for this VIN.", variant: "destructive" });
+      if (!res.ok || !data.valid) {
+        toast({ title: "VIN Not Found", description: data.error || "Could not find vehicle information for this VIN.", variant: "destructive" });
         return;
       }
       
@@ -503,7 +501,7 @@ export default function Inventory() {
       
       toast({ title: "VIN Decoded", description: `Found: ${data.ModelYear} ${data.Make} ${data.Model}` });
     } catch {
-      toast({ title: "Error", description: "Failed to lookup VIN.", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to lookup VIN. Please try again.", variant: "destructive" });
     } finally {
       setEditVinLoading(false);
     }
