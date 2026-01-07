@@ -5,8 +5,9 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Heart, Trash2, ArrowLeft, Bell, BellRing } from "lucide-react";
+import { Heart, Trash2, ArrowLeft, Bell, BellRing, CalendarDays } from "lucide-react";
 import { Link } from "wouter";
 import type { InventoryCar } from "@shared/schema";
 import placeholderCar from '@assets/stock_images/car_silhouette_place_c08b6507.jpg';
@@ -29,9 +30,19 @@ export default function SavedVehicles() {
   const queryClient = useQueryClient();
   
   const [priceAlertOpen, setPriceAlertOpen] = useState(false);
+  const [testDriveOpen, setTestDriveOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<InventoryCar | null>(null);
   const [alertEmail, setAlertEmail] = useState("");
   const [alertPhone, setAlertPhone] = useState("");
+  
+  const [testDriveForm, setTestDriveForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    preferredDate: "",
+    preferredTime: "",
+    message: "",
+  });
 
   useSEO({
     title: "Saved Vehicles",
@@ -133,6 +144,65 @@ export default function SavedVehicles() {
 
   const getAlertForVehicle = (vehicleId: string) => {
     return myAlerts.find(a => a.vehicleId === vehicleId && a.active);
+  };
+
+  const testDriveMutation = useMutation({
+    mutationFn: async (data: { vehicle: InventoryCar; name: string; email: string; phone: string; preferredDate: string; preferredTime: string; message: string }) => {
+      const messageParts = [];
+      if (data.preferredDate) messageParts.push(`Preferred Date: ${data.preferredDate}`);
+      if (data.preferredTime) messageParts.push(`Preferred Time: ${data.preferredTime}`);
+      if (data.message) messageParts.push(data.message);
+      
+      const res = await fetch("/api/vehicle-inquiry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vehicleId: data.vehicle.id,
+          vin: data.vehicle.vin || "",
+          year: data.vehicle.year,
+          make: data.vehicle.make,
+          model: data.vehicle.model,
+          buyerName: data.name,
+          buyerPhone: data.phone,
+          buyerEmail: data.email,
+          interestType: "test_drive",
+          message: messageParts.join("\n"),
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to submit");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Test Drive Requested",
+        description: "We'll contact you soon to confirm your appointment.",
+      });
+      setTestDriveOpen(false);
+      setSelectedVehicle(null);
+      setTestDriveForm({ name: "", email: "", phone: "", preferredDate: "", preferredTime: "", message: "" });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to submit request. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const openTestDrive = (car: InventoryCar) => {
+    setSelectedVehicle(car);
+    const storedEmail = typeof window !== 'undefined' ? localStorage.getItem('priceAlertEmail') : null;
+    if (storedEmail) setTestDriveForm(prev => ({ ...prev, email: storedEmail }));
+    setTestDriveOpen(true);
+  };
+
+  const handleSubmitTestDrive = () => {
+    if (!selectedVehicle || !testDriveForm.name || !testDriveForm.email || !testDriveForm.phone) return;
+    testDriveMutation.mutate({
+      vehicle: selectedVehicle,
+      ...testDriveForm,
+    });
   };
 
   return (
@@ -249,27 +319,38 @@ export default function SavedVehicles() {
                         </Button>
                       </Link>
                       {car.status === "available" && (
-                        existingAlert ? (
-                          <Button 
-                            variant="secondary"
-                            size="icon"
-                            onClick={() => deleteAlertMutation.mutate(existingAlert.id)}
-                            title="Remove price alert"
-                            data-testid={`btn-remove-alert-${car.id}`}
-                          >
-                            <BellRing className="h-4 w-4 text-primary" />
-                          </Button>
-                        ) : (
+                        <>
                           <Button 
                             variant="outline"
                             size="icon"
-                            onClick={() => openPriceAlert(car)}
-                            title="Set price drop alert"
-                            data-testid={`btn-set-alert-${car.id}`}
+                            onClick={() => openTestDrive(car)}
+                            title="Schedule test drive"
+                            data-testid={`btn-test-drive-${car.id}`}
                           >
-                            <Bell className="h-4 w-4" />
+                            <CalendarDays className="h-4 w-4" />
                           </Button>
-                        )
+                          {existingAlert ? (
+                            <Button 
+                              variant="secondary"
+                              size="icon"
+                              onClick={() => deleteAlertMutation.mutate(existingAlert.id)}
+                              title="Remove price alert"
+                              data-testid={`btn-remove-alert-${car.id}`}
+                            >
+                              <BellRing className="h-4 w-4 text-primary" />
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="outline"
+                              size="icon"
+                              onClick={() => openPriceAlert(car)}
+                              title="Set price drop alert"
+                              data-testid={`btn-set-alert-${car.id}`}
+                            >
+                              <Bell className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -333,6 +414,113 @@ export default function SavedVehicles() {
               data-testid="btn-confirm-alert"
             >
               {createAlertMutation.isPending ? "Setting Alert..." : "Set Alert"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={testDriveOpen} onOpenChange={setTestDriveOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5" />
+              Schedule a Test Drive
+            </DialogTitle>
+            <DialogDescription>
+              {selectedVehicle && (
+                <>
+                  Request a test drive for the{" "}
+                  <span className="font-semibold">
+                    {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
+                  </span>.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="td-name">Full Name *</Label>
+              <Input
+                id="td-name"
+                placeholder="John Smith"
+                value={testDriveForm.name}
+                onChange={(e) => setTestDriveForm(prev => ({ ...prev, name: e.target.value }))}
+                data-testid="input-td-name"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="td-email">Email *</Label>
+                <Input
+                  id="td-email"
+                  type="email"
+                  placeholder="you@email.com"
+                  value={testDriveForm.email}
+                  onChange={(e) => setTestDriveForm(prev => ({ ...prev, email: e.target.value }))}
+                  data-testid="input-td-email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="td-phone">Phone *</Label>
+                <Input
+                  id="td-phone"
+                  type="tel"
+                  placeholder="(555) 123-4567"
+                  value={testDriveForm.phone}
+                  onChange={(e) => setTestDriveForm(prev => ({ ...prev, phone: e.target.value }))}
+                  data-testid="input-td-phone"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="td-date">Preferred Date</Label>
+                <Input
+                  id="td-date"
+                  type="date"
+                  value={testDriveForm.preferredDate}
+                  onChange={(e) => setTestDriveForm(prev => ({ ...prev, preferredDate: e.target.value }))}
+                  data-testid="input-td-date"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="td-time">Preferred Time</Label>
+                <select
+                  id="td-time"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  value={testDriveForm.preferredTime}
+                  onChange={(e) => setTestDriveForm(prev => ({ ...prev, preferredTime: e.target.value }))}
+                  data-testid="input-td-time"
+                >
+                  <option value="">Select time...</option>
+                  <option value="Morning (9-12)">Morning (9-12)</option>
+                  <option value="Afternoon (12-3)">Afternoon (12-3)</option>
+                  <option value="Late Afternoon (3-6)">Late Afternoon (3-6)</option>
+                </select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="td-message">Additional Notes (optional)</Label>
+              <Textarea
+                id="td-message"
+                placeholder="Any special requests or questions..."
+                value={testDriveForm.message}
+                onChange={(e) => setTestDriveForm(prev => ({ ...prev, message: e.target.value }))}
+                rows={3}
+                data-testid="input-td-message"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTestDriveOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmitTestDrive}
+              disabled={!testDriveForm.name || !testDriveForm.email || !testDriveForm.phone || testDriveMutation.isPending}
+              data-testid="btn-submit-test-drive"
+            >
+              {testDriveMutation.isPending ? "Submitting..." : "Request Test Drive"}
             </Button>
           </DialogFooter>
         </DialogContent>
