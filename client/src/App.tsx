@@ -19,6 +19,7 @@ import AdminLeads from "@/pages/admin/Leads";
 import AdminConsignments from "@/pages/admin/Consignments";
 import AdminSettings from "@/pages/admin/Settings";
 import AdminRoadmap from "@/pages/admin/Roadmap";
+import AdminSeoTools from "@/pages/admin/SeoTools";
 import SellerPortal from "@/pages/SellerPortal";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
@@ -27,6 +28,7 @@ import Compare from "@/pages/Compare";
 import Appointments from "@/pages/Appointments";
 import CreditApp from "@/pages/CreditApp";
 import SavedVehicles from "@/pages/SavedVehicles";
+import LocationPage from "@/pages/LocationPage";
 
 function FaviconLoader() {
   useFavicon();
@@ -53,6 +55,7 @@ function Router() {
       <Route path="/admin/consignments" component={AdminConsignments} />
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/roadmap" component={AdminRoadmap} />
+      <Route path="/admin/seo-tools" component={AdminSeoTools} />
       <Route path="/admin-legacy" component={Admin} />
       <Route path="/seller-portal" component={SellerPortal} />
       <Route path="/privacy" component={Privacy} />
@@ -62,6 +65,7 @@ function Router() {
       <Route path="/appointments" component={Appointments} />
       <Route path="/get-approved" component={CreditApp} />
       <Route path="/saved" component={SavedVehicles} />
+      <Route path="/location/:slug">{(params) => <LocationPage slug={params.slug} />}</Route>
       <Route component={NotFound} />
     </Switch>
   );

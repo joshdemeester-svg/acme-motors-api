@@ -28,7 +28,9 @@ import {
   FileText,
   Brain,
   Video,
-  Shield
+  Shield,
+  MapPin,
+  Globe
 } from "lucide-react";
 
 interface RoadmapItem {
@@ -172,6 +174,20 @@ const roadmapItems: RoadmapItem[] = [
     status: "planned",
     icon: <Shield className="h-5 w-5" />,
     category: "Admin Experience"
+  },
+  {
+    title: "Local SEO Tools",
+    description: "Location landing pages for target cities, citation tracker, NAP consistency checker, and export tools",
+    status: "completed",
+    icon: <MapPin className="h-5 w-5" />,
+    category: "SEO & Marketing"
+  },
+  {
+    title: "Google Business Profile Sync",
+    description: "Auto-sync inventory to GBP posts, manage reviews, update hours and photos from admin panel",
+    status: "planned",
+    icon: <Globe className="h-5 w-5" />,
+    category: "SEO & Marketing"
   },
 ];
 
