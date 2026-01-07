@@ -138,11 +138,10 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
     const logoUrl = ogImageUrl || (settings?.logoUrl ? `${baseUrl}${settings.logoUrl}` : undefined);
     const twitterHandle = settings?.twitterHandle || undefined;
 
-    // Vehicle details page: /vehicle/:slug (new SEO-friendly URL)
-    const vehicleSlugMatch = url.match(/^\/vehicle\/([a-z0-9-]+)$/i);
-    if (vehicleSlugMatch) {
-      const slug = vehicleSlugMatch[1];
-      // Try by slug first, then by full ID, then extract ID from slug
+    // Vehicle details page: /inventory/:slug (canonical URL format)
+    const inventorySlugMatch = url.match(/^\/inventory\/([a-z0-9-]+)$/i);
+    if (inventorySlugMatch) {
+      const slug = inventorySlugMatch[1];
       let car = await storage.getInventoryCarBySlug(slug);
       if (!car) {
         car = await storage.getInventoryCar(slug);
@@ -150,9 +149,7 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
       if (!car) {
         const extractedId = extractIdFromSlug(slug);
         if (extractedId) {
-          // Try full ID lookup first
           car = await storage.getInventoryCar(extractedId);
-          // If that fails, try short ID lookup (8-char prefix)
           if (!car && extractedId.length === 8) {
             car = await storage.getInventoryCarByShortId(extractedId);
           }
@@ -163,19 +160,15 @@ export async function getSEODataForRoute(url: string, baseUrl: string): Promise<
         const state = settings?.dealerState || "";
         const trim = car.trim || "";
         
-        // Generate canonical slug with full format including new options
         const canonicalSlug = car.slug || generateVehicleSlug({
           year: car.year,
           make: car.make,
           model: car.model,
-          trim: settings?.slugIncludeTrim ? trim : null,
-          city: settings?.slugIncludeLocation ? city : null,
-          state: settings?.slugIncludeLocation ? state : null,
+          trim: settings?.slugIncludeTrim !== false ? trim : null,
           id: car.id,
           stockNumber: settings?.slugIncludeStock ? car.stockNumber : null,
-          locationFirst: settings?.slugLocationFirst ?? false,
         });
-        const canonicalUrl = `${baseUrl}/vehicle/${canonicalSlug}`;
+        const canonicalUrl = `${baseUrl}/inventory/${canonicalSlug}`;
         
         // Build title with location
         const locationPart = city && state ? ` in ${city}, ${state}` : "";
