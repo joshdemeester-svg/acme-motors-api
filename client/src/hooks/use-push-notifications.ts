@@ -20,6 +20,7 @@ interface PushPreferences {
   notifyNewListings?: boolean;
   notifyPriceDrops?: boolean;
   notifySpecialOffers?: boolean;
+  notifyHotListings?: boolean;
 }
 
 export function usePushNotifications() {
