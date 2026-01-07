@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Car, Users, FileText, DollarSign, TrendingUp, Clock, MessageSquare, Calendar, Eye, BarChart3 } from "lucide-react";
+import { Car, Users, FileText, DollarSign, TrendingUp, Clock, MessageSquare, Calendar, Eye, BarChart3, Target, CheckCircle } from "lucide-react";
 import type { ConsignmentSubmission, InventoryCar, BuyerInquiry } from "@shared/schema";
 
 interface TradeInSubmission {
@@ -84,6 +84,24 @@ export default function Dashboard() {
         photo: string | null;
       };
     }>;
+    conversions: {
+      vehiclesWithInquiries: number;
+      soldWithInquiries: number;
+      overallConversionRate: number;
+      topVehicles: Array<{
+        vehicleId: string;
+        year: number;
+        make: string;
+        model: string;
+        status: string;
+        price: number;
+        photo: string | null;
+        inquiryCount: number;
+        sold: boolean;
+        converted: boolean;
+        efficiencyRate: number | null;
+      }>;
+    };
   }>({
     queryKey: ["/api/analytics"],
     queryFn: async () => {
@@ -356,6 +374,98 @@ export default function Dashboard() {
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   No view data yet. Views are tracked when visitors view vehicle details.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Conversion Rate
+              </CardTitle>
+              <CardDescription>
+                Inquiry to sale conversion performance
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-4 rounded-lg bg-muted">
+                  <p className="text-3xl font-bold text-primary">
+                    {analytics?.conversions?.overallConversionRate || 0}%
+                  </p>
+                  <p className="text-xs text-muted-foreground">Conversion Rate</p>
+                </div>
+                <div className="text-center p-4 rounded-lg bg-muted">
+                  <p className="text-3xl font-bold">
+                    {analytics?.conversions?.vehiclesWithInquiries || 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Vehicles w/ Inquiries</p>
+                </div>
+                <div className="text-center p-4 rounded-lg bg-muted">
+                  <p className="text-3xl font-bold text-green-500">
+                    {analytics?.conversions?.soldWithInquiries || 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Converted to Sales</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5" />
+                Top Vehicles by Inquiries
+              </CardTitle>
+              <CardDescription>Vehicles generating the most interest</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {analytics?.conversions?.topVehicles && analytics.conversions.topVehicles.length > 0 ? (
+                <div className="space-y-3">
+                  {analytics.conversions.topVehicles.slice(0, 5).map((item, index) => (
+                    <div key={item.vehicleId} className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                        {index + 1}
+                      </div>
+                      {item.photo && (
+                        <img 
+                          src={item.photo} 
+                          alt={`${item.year} ${item.make} ${item.model}`}
+                          className="w-12 h-8 object-cover rounded"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {item.year} {item.make} {item.model}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          ${item.price.toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {item.inquiryCount} {item.inquiryCount === 1 ? 'inquiry' : 'inquiries'}
+                        </Badge>
+                        {item.converted ? (
+                          <Badge variant="default" className="text-xs bg-green-500">
+                            Sold ({item.efficiencyRate}% eff)
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs">
+                            Active
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No inquiry data yet. Inquiries appear when customers submit interest forms.
                 </p>
               )}
             </CardContent>

@@ -3233,6 +3233,45 @@ export async function registerRoutes(
         };
       }).filter(mv => mv.vehicle);
       
+      // Conversion tracking: calculate inquiry-to-sale rates
+      const vehiclesWithInquiries = inventory.filter(v => 
+        inquiries.some(i => i.inventoryCarId === v.id)
+      );
+      const soldWithInquiries = vehiclesWithInquiries.filter(v => v.status === "sold");
+      const overallConversionRate = vehiclesWithInquiries.length > 0 
+        ? (soldWithInquiries.length / vehiclesWithInquiries.length) * 100 
+        : 0;
+      
+      // Per-vehicle conversion data (top 10 by inquiry count)
+      // Conversion rate = 1/inquiryCount * 100 if sold, showing efficiency
+      // (How many inquiries it took to close the deal - lower inquiry count = higher efficiency)
+      const vehicleConversions = inventory.map(vehicle => {
+        const vehicleInquiries = inquiries.filter(i => i.inventoryCarId === vehicle.id);
+        const sold = vehicle.status === "sold";
+        const converted = sold && vehicleInquiries.length > 0;
+        // Efficiency rate: if sold, shows 1/inquiryCount as percentage (higher = fewer inquiries needed)
+        // For sold vehicles: 1 inquiry = 100%, 2 inquiries = 50%, 5 inquiries = 20%, etc.
+        const efficiencyRate = sold && vehicleInquiries.length > 0 
+          ? Math.round((1 / vehicleInquiries.length) * 100) 
+          : (vehicleInquiries.length > 0 ? 0 : null);
+        return {
+          vehicleId: vehicle.id,
+          year: vehicle.year,
+          make: vehicle.make,
+          model: vehicle.model,
+          status: vehicle.status,
+          price: vehicle.price,
+          photo: vehicle.photos?.[0] || null,
+          inquiryCount: vehicleInquiries.length,
+          sold,
+          converted,
+          efficiencyRate,
+        };
+      })
+        .filter(v => v.inquiryCount > 0)
+        .sort((a, b) => b.inquiryCount - a.inquiryCount)
+        .slice(0, 10);
+      
       res.json({
         totalViews,
         inventory: {
@@ -3253,6 +3292,12 @@ export async function registerRoutes(
           active: activeAlerts,
         },
         mostViewed: mostViewedWithDetails,
+        conversions: {
+          vehiclesWithInquiries: vehiclesWithInquiries.length,
+          soldWithInquiries: soldWithInquiries.length,
+          overallConversionRate: Math.round(overallConversionRate * 10) / 10,
+          topVehicles: vehicleConversions,
+        },
       });
     } catch (error) {
       console.error("Error fetching analytics:", error);
