@@ -3311,6 +3311,251 @@ export async function registerRoutes(
     }
   });
 
+  // ====================== TARGET LOCATIONS ======================
+  
+  app.get("/api/locations", async (req, res) => {
+    try {
+      const locations = await storage.getAllTargetLocations();
+      res.json(locations);
+    } catch (error) {
+      console.error("Error fetching locations:", error);
+      res.status(500).json({ error: "Failed to fetch locations" });
+    }
+  });
+
+  app.get("/api/locations/active", async (req, res) => {
+    try {
+      const locations = await storage.getActiveTargetLocations();
+      res.json(locations);
+    } catch (error) {
+      console.error("Error fetching active locations:", error);
+      res.status(500).json({ error: "Failed to fetch active locations" });
+    }
+  });
+
+  app.get("/api/locations/:slug", async (req, res) => {
+    try {
+      const location = await storage.getTargetLocationBySlug(req.params.slug);
+      if (!location) {
+        return res.status(404).json({ error: "Location not found" });
+      }
+      res.json(location);
+    } catch (error) {
+      console.error("Error fetching location:", error);
+      res.status(500).json({ error: "Failed to fetch location" });
+    }
+  });
+
+  app.post("/api/locations", requireAdmin, async (req, res) => {
+    try {
+      const { city, state, headline, description, metaTitle, metaDescription, radius, isActive, isPrimary, sortOrder } = req.body;
+      const slug = slugify(`${city}-${state}`);
+      const location = await storage.createTargetLocation({
+        city,
+        state,
+        slug,
+        headline,
+        description,
+        metaTitle,
+        metaDescription,
+        radius: radius || 50,
+        isActive: isActive ?? true,
+        isPrimary: isPrimary ?? false,
+        sortOrder: sortOrder || 0,
+      });
+      res.status(201).json(location);
+    } catch (error) {
+      console.error("Error creating location:", error);
+      res.status(500).json({ error: "Failed to create location" });
+    }
+  });
+
+  app.put("/api/locations/:id", requireAdmin, async (req, res) => {
+    try {
+      const { city, state, headline, description, metaTitle, metaDescription, radius, isActive, isPrimary, sortOrder } = req.body;
+      const updates: any = { headline, description, metaTitle, metaDescription, radius, isActive, isPrimary, sortOrder };
+      if (city && state) {
+        updates.city = city;
+        updates.state = state;
+        updates.slug = slugify(`${city}-${state}`);
+      }
+      const location = await storage.updateTargetLocation(req.params.id, updates);
+      if (!location) {
+        return res.status(404).json({ error: "Location not found" });
+      }
+      res.json(location);
+    } catch (error) {
+      console.error("Error updating location:", error);
+      res.status(500).json({ error: "Failed to update location" });
+    }
+  });
+
+  app.delete("/api/locations/:id", requireAdmin, async (req, res) => {
+    try {
+      const deleted = await storage.deleteTargetLocation(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Location not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting location:", error);
+      res.status(500).json({ error: "Failed to delete location" });
+    }
+  });
+
+  // ====================== CITATIONS ======================
+  
+  app.get("/api/citations/directories", async (req, res) => {
+    try {
+      const directories = await storage.getAllCitationDirectories();
+      res.json(directories);
+    } catch (error) {
+      console.error("Error fetching directories:", error);
+      res.status(500).json({ error: "Failed to fetch directories" });
+    }
+  });
+
+  app.get("/api/citations/directories/aggregators", async (req, res) => {
+    try {
+      const aggregators = await storage.getAggregatorDirectories();
+      res.json(aggregators);
+    } catch (error) {
+      console.error("Error fetching aggregators:", error);
+      res.status(500).json({ error: "Failed to fetch aggregators" });
+    }
+  });
+
+  app.get("/api/citations/submissions", requireAdmin, async (req, res) => {
+    try {
+      const submissions = await storage.getAllCitationSubmissions();
+      res.json(submissions);
+    } catch (error) {
+      console.error("Error fetching submissions:", error);
+      res.status(500).json({ error: "Failed to fetch submissions" });
+    }
+  });
+
+  app.get("/api/citations/stats", requireAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getCitationStats();
+      const directories = await storage.getAllCitationDirectories();
+      res.json({ ...stats, totalDirectories: directories.length });
+    } catch (error) {
+      console.error("Error fetching citation stats:", error);
+      res.status(500).json({ error: "Failed to fetch citation stats" });
+    }
+  });
+
+  app.post("/api/citations/submissions", requireAdmin, async (req, res) => {
+    try {
+      const { directoryId, directoryName, status, listingUrl, notes } = req.body;
+      const submission = await storage.createCitationSubmission({
+        directoryId,
+        directoryName,
+        status: status || "pending",
+        listingUrl,
+        notes,
+        submittedAt: status === "submitted" ? new Date() : null,
+      });
+      res.status(201).json(submission);
+    } catch (error) {
+      console.error("Error creating submission:", error);
+      res.status(500).json({ error: "Failed to create submission" });
+    }
+  });
+
+  app.put("/api/citations/submissions/:id", requireAdmin, async (req, res) => {
+    try {
+      const { status, listingUrl, notes } = req.body;
+      const updates: any = { status, listingUrl, notes };
+      if (status === "submitted" && !req.body.submittedAt) {
+        updates.submittedAt = new Date();
+      }
+      if (status === "confirmed" && !req.body.confirmedAt) {
+        updates.confirmedAt = new Date();
+      }
+      const submission = await storage.updateCitationSubmission(req.params.id, updates);
+      if (!submission) {
+        return res.status(404).json({ error: "Submission not found" });
+      }
+      res.json(submission);
+    } catch (error) {
+      console.error("Error updating submission:", error);
+      res.status(500).json({ error: "Failed to update submission" });
+    }
+  });
+
+  // NAP Consistency Check
+  app.get("/api/citations/nap-check", requireAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getSiteSettings();
+      const issues: string[] = [];
+      
+      if (!settings?.siteName) issues.push("Business name is not set");
+      if (!settings?.dealerAddress) issues.push("Street address is not set");
+      if (!settings?.dealerCity) issues.push("City is not set");
+      if (!settings?.dealerState) issues.push("State is not set");
+      if (!settings?.contactPhone) issues.push("Phone number is not set");
+      if (!settings?.contactEmail) issues.push("Email is not set");
+      if (!settings?.baseUrl) issues.push("Website URL is not set");
+      
+      const napData = {
+        name: settings?.siteName || "",
+        address: settings?.dealerAddress || "",
+        city: settings?.dealerCity || "",
+        state: settings?.dealerState || "",
+        phone: settings?.contactPhone || "",
+        email: settings?.contactEmail || "",
+        website: settings?.baseUrl || "",
+        hours: settings?.dealerHours || "",
+        googleMapUrl: settings?.googleMapUrl || "",
+      };
+      
+      res.json({
+        isComplete: issues.length === 0,
+        issues,
+        napData,
+      });
+    } catch (error) {
+      console.error("Error checking NAP:", error);
+      res.status(500).json({ error: "Failed to check NAP consistency" });
+    }
+  });
+
+  // Citation Export
+  app.get("/api/citations/export", requireAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getSiteSettings();
+      const format = req.query.format || "json";
+      
+      const napData = {
+        businessName: settings?.siteName || "",
+        streetAddress: settings?.dealerAddress || "",
+        city: settings?.dealerCity || "",
+        state: settings?.dealerState || "",
+        zipCode: "",
+        phone: settings?.contactPhone || "",
+        email: settings?.contactEmail || "",
+        website: settings?.baseUrl || "",
+        hours: settings?.dealerHours || "",
+        description: settings?.ogDescription || "",
+        categories: "Automotive Dealer, Used Car Dealer, Luxury Car Dealer, Car Consignment",
+      };
+      
+      if (format === "csv") {
+        const csv = Object.entries(napData).map(([key, value]) => `"${key}","${value}"`).join("\n");
+        res.setHeader("Content-Type", "text/csv");
+        res.setHeader("Content-Disposition", "attachment; filename=nap-data.csv");
+        res.send(csv);
+      } else {
+        res.json(napData);
+      }
+    } catch (error) {
+      console.error("Error exporting citations:", error);
+      res.status(500).json({ error: "Failed to export citation data" });
+    }
+  });
+
   // ====================== SEO ENDPOINTS ======================
   
   // robots.txt - dynamic based on settings
@@ -3379,12 +3624,12 @@ Sitemap: ${baseUrl}/sitemap.xml
       <priority>0.6</priority>
     </url>`);
       
-      // Location page
-      if (settings?.dealerCity && settings?.dealerState) {
-        const locationSlug = slugify(`${settings.dealerCity}-${settings.dealerState}`);
+      // Target Location Pages
+      const targetLocations = await storage.getActiveTargetLocations();
+      for (const location of targetLocations) {
         urls.push(`
     <url>
-      <loc>${baseUrl}/${locationSlug}</loc>
+      <loc>${baseUrl}/location/${location.slug}</loc>
       <changefreq>weekly</changefreq>
       <priority>0.8</priority>
     </url>`);
@@ -3392,8 +3637,19 @@ Sitemap: ${baseUrl}/sitemap.xml
         // Inventory by location
         urls.push(`
     <url>
-      <loc>${baseUrl}/inventory/${locationSlug}</loc>
+      <loc>${baseUrl}/inventory/location/${location.slug}</loc>
       <changefreq>daily</changefreq>
+      <priority>0.8</priority>
+    </url>`);
+      }
+      
+      // Primary dealer location (fallback if no target locations)
+      if (targetLocations.length === 0 && settings?.dealerCity && settings?.dealerState) {
+        const locationSlug = slugify(`${settings.dealerCity}-${settings.dealerState}`);
+        urls.push(`
+    <url>
+      <loc>${baseUrl}/location/${locationSlug}</loc>
+      <changefreq>weekly</changefreq>
       <priority>0.8</priority>
     </url>`);
       }
