@@ -777,3 +777,19 @@ export const insertSmsMessageSchema = createInsertSchema(smsMessages).omit({
 
 export type InsertSmsMessage = z.infer<typeof insertSmsMessageSchema>;
 export type SmsMessage = typeof smsMessages.$inferSelect;
+
+// Vehicle Saves - tracks when users save/heart vehicles
+export const vehicleSaves = pgTable("vehicle_saves", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  vehicleId: varchar("vehicle_id").notNull().references(() => inventoryCars.id),
+  sessionId: text("session_id").notNull(), // Anonymous session or authenticated user identifier
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertVehicleSaveSchema = createInsertSchema(vehicleSaves).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertVehicleSave = z.infer<typeof insertVehicleSaveSchema>;
+export type VehicleSave = typeof vehicleSaves.$inferSelect;
