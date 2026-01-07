@@ -39,8 +39,8 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-background/80 backdrop-blur-md">
-      <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
-        <Link href="/" className="flex items-center gap-2 font-serif text-2xl font-bold tracking-tighter text-foreground transition-opacity hover:opacity-80 pl-2">
+      <div className="mx-auto flex h-20 items-center justify-between px-4 md:px-6" style={{ maxWidth: '90%' }}>
+        <Link href="/" className="flex items-center gap-2 font-serif text-2xl font-bold tracking-tighter text-foreground transition-opacity hover:opacity-80 flex-shrink-0">
           {settings?.logoUrl ? (
             <>
               <img 
@@ -65,7 +65,7 @@ export function Navbar() {
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden md:flex md:items-center md:gap-8">
+        <div className="hidden md:flex md:items-center md:gap-6 ml-12">
           {links.map((link) => (
             <Link
               key={link.href}

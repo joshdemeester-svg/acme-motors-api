@@ -77,3 +77,13 @@ Preferred communication style: Simple, everyday language.
 - **UI Libraries**: shadcn/ui (Radix UI), Lucide React, Embla Carousel, Uppy.
 - **Fonts**: Inter, Playfair Display (Google Fonts CDN).
 - **CRM Integration**: GoHighLevel CRM for contact creation, SMS verification, and admin notifications (using API v2 with Private Integration Token).
+
+## Future Roadmap
+
+### Listing Syndication
+- **Facebook Marketplace Feed**: Export vehicle listings to Facebook Marketplace via Business Manager catalog
+- **Third-Party Listing Feeds**: Syndicate inventory to AutoTrader, Cars.com, CarGurus, and other marketplaces using XML/CSV feeds or APIs
+- **Dealer-to-Dealer Listings**: Share inventory with partner dealerships
+- **Wholesale Inventory Option**: Mark vehicles for wholesale distribution
+
+**Implementation Notes**: Most platforms require dealer accounts with contractual relationships, API keys or SFTP credentials, and vehicle data in specific formats (ADF/XML, VehicleXML, or JSON). Consider using an aggregator service or building a syndication module with per-channel adapters.
