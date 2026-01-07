@@ -42,6 +42,14 @@ export function SavedVehiclesProvider({ children }: { children: ReactNode }) {
         ? prev.filter(id => id !== vehicleId)
         : [...prev, vehicleId]
     );
+    
+    // Sync with backend for analytics tracking (fire-and-forget)
+    fetch(`/api/vehicles/${vehicleId}/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    }).catch(() => {
+      // Silently fail - localStorage is the source of truth for user experience
+    });
   }, []);
 
   const isSaved = useCallback((vehicleId: string) => {
