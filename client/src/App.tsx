@@ -18,6 +18,7 @@ import AdminInventory from "@/pages/admin/Inventory";
 import AdminLeads from "@/pages/admin/Leads";
 import AdminConsignments from "@/pages/admin/Consignments";
 import AdminSettings from "@/pages/admin/Settings";
+import AdminRoadmap from "@/pages/admin/Roadmap";
 import SellerPortal from "@/pages/SellerPortal";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
@@ -51,6 +52,7 @@ function Router() {
       <Route path="/admin/leads" component={AdminLeads} />
       <Route path="/admin/consignments" component={AdminConsignments} />
       <Route path="/admin/settings" component={AdminSettings} />
+      <Route path="/admin/roadmap" component={AdminRoadmap} />
       <Route path="/admin-legacy" component={Admin} />
       <Route path="/seller-portal" component={SellerPortal} />
       <Route path="/privacy" component={Privacy} />
