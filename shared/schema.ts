@@ -265,6 +265,9 @@ export const siteSettings = pgTable("site_settings", {
   
   hotListingThreshold: integer("hot_listing_threshold").default(5),
   
+  liveChatEnabled: boolean("live_chat_enabled").default(false),
+  liveChatWidgetId: text("live_chat_widget_id"),
+  
   indexVehiclePages: boolean("index_vehicle_pages").default(true),
   indexInventoryPages: boolean("index_inventory_pages").default(true),
   indexMakePages: boolean("index_make_pages").default(true),

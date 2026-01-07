@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { useFavicon } from "@/hooks/use-favicon";
+import { useLiveChat } from "@/hooks/use-live-chat";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Inventory from "@/pages/Inventory";
@@ -26,6 +27,11 @@ import CreditApp from "@/pages/CreditApp";
 
 function FaviconLoader() {
   useFavicon();
+  return null;
+}
+
+function LiveChatLoader() {
+  useLiveChat();
   return null;
 }
 
@@ -62,6 +68,7 @@ function App() {
       <SettingsProvider>
         <TooltipProvider>
           <FaviconLoader />
+          <LiveChatLoader />
           <Toaster />
           <Router />
         </TooltipProvider>
