@@ -2802,9 +2802,12 @@ export async function registerRoutes(
       
       for (const inquiry of demoBuyerInquiries) {
         if (vehicleIds.length > 0) {
-          const vehicleIndex = demoBuyerInquiries.indexOf(inquiry) % vehicleIds.length;
+          const { targetVehicleIndex, ...inquiryData } = inquiry as any;
+          const vehicleIndex = typeof targetVehicleIndex === 'number' 
+            ? targetVehicleIndex 
+            : demoBuyerInquiries.indexOf(inquiry) % vehicleIds.length;
           await storage.createBuyerInquiry({
-            ...inquiry,
+            ...inquiryData,
             inventoryCarId: vehicleIds[vehicleIndex],
           });
         }
