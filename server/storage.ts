@@ -208,6 +208,8 @@ export interface IStorage {
   getPushSubscriptionByEndpoint(endpoint: string): Promise<PushSubscription | undefined>;
   getAllPushSubscriptions(): Promise<PushSubscription[]>;
   getPushSubscriptionsByMake(make: string): Promise<PushSubscription[]>;
+  getPushSubscriptionsByCategory(category: string): Promise<PushSubscription[]>;
+  getPushSubscriptionCountByCategory(category: string): Promise<number>;
   updatePushSubscription(id: string, data: Partial<InsertPushSubscription>): Promise<PushSubscription | undefined>;
   deletePushSubscription(endpoint: string): Promise<boolean>;
   getPushSubscriptionCount(): Promise<number>;
@@ -946,6 +948,26 @@ export class DatabaseStorage implements IStorage {
     return all.filter(sub => 
       !sub.preferredMakes || sub.preferredMakes.length === 0 || sub.preferredMakes.includes(make)
     );
+  }
+
+  async getPushSubscriptionsByCategory(category: string): Promise<PushSubscription[]> {
+    const all = await db.select().from(pushSubscriptions);
+    if (category === "all") return all;
+    
+    return all.filter(sub => {
+      switch (category) {
+        case "new_listings": return sub.notifyNewListings !== false;
+        case "price_drops": return sub.notifyPriceDrops !== false;
+        case "special_offers": return sub.notifySpecialOffers !== false;
+        case "hot_listings": return sub.notifyHotListings !== false;
+        default: return true;
+      }
+    });
+  }
+
+  async getPushSubscriptionCountByCategory(category: string): Promise<number> {
+    const subs = await this.getPushSubscriptionsByCategory(category);
+    return subs.length;
   }
 
   async updatePushSubscription(id: string, data: Partial<InsertPushSubscription>): Promise<PushSubscription | undefined> {

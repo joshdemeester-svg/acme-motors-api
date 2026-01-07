@@ -3646,8 +3646,19 @@ export async function registerRoutes(
     try {
       const count = await storage.getPushSubscriptionCount();
       const notifications = await storage.getAllPushNotifications();
+      
+      // Get counts by category
+      const categoryCounts = {
+        all: count,
+        new_listings: await storage.getPushSubscriptionCountByCategory("new_listings"),
+        price_drops: await storage.getPushSubscriptionCountByCategory("price_drops"),
+        special_offers: await storage.getPushSubscriptionCountByCategory("special_offers"),
+        hot_listings: await storage.getPushSubscriptionCountByCategory("hot_listings"),
+      };
+      
       res.json({ 
         subscriberCount: count,
+        categoryCounts,
         notificationsSent: notifications.length,
         lastNotification: notifications[0] || null,
       });
@@ -3682,7 +3693,7 @@ export async function registerRoutes(
   // Send push notification (admin)
   app.post("/api/push/send", requireAdmin, async (req, res) => {
     try {
-      const { title, body, url, imageUrl, targetType, targetMakes } = req.body;
+      const { title, body, url, imageUrl, targetType, targetMakes, targetCategory } = req.body;
       
       if (!title || !body) {
         return res.status(400).json({ error: "Title and body required" });
@@ -3705,9 +3716,11 @@ export async function registerRoutes(
         privateKey
       );
 
-      // Get subscriptions based on target
-      let subscriptions = await storage.getAllPushSubscriptions();
+      // Get subscriptions based on category preference
+      const category = targetCategory || 'all';
+      let subscriptions = await storage.getPushSubscriptionsByCategory(category);
       
+      // Further filter by make if specified
       if (targetType === 'make' && targetMakes?.length > 0) {
         subscriptions = subscriptions.filter(sub => 
           !sub.preferredMakes || sub.preferredMakes.length === 0 ||
@@ -3722,6 +3735,7 @@ export async function registerRoutes(
         url,
         imageUrl,
         targetType: targetType || 'all',
+        targetCategory: category,
         targetMakes: targetMakes || [],
         createdBy: req.user?.id,
       });
