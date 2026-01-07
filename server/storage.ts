@@ -15,6 +15,7 @@ import {
   creditApplications,
   leadNotes,
   activityLog,
+  priceAlerts,
   type User, 
   type InsertUser,
   type ConsignmentSubmission,
@@ -43,7 +44,9 @@ import {
   type LeadNote,
   type InsertLeadNote,
   type ActivityLog,
-  type InsertActivityLog
+  type InsertActivityLog,
+  type PriceAlert,
+  type InsertPriceAlert
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, lt } from "drizzle-orm";
@@ -156,6 +159,14 @@ export interface IStorage {
   deleteDemoBuyerInquiries(): Promise<number>;
   deleteDemoConsignments(): Promise<number>;
   deleteDemoTestimonials(): Promise<number>;
+  
+  createPriceAlert(data: InsertPriceAlert): Promise<PriceAlert>;
+  getPriceAlertsForVehicle(vehicleId: string): Promise<PriceAlert[]>;
+  getPriceAlertsByEmail(email: string): Promise<PriceAlert[]>;
+  getActivePriceAlerts(): Promise<PriceAlert[]>;
+  updatePriceAlertNotified(id: string): Promise<PriceAlert | undefined>;
+  deactivatePriceAlert(id: string): Promise<boolean>;
+  deletePriceAlert(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -740,6 +751,42 @@ export class DatabaseStorage implements IStorage {
   async deleteDemoTestimonials(): Promise<number> {
     const result = await db.delete(testimonials).where(eq(testimonials.isDemo, true)).returning();
     return result.length;
+  }
+
+  async createPriceAlert(data: InsertPriceAlert): Promise<PriceAlert> {
+    const [alert] = await db.insert(priceAlerts).values(data).returning();
+    return alert;
+  }
+
+  async getPriceAlertsForVehicle(vehicleId: string): Promise<PriceAlert[]> {
+    return db.select().from(priceAlerts).where(eq(priceAlerts.vehicleId, vehicleId)).orderBy(desc(priceAlerts.createdAt));
+  }
+
+  async getPriceAlertsByEmail(email: string): Promise<PriceAlert[]> {
+    return db.select().from(priceAlerts).where(eq(priceAlerts.email, email)).orderBy(desc(priceAlerts.createdAt));
+  }
+
+  async getActivePriceAlerts(): Promise<PriceAlert[]> {
+    return db.select().from(priceAlerts).where(eq(priceAlerts.active, true)).orderBy(desc(priceAlerts.createdAt));
+  }
+
+  async updatePriceAlertNotified(id: string): Promise<PriceAlert | undefined> {
+    const [updated] = await db
+      .update(priceAlerts)
+      .set({ lastNotifiedAt: new Date() })
+      .where(eq(priceAlerts.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deactivatePriceAlert(id: string): Promise<boolean> {
+    const result = await db.update(priceAlerts).set({ active: false }).where(eq(priceAlerts.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async deletePriceAlert(id: string): Promise<boolean> {
+    const result = await db.delete(priceAlerts).where(eq(priceAlerts.id, id)).returning();
+    return result.length > 0;
   }
 }
 

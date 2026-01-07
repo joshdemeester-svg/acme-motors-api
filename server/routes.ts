@@ -2911,6 +2911,72 @@ export async function registerRoutes(
     }
   });
 
+  // Price Alerts - for specific vehicles (price drop notifications)
+  app.post("/api/price-alerts", async (req, res) => {
+    try {
+      const { vehicleId, email, phone, name, priceAtSubscription, notifyEmail, notifySms } = req.body;
+      
+      if (!vehicleId || !email || !priceAtSubscription) {
+        return res.status(400).json({ error: "Vehicle ID, email, and current price are required" });
+      }
+      
+      // Check if vehicle exists
+      const vehicle = await storage.getInventoryCar(vehicleId);
+      if (!vehicle) {
+        return res.status(404).json({ error: "Vehicle not found" });
+      }
+      
+      const alert = await storage.createPriceAlert({
+        vehicleId,
+        email,
+        phone: phone || null,
+        name: name || null,
+        priceAtSubscription,
+        notifyEmail: notifyEmail !== false,
+        notifySms: notifySms || false,
+      });
+      
+      res.status(201).json(alert);
+    } catch (error) {
+      console.error("Error creating price alert:", error);
+      res.status(500).json({ error: "Failed to create price alert" });
+    }
+  });
+
+  app.get("/api/price-alerts/vehicle/:vehicleId", requireAdmin, async (req, res) => {
+    try {
+      const alerts = await storage.getPriceAlertsForVehicle(req.params.vehicleId);
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error fetching price alerts:", error);
+      res.status(500).json({ error: "Failed to fetch price alerts" });
+    }
+  });
+
+  app.get("/api/price-alerts/my", async (req, res) => {
+    try {
+      const { email } = req.query;
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({ error: "Email is required" });
+      }
+      const alerts = await storage.getPriceAlertsByEmail(email);
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error fetching price alerts:", error);
+      res.status(500).json({ error: "Failed to fetch price alerts" });
+    }
+  });
+
+  app.delete("/api/price-alerts/:id", async (req, res) => {
+    try {
+      await storage.deletePriceAlert(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting price alert:", error);
+      res.status(500).json({ error: "Failed to delete price alert" });
+    }
+  });
+
   // Testimonials - Public view, Admin manage
   app.get("/api/testimonials", async (req, res) => {
     try {
