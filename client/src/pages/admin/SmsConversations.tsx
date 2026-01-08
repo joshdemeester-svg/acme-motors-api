@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import { 
   MessageSquare, 
   Send, 
@@ -16,7 +17,9 @@ import {
   Clock,
   Loader2,
   Pencil,
-  History
+  History,
+  Wifi,
+  WifiOff
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -68,9 +71,68 @@ export default function SmsConversations() {
   const [editNameDialogOpen, setEditNameDialogOpen] = useState(false);
   const [editingPhone, setEditingPhone] = useState<string | null>(null);
   const [editNameValue, setEditNameValue] = useState("");
+  const [wsConnected, setWsConnected] = useState(false);
 
   const queryClient = useQueryClient();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const { toast } = useToast();
+
+  // WebSocket connection for real-time SMS updates
+  useEffect(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    
+    const connect = () => {
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+      
+      ws.onopen = () => {
+        console.log('[SMS] WebSocket connected');
+        setWsConnected(true);
+      };
+      
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'sms_message') {
+            console.log('[SMS] Received real-time message:', data.data);
+            // Invalidate queries to refresh the conversation list
+            queryClient.invalidateQueries({ queryKey: ["/api/sms/conversations"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/sms/recent"] });
+            
+            // Show toast notification
+            toast({
+              title: "New SMS received",
+              description: parseMessageBody(data.data.body).substring(0, 50) + "...",
+            });
+          }
+        } catch (e) {
+          console.error('[SMS] Error parsing WebSocket message:', e);
+        }
+      };
+      
+      ws.onclose = () => {
+        console.log('[SMS] WebSocket disconnected, reconnecting...');
+        setWsConnected(false);
+        // Reconnect after 3 seconds
+        setTimeout(connect, 3000);
+      };
+      
+      ws.onerror = (error) => {
+        console.error('[SMS] WebSocket error:', error);
+        ws.close();
+      };
+    };
+    
+    connect();
+    
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, [queryClient, toast]);
 
   const { data: conversations, isLoading } = useQuery<LeadWithMessages[]>({
     queryKey: ["/api/sms/conversations"],
@@ -223,9 +285,24 @@ export default function SmsConversations() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold font-serif">SMS Conversations</h1>
-          <p className="text-muted-foreground">Two-way messaging with leads and customers</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold font-serif">SMS Conversations</h1>
+            <p className="text-muted-foreground">Two-way messaging with leads and customers</p>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            {wsConnected ? (
+              <>
+                <Wifi className="h-4 w-4 text-green-500" />
+                <span className="text-green-600">Live</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="h-4 w-4 text-yellow-500 animate-pulse" />
+                <span className="text-yellow-600">Connecting...</span>
+              </>
+            )}
+          </div>
         </div>
 
         {isLoading ? (
