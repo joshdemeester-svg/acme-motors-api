@@ -28,6 +28,7 @@ export function usePushNotifications() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [permission, setPermission] = useState<NotificationPermission>("default");
+  const [subscriptionEndpoint, setSubscriptionEndpoint] = useState<string | null>(null);
 
   useEffect(() => {
     const supported = 'serviceWorker' in navigator && 'PushManager' in window;
@@ -46,6 +47,7 @@ export function usePushNotifications() {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
       setIsSubscribed(!!subscription);
+      setSubscriptionEndpoint(subscription?.endpoint || null);
     } catch (error) {
       console.error("Error checking subscription:", error);
     } finally {
@@ -96,7 +98,8 @@ export function usePushNotifications() {
       }
 
       setIsSubscribed(true);
-      return { success: true };
+      setSubscriptionEndpoint(subscription.endpoint);
+      return { success: true, endpoint: subscription.endpoint };
     } catch (error: any) {
       console.error("Subscription error:", error);
       return { success: false, error: error.message || "Subscription failed" };
@@ -121,6 +124,7 @@ export function usePushNotifications() {
       }
       
       setIsSubscribed(false);
+      setSubscriptionEndpoint(null);
       return { success: true };
     } catch (error: any) {
       console.error("Unsubscribe error:", error);
@@ -135,6 +139,7 @@ export function usePushNotifications() {
     isSubscribed,
     isLoading,
     permission,
+    subscriptionEndpoint,
     subscribe,
     unsubscribe,
   };

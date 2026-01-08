@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { 
   Bell, 
   Send, 
@@ -18,7 +19,10 @@ import {
   CheckCircle2,
   AlertCircle,
   Filter,
-  HelpCircle
+  HelpCircle,
+  BellPlus,
+  BellOff,
+  TestTube2
 } from "lucide-react";
 import { AdminHelpBox } from "@/components/admin/AdminHelpBox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -68,8 +72,96 @@ export default function PushNotifications() {
   const [body, setBody] = useState("");
   const [url, setUrl] = useState("");
   const [targetCategory, setTargetCategory] = useState("all");
+  const [subscribeError, setSubscribeError] = useState<string | null>(null);
+  const [testSending, setTestSending] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  const { 
+    isSupported, 
+    isSubscribed, 
+    isLoading: pushLoading, 
+    permission,
+    subscriptionEndpoint,
+    subscribe, 
+    unsubscribe 
+  } = usePushNotifications();
+
+  const handleSubscribe = async () => {
+    setSubscribeError(null);
+    const result = await subscribe({
+      notifyNewListings: true,
+      notifyPriceDrops: true,
+      notifySpecialOffers: true,
+      notifyHotListings: true,
+    });
+    
+    if (result.success) {
+      toast({
+        title: "Subscribed!",
+        description: "This browser is now receiving push notifications",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/push/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/push/subscriptions"] });
+    } else {
+      setSubscribeError(result.error || "Subscription failed");
+      toast({
+        title: "Subscription failed",
+        description: result.error,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUnsubscribe = async () => {
+    const result = await unsubscribe();
+    if (result.success) {
+      toast({
+        title: "Unsubscribed",
+        description: "This browser will no longer receive notifications",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/push/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/push/subscriptions"] });
+    }
+  };
+
+  const handleSendTest = async () => {
+    if (!subscriptionEndpoint) {
+      toast({
+        title: "Not subscribed",
+        description: "Subscribe this browser first to send a test.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setTestSending(true);
+    try {
+      const res = await fetch("/api/push/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint: subscriptionEndpoint }),
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to send test");
+      }
+      
+      toast({
+        title: "Test sent!",
+        description: "Check for a notification on this device!",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Test failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setTestSending(false);
+    }
+  };
 
   const { data: stats } = useQuery<PushStats>({
     queryKey: ["/api/push/stats"],
@@ -200,6 +292,97 @@ export default function PushNotifications() {
             </CardContent>
           </Card>
         </div>
+
+        <Card className="border-dashed">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <TestTube2 className="w-5 h-5" />
+              Test Push Notifications
+            </CardTitle>
+            <CardDescription>Subscribe this browser to test notifications</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!isSupported ? (
+              <div className="flex items-center gap-3 p-3 bg-destructive/10 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-destructive" />
+                <div>
+                  <p className="font-medium text-destructive">Not Supported</p>
+                  <p className="text-sm text-muted-foreground">This browser doesn't support push notifications</p>
+                </div>
+              </div>
+            ) : permission === "denied" ? (
+              <div className="flex items-center gap-3 p-3 bg-destructive/10 rounded-lg">
+                <BellOff className="w-5 h-5 text-destructive" />
+                <div>
+                  <p className="font-medium text-destructive">Notifications Blocked</p>
+                  <p className="text-sm text-muted-foreground">Enable notifications in your browser settings for this site</p>
+                </div>
+              </div>
+            ) : isSubscribed ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-green-500/10 rounded-lg">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  <div>
+                    <p className="font-medium text-green-700">Subscribed</p>
+                    <p className="text-sm text-muted-foreground">This browser is receiving push notifications</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleSendTest}
+                    disabled={testSending || !subscriptionEndpoint}
+                    className="flex-1"
+                    data-testid="button-send-test"
+                  >
+                    {testSending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Bell className="w-4 h-4 mr-2" />
+                    )}
+                    Send Test Notification
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleUnsubscribe}
+                    disabled={pushLoading}
+                    data-testid="button-unsubscribe"
+                  >
+                    <BellOff className="w-4 h-4 mr-2" />
+                    Unsubscribe
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Subscribe this browser to test how notifications appear to your customers.
+                </p>
+                <Button 
+                  onClick={handleSubscribe}
+                  disabled={pushLoading}
+                  className="w-full"
+                  data-testid="button-subscribe-browser"
+                >
+                  {pushLoading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <BellPlus className="w-4 h-4 mr-2" />
+                  )}
+                  Subscribe This Browser
+                </Button>
+                {subscribeError && (
+                  <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-destructive mt-0.5" />
+                    <div>
+                      <p className="font-medium text-destructive text-sm">Subscription Failed</p>
+                      <p className="text-xs text-muted-foreground">{subscribeError}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>

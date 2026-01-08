@@ -3652,14 +3652,25 @@ export async function registerRoutes(
     try {
       const { subscription, preferences } = req.body;
       
+      console.log("[push] Subscribe request received:", { 
+        hasEndpoint: !!subscription?.endpoint, 
+        hasKeys: !!subscription?.keys,
+        preferences 
+      });
+      
       if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
-        return res.status(400).json({ error: "Invalid subscription data" });
+        console.log("[push] Invalid subscription - missing fields:", {
+          hasEndpoint: !!subscription?.endpoint,
+          hasP256dh: !!subscription?.keys?.p256dh,
+          hasAuth: !!subscription?.keys?.auth
+        });
+        return res.status(400).json({ error: "Invalid subscription data - missing required fields" });
       }
 
       // Check if already subscribed
       const existing = await storage.getPushSubscriptionByEndpoint(subscription.endpoint);
       if (existing) {
-        // Update preferences
+        console.log("[push] Updating existing subscription:", existing.id);
         await storage.updatePushSubscription(existing.id, {
           preferredMakes: preferences?.preferredMakes || [],
           notifyNewListings: preferences?.notifyNewListings ?? true,
@@ -3669,7 +3680,7 @@ export async function registerRoutes(
         return res.json({ success: true, message: "Preferences updated" });
       }
 
-      await storage.createPushSubscription({
+      const newSub = await storage.createPushSubscription({
         endpoint: subscription.endpoint,
         p256dh: subscription.keys.p256dh,
         auth: subscription.keys.auth,
@@ -3680,10 +3691,11 @@ export async function registerRoutes(
         userAgent: req.get('user-agent') || null,
       });
 
+      console.log("[push] New subscription created:", newSub.id);
       res.status(201).json({ success: true, message: "Subscribed to notifications" });
-    } catch (error) {
-      console.error("Error subscribing to push:", error);
-      res.status(500).json({ error: "Failed to subscribe" });
+    } catch (error: any) {
+      console.error("[push] Subscription error:", error.message, error.stack);
+      res.status(500).json({ error: "Failed to subscribe: " + error.message });
     }
   });
 
@@ -3756,6 +3768,8 @@ export async function registerRoutes(
     try {
       const { title, body, url, imageUrl, targetType, targetMakes, targetCategory } = req.body;
       
+      console.log("[push] Send request:", { title, body, url, targetCategory });
+      
       if (!title || !body) {
         return res.status(400).json({ error: "Title and body required" });
       }
@@ -3766,8 +3780,11 @@ export async function registerRoutes(
       const publicKey = process.env.VAPID_PUBLIC_KEY;
       const privateKey = process.env.VAPID_PRIVATE_KEY;
       
+      console.log("[push] VAPID keys present:", { hasPublic: !!publicKey, hasPrivate: !!privateKey });
+      
       if (!publicKey || !privateKey) {
-        return res.status(500).json({ error: "VAPID keys not configured" });
+        console.error("[push] VAPID keys not configured!");
+        return res.status(500).json({ error: "VAPID keys not configured - check environment variables" });
       }
 
       const settings = await storage.getSiteSettings();
@@ -3780,6 +3797,7 @@ export async function registerRoutes(
       // Get subscriptions based on category preference
       const category = targetCategory || 'all';
       let subscriptions = await storage.getPushSubscriptionsByCategory(category);
+      console.log("[push] Found subscriptions for category", category, ":", subscriptions.length);
       
       // Further filter by make if specified
       if (targetType === 'make' && targetMakes?.length > 0) {
@@ -3821,13 +3839,17 @@ export async function registerRoutes(
           }, payload);
           successCount++;
         } catch (error: any) {
+          console.error("[push] Failed to send to subscription:", sub.id, error.statusCode, error.body);
           if (error.statusCode === 410) {
             // Subscription expired, remove it
+            console.log("[push] Removing expired subscription:", sub.id);
             await storage.deletePushSubscription(sub.endpoint);
           }
           failedEndpoints.push(sub.endpoint);
         }
       }
+      
+      console.log("[push] Send complete:", { successCount, failed: failedEndpoints.length });
 
       await storage.updatePushNotificationSentCount(notification.id, successCount);
 
@@ -3840,6 +3862,69 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error sending push notification:", error);
       res.status(500).json({ error: "Failed to send notifications" });
+    }
+  });
+
+  // Send test push notification to a specific subscription (admin)
+  app.post("/api/push/test", requireAdmin, async (req, res) => {
+    try {
+      const { endpoint } = req.body;
+      
+      console.log("[push] Test notification request for endpoint");
+      
+      if (!endpoint) {
+        return res.status(400).json({ error: "Subscription endpoint required" });
+      }
+
+      // Find the subscription
+      const subscription = await storage.getPushSubscriptionByEndpoint(endpoint);
+      if (!subscription) {
+        return res.status(404).json({ error: "Subscription not found" });
+      }
+
+      // Import web-push dynamically
+      const webpush = await import('web-push');
+      
+      const publicKey = process.env.VAPID_PUBLIC_KEY;
+      const privateKey = process.env.VAPID_PRIVATE_KEY;
+      
+      if (!publicKey || !privateKey) {
+        return res.status(500).json({ error: "VAPID keys not configured" });
+      }
+
+      const settings = await storage.getSiteSettings();
+      webpush.setVapidDetails(
+        `mailto:${settings?.contactEmail || 'admin@example.com'}`,
+        publicKey,
+        privateKey
+      );
+
+      const payload = JSON.stringify({
+        title: "Test Notification",
+        body: "This is a test notification from the admin panel. Push notifications are working!",
+        url: "/admin/notifications",
+        tag: "test-" + Date.now(),
+      });
+
+      try {
+        await webpush.sendNotification({
+          endpoint: subscription.endpoint,
+          keys: { p256dh: subscription.p256dh, auth: subscription.auth }
+        }, payload);
+        
+        console.log("[push] Test notification sent successfully");
+        res.json({ success: true, message: "Test notification sent!" });
+      } catch (error: any) {
+        console.error("[push] Test notification failed:", error.statusCode, error.body);
+        if (error.statusCode === 410) {
+          await storage.deletePushSubscription(subscription.endpoint);
+          return res.status(410).json({ error: "Subscription expired - please re-subscribe" });
+        }
+        throw error;
+      }
+    } catch (error: any) {
+      console.error("Error sending test notification:", error);
+      res.status(500).json({ error: "Failed to send test: " + error.message });
     }
   });
 
