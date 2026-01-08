@@ -231,6 +231,7 @@ export const siteSettings = pgTable("site_settings", {
   logoUrl: text("logo_url"),
   logoWidth: text("logo_width").default("120"),
   mobileLogoWidth: text("mobile_logo_width").default("100"),
+  footerLogoWidth: text("footer_logo_width").default("120"),
   hideSiteNameWithLogo: boolean("hide_site_name_with_logo").default(false),
   faviconUrl: text("favicon_url"),
   siteName: text("site_name").default("PRESTIGE"),

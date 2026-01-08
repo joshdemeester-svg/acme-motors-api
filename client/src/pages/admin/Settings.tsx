@@ -676,6 +676,33 @@ export default function Settings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
+                  <Label htmlFor="footerLogoWidth">Footer Logo Width (px)</Label>
+                  <div className="flex items-center gap-4">
+                    <Input
+                      id="footerLogoWidth"
+                      type="range"
+                      min="60"
+                      max="200"
+                      value={formData.footerLogoWidth || "120"}
+                      onChange={(e) => setFormData({ ...formData, footerLogoWidth: e.target.value })}
+                      className="flex-1"
+                      data-testid="input-footer-logo-width"
+                    />
+                    <span className="text-sm font-medium w-16">{formData.footerLogoWidth || "120"}px</span>
+                  </div>
+                  {formData.logoUrl && (
+                    <div className="mt-2 p-4 bg-muted rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-2">Footer Preview:</p>
+                      <img 
+                        src={formData.logoUrl} 
+                        alt="Footer logo preview" 
+                        style={{ width: `${formData.footerLogoWidth || 120}px` }}
+                        className="max-h-16 object-contain"
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="footerTagline">Footer Tagline</Label>
                   <Textarea
                     id="footerTagline"
