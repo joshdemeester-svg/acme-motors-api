@@ -19,9 +19,7 @@ export function Footer() {
                   src={settings.logoUrl} 
                   alt={siteName} 
                   style={{ 
-                    maxWidth: `${settings.footerLogoWidth || 120}px`,
-                    maxHeight: '56px',
-                    width: 'auto',
+                    width: `${settings.footerLogoWidth || 120}px`,
                     height: 'auto',
                     objectFit: 'contain'
                   }}
