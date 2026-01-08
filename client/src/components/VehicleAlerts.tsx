@@ -97,26 +97,35 @@ export function VehicleAlerts() {
 
   const createAlert = useMutation({
     mutationFn: async (data: any) => {
+      console.log("[VehicleAlerts] Submitting alert data:", data);
       const res = await fetch("/api/vehicle-alerts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed to create alert");
-      return res.json();
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error("[VehicleAlerts] Server error:", res.status, errorData);
+        throw new Error(errorData.error || "Failed to create alert");
+      }
+      const result = await res.json();
+      console.log("[VehicleAlerts] Alert created successfully:", result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("[VehicleAlerts] SUCCESS - Alert saved with ID:", data.id);
       toast({
-        title: "Alert Created!",
-        description: "You'll be notified when matching vehicles are listed.",
+        title: "Alert Created Successfully!",
+        description: `You'll be notified at ${email} when matching vehicles are listed.`,
       });
       setOpen(false);
       resetForm();
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error("[VehicleAlerts] FAILED:", error.message);
       toast({
-        title: "Error",
-        description: "Failed to create alert. Please try again.",
+        title: "Failed to Create Alert",
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     },
@@ -140,7 +149,11 @@ export function VehicleAlerts() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log("[VehicleAlerts] Form submitted - checking validation...");
+    console.log("[VehicleAlerts] Form state:", { name, email, phone, phoneVerified, makes, minPrice, maxPrice, minYear, maxYear });
+    
     if (!phoneVerified) {
+      console.log("[VehicleAlerts] BLOCKED - Phone not verified");
       toast({
         title: "Phone Verification Required",
         description: "Please verify your phone number before creating an alert.",
@@ -149,7 +162,17 @@ export function VehicleAlerts() {
       return;
     }
     
-    createAlert.mutate({
+    if (!name || !email) {
+      console.log("[VehicleAlerts] BLOCKED - Missing name or email");
+      toast({
+        title: "Required Fields Missing",
+        description: "Please enter your name and email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const alertData = {
       name,
       email,
       phone,
@@ -162,7 +185,10 @@ export function VehicleAlerts() {
       notifyEmail,
       notifySms,
       phoneVerified: true,
-    });
+    };
+    
+    console.log("[VehicleAlerts] Validation passed - calling API with:", alertData);
+    createAlert.mutate(alertData);
   };
 
   const handleSendCode = () => {

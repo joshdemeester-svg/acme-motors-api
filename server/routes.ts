@@ -2879,13 +2879,16 @@ export async function registerRoutes(
   // Vehicle Alerts - Public create, Admin manage
   app.post("/api/vehicle-alerts", async (req, res) => {
     try {
+      console.log("[vehicle-alerts] Received alert creation request:", JSON.stringify(req.body, null, 2));
+      
       const { name, email, phone, makes, models, minYear, maxYear, minPrice, maxPrice, notifyEmail, notifySms } = req.body;
       
       if (!name || !email) {
+        console.log("[vehicle-alerts] Validation failed - missing name or email:", { name: !!name, email: !!email });
         return res.status(400).json({ error: "Name and email are required" });
       }
       
-      const alert = await storage.createVehicleAlert({
+      const alertData = {
         name,
         email,
         phone: phone || null,
@@ -2897,12 +2900,17 @@ export async function registerRoutes(
         maxPrice: maxPrice || null,
         notifyEmail: notifyEmail !== false,
         notifySms: notifySms || false,
-      });
+      };
       
+      console.log("[vehicle-alerts] Creating alert with data:", JSON.stringify(alertData, null, 2));
+      
+      const alert = await storage.createVehicleAlert(alertData);
+      
+      console.log("[vehicle-alerts] SUCCESS - Alert created with ID:", alert.id);
       res.status(201).json(alert);
-    } catch (error) {
-      console.error("Error creating vehicle alert:", error);
-      res.status(500).json({ error: "Failed to create vehicle alert" });
+    } catch (error: any) {
+      console.error("[vehicle-alerts] ERROR creating alert:", error.message, error.stack);
+      res.status(500).json({ error: "Failed to create vehicle alert: " + error.message });
     }
   });
 
@@ -2943,19 +2951,23 @@ export async function registerRoutes(
   // Price Alerts - for specific vehicles (price drop notifications)
   app.post("/api/price-alerts", async (req, res) => {
     try {
+      console.log("[price-alerts] Received price alert request:", JSON.stringify(req.body, null, 2));
+      
       const { vehicleId, email, phone, name, priceAtSubscription, notifyEmail, notifySms } = req.body;
       
       if (!vehicleId || !email || !priceAtSubscription) {
+        console.log("[price-alerts] Validation failed:", { vehicleId: !!vehicleId, email: !!email, priceAtSubscription: !!priceAtSubscription });
         return res.status(400).json({ error: "Vehicle ID, email, and current price are required" });
       }
       
       // Check if vehicle exists
       const vehicle = await storage.getInventoryCar(vehicleId);
       if (!vehicle) {
+        console.log("[price-alerts] Vehicle not found:", vehicleId);
         return res.status(404).json({ error: "Vehicle not found" });
       }
       
-      const alert = await storage.createPriceAlert({
+      const alertData = {
         vehicleId,
         email,
         phone: phone || null,
@@ -2963,12 +2975,17 @@ export async function registerRoutes(
         priceAtSubscription,
         notifyEmail: notifyEmail !== false,
         notifySms: notifySms || false,
-      });
+      };
       
+      console.log("[price-alerts] Creating price alert for vehicle:", vehicle.year, vehicle.make, vehicle.model);
+      
+      const alert = await storage.createPriceAlert(alertData);
+      
+      console.log("[price-alerts] SUCCESS - Price alert created with ID:", alert.id);
       res.status(201).json(alert);
-    } catch (error) {
-      console.error("Error creating price alert:", error);
-      res.status(500).json({ error: "Failed to create price alert" });
+    } catch (error: any) {
+      console.error("[price-alerts] ERROR creating alert:", error.message, error.stack);
+      res.status(500).json({ error: "Failed to create price alert: " + error.message });
     }
   });
 
