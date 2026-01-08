@@ -4189,35 +4189,99 @@ ${urls.join('')}
         return res.status(400).json({ error: "GoHighLevel not configured" });
       }
 
+      // Normalize phone number for reliable search
+      const normalizedPhone = normalizePhoneNumber(phone);
+      const digitsOnly = normalizedPhone.replace(/\D/g, '');
+      
+      console.log("[SMS Send] Sending to phone:", normalizedPhone, "digits:", digitsOnly);
+
       // Send SMS via GHL
       // First, find or create contact
       let ghlContactId: string | undefined;
       
       try {
-        // Search for contact by phone
-        const searchRes = await fetch(
-          `https://services.leadconnectorhq.com/contacts/search?locationId=${locationId}&query=${encodeURIComponent(phone)}`,
-          {
-            headers: {
-              "Authorization": `Bearer ${apiToken}`,
-              "Version": "2021-07-28",
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        // Search for contact by phone - try multiple formats
+        const searchQueries = [normalizedPhone, digitsOnly, phone];
         
-        if (searchRes.ok) {
-          const searchData = await searchRes.json();
-          if (searchData.contacts && searchData.contacts.length > 0) {
-            ghlContactId = searchData.contacts[0].id;
+        for (const query of searchQueries) {
+          const searchRes = await fetch(
+            `https://services.leadconnectorhq.com/contacts/search?locationId=${locationId}&query=${encodeURIComponent(query)}`,
+            {
+              headers: {
+                "Authorization": `Bearer ${apiToken}`,
+                "Version": "2021-07-28",
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          
+          if (searchRes.ok) {
+            const searchData = await searchRes.json();
+            if (searchData.contacts && searchData.contacts.length > 0) {
+              ghlContactId = searchData.contacts[0].id;
+              console.log("[SMS Send] Found contact in GHL:", ghlContactId);
+              break;
+            }
           }
         }
       } catch (e) {
         console.error("Error searching GHL contact:", e);
       }
 
+      // If contact not found, create one
       if (!ghlContactId) {
-        return res.status(400).json({ error: "Contact not found in GoHighLevel" });
+        console.log("[SMS Send] Contact not found, creating new contact");
+        try {
+          const createRes = await fetch(
+            `https://services.leadconnectorhq.com/contacts/upsert`,
+            {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${apiToken}`,
+                "Version": "2021-07-28",
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                phone: normalizedPhone,
+                locationId,
+                firstName: "Customer",
+                source: "Admin SMS Panel",
+                tags: ["SMS Contact"],
+              }),
+            }
+          );
+          
+          if (createRes.ok) {
+            const createData = await createRes.json();
+            ghlContactId = createData.contact?.id;
+            if (ghlContactId) {
+              console.log("[SMS Send] Created contact in GHL:", ghlContactId);
+            } else {
+              console.error("[SMS Send] Contact created but no ID returned:", JSON.stringify(createData));
+              return res.status(500).json({ 
+                error: "GoHighLevel returned success but no contact ID - please check your API permissions" 
+              });
+            }
+          } else {
+            const errText = await createRes.text();
+            console.error("[SMS Send] Failed to create contact:", createRes.status, errText);
+            let errorMessage = "Failed to create contact in GoHighLevel";
+            try {
+              const errData = JSON.parse(errText);
+              errorMessage = errData.message || errData.error || errorMessage;
+            } catch (e) {}
+            return res.status(createRes.status === 401 ? 401 : 500).json({ 
+              error: `GoHighLevel error: ${errorMessage}` 
+            });
+          }
+        } catch (e: any) {
+          console.error("Error creating GHL contact:", e);
+          return res.status(500).json({ error: `Network error contacting GoHighLevel: ${e.message}` });
+        }
+      }
+
+      if (!ghlContactId) {
+        return res.status(400).json({ error: "Could not find or create contact in GoHighLevel" });
       }
 
       // Send message via GHL Conversations API
@@ -4288,21 +4352,61 @@ ${urls.join('')}
 
       // GHL webhook payload structure for inbound messages
       const contactId = payload.contactId || payload.contact_id;
-      const messageBody = payload.body || payload.message || payload.text;
+      let messageBody = payload.body || payload.message || payload.text;
       const phone = payload.phone || payload.from || payload.contactPhone;
       const messageId = payload.messageId || payload.message_id;
       const conversationId = payload.conversationId || payload.conversation_id;
+      const contactName = payload.contactName || payload.contact_name || payload.name;
+
+      // Parse JSON payloads - GHL sometimes sends {"type":2,"body":"Hey"} format
+      if (messageBody && typeof messageBody === 'string') {
+        try {
+          if (messageBody.trim().startsWith('{')) {
+            const parsed = JSON.parse(messageBody);
+            if (parsed.body) {
+              messageBody = parsed.body;
+              console.log("[SMS Webhook] Extracted message body from JSON:", messageBody);
+            }
+          }
+        } catch (e) {
+          // Not JSON, use as-is
+        }
+      }
 
       if (!messageBody || !phone) {
         console.log("[SMS Webhook] Incomplete SMS webhook payload");
         return res.status(200).json({ received: true });
       }
 
+      const normalizedPhone = phone.replace(/\D/g, '');
+
       // Try to match to an existing inquiry by phone
       const inquiries = await storage.getAllBuyerInquiries();
       const matchingInquiry = inquiries.find(i => 
-        i.buyerPhone.replace(/\D/g, '') === phone.replace(/\D/g, '')
+        i.buyerPhone.replace(/\D/g, '') === normalizedPhone
       );
+
+      // Try to find sender's name from consignment submissions if not provided by GHL
+      let senderName = contactName;
+      if (!senderName) {
+        // Check buyer inquiries first
+        if (matchingInquiry) {
+          senderName = matchingInquiry.buyerName;
+        }
+        
+        // Check consignment submissions
+        if (!senderName) {
+          const consignments = await storage.getAllConsignments();
+          const matchingConsignment = consignments.find((c: { phone?: string | null }) => 
+            c.phone?.replace(/\D/g, '') === normalizedPhone
+          );
+          if (matchingConsignment) {
+            senderName = `${matchingConsignment.firstName} ${matchingConsignment.lastName}`.trim();
+          }
+        }
+      }
+
+      console.log("[SMS Webhook] Sender name resolved to:", senderName || "Unknown");
 
       // Store the inbound message
       await storage.createSmsMessage({
@@ -4312,7 +4416,7 @@ ${urls.join('')}
         ghlMessageId: messageId,
         direction: "inbound",
         body: messageBody,
-        phone: phone.replace(/\D/g, ''),
+        phone: normalizedPhone,
         status: "delivered",
         isRead: false,
       });
