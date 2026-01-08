@@ -44,12 +44,24 @@ export function usePushNotifications() {
 
   const checkSubscription = useCallback(async () => {
     try {
-      const registration = await navigator.serviceWorker.ready;
+      // Add timeout to prevent indefinite waiting for service worker
+      const timeoutPromise = new Promise<null>((_, reject) => 
+        setTimeout(() => reject(new Error("Service worker timeout")), 3000)
+      );
+      
+      const registration = await Promise.race([
+        navigator.serviceWorker.ready,
+        timeoutPromise
+      ]) as ServiceWorkerRegistration;
+      
       const subscription = await registration.pushManager.getSubscription();
       setIsSubscribed(!!subscription);
       setSubscriptionEndpoint(subscription?.endpoint || null);
     } catch (error) {
       console.error("Error checking subscription:", error);
+      // If service worker isn't ready yet, that's ok - user can still subscribe
+      setIsSubscribed(false);
+      setSubscriptionEndpoint(null);
     } finally {
       setIsLoading(false);
     }
