@@ -28,7 +28,7 @@ export function PushNotificationPrompt() {
     notifySpecialOffers: true,
   });
   
-  const { isSupported, isSubscribed, isLoading, subscribe } = usePushNotifications();
+  const { isSupported, isSubscribed, isLoading, subscribe, lastError } = usePushNotifications();
   const { toast } = useToast();
 
   if (!isSupported || isSubscribed || dismissed || isLoading) {
@@ -44,16 +44,10 @@ export function PushNotificationPrompt() {
         title: "Notifications enabled!",
         description: `You'll receive ${enabledCount} type${enabledCount !== 1 ? 's' : ''} of alerts.`,
       });
-    } else if (result.error === "Permission denied") {
-      toast({
-        title: "Notifications blocked",
-        description: "You can enable them in your browser settings.",
-        variant: "destructive",
-      });
     } else {
       toast({
-        title: "Something went wrong",
-        description: "Please try again later.",
+        title: "Could not enable notifications",
+        description: result.error || "Please try again later.",
         variant: "destructive",
       });
     }
