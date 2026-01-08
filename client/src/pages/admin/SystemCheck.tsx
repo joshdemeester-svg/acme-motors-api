@@ -124,14 +124,30 @@ export default function SystemCheck() {
   };
 
   if (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const isAccessDenied = errorMessage.includes("403") || errorMessage.includes("Master admin") || errorMessage.includes("Access denied");
+    
     return (
       <AdminLayout>
         <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
           <Shield className="h-16 w-16 text-muted-foreground" />
-          <h1 className="text-xl font-semibold">Access Denied</h1>
+          <h1 className="text-xl font-semibold">
+            {isAccessDenied ? "Access Denied" : "Error Loading Page"}
+          </h1>
           <p className="text-muted-foreground text-center max-w-md">
-            The System Check page is only available to master administrators.
+            {isAccessDenied 
+              ? "The System Check page is only available to master administrators. If you are a master admin, please log out and log back in to refresh your session."
+              : errorMessage
+            }
           </p>
+          {isAccessDenied && (
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = "/admin"}
+            >
+              Return to Dashboard
+            </Button>
+          )}
         </div>
       </AdminLayout>
     );
