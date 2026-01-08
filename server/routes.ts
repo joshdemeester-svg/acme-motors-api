@@ -4268,9 +4268,23 @@ ${urls.join('')}
   // Webhook for incoming SMS from GoHighLevel
   app.post("/api/webhooks/ghl/sms", async (req, res) => {
     try {
+      // Validate webhook token for security
+      const token = req.query.token || req.headers['x-webhook-token'];
+      const expectedToken = process.env.SMS_WEBHOOK_TOKEN;
+      
+      if (!expectedToken) {
+        console.log("[SMS Webhook] SMS_WEBHOOK_TOKEN not configured - rejecting request");
+        return res.status(200).json({ received: true, error: "Webhook not configured" });
+      }
+      
+      if (token !== expectedToken) {
+        console.log("[SMS Webhook] Invalid or missing token - rejecting request");
+        return res.status(200).json({ received: true, error: "Invalid token" });
+      }
+      
       const payload = req.body;
       
-      console.log("Received GHL SMS webhook:", JSON.stringify(payload, null, 2));
+      console.log("[SMS Webhook] Received GHL SMS webhook:", JSON.stringify(payload, null, 2));
 
       // GHL webhook payload structure for inbound messages
       const contactId = payload.contactId || payload.contact_id;
@@ -4280,7 +4294,7 @@ ${urls.join('')}
       const conversationId = payload.conversationId || payload.conversation_id;
 
       if (!messageBody || !phone) {
-        console.log("Incomplete SMS webhook payload");
+        console.log("[SMS Webhook] Incomplete SMS webhook payload");
         return res.status(200).json({ received: true });
       }
 
