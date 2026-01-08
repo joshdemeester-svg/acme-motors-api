@@ -79,30 +79,39 @@ export default function SavedVehicles() {
 
   const createAlertMutation = useMutation({
     mutationFn: async (data: { vehicleId: string; email: string; phone?: string; priceAtSubscription: number }) => {
+      console.log("[PriceAlerts] Submitting price alert:", data);
       const res = await fetch("/api/price-alerts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed to create alert");
-      return res.json();
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error("[PriceAlerts] Server error:", res.status, errorData);
+        throw new Error(errorData.error || "Failed to create alert");
+      }
+      const result = await res.json();
+      console.log("[PriceAlerts] Alert created successfully:", result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("[PriceAlerts] SUCCESS - Price alert saved with ID:", data.id);
       if (typeof window !== 'undefined') {
         localStorage.setItem('priceAlertEmail', alertEmail);
       }
       queryClient.invalidateQueries({ queryKey: ["/api/price-alerts/my"] });
       toast({
-        title: "Price Alert Set",
-        description: "We'll notify you if the price drops on this vehicle.",
+        title: "Price Alert Set Successfully!",
+        description: `We'll notify you at ${alertEmail} if the price drops.`,
       });
       setPriceAlertOpen(false);
       setSelectedVehicle(null);
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error("[PriceAlerts] FAILED:", error.message);
       toast({
-        title: "Error",
-        description: "Failed to create price alert. Please try again.",
+        title: "Failed to Create Price Alert",
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     },
@@ -133,13 +142,31 @@ export default function SavedVehicles() {
   };
 
   const handleCreateAlert = () => {
-    if (!selectedVehicle || !alertEmail) return;
-    createAlertMutation.mutate({
+    console.log("[PriceAlerts] handleCreateAlert called", { selectedVehicle: selectedVehicle?.id, alertEmail, alertPhone });
+    
+    if (!selectedVehicle) {
+      console.log("[PriceAlerts] BLOCKED - No vehicle selected");
+      return;
+    }
+    if (!alertEmail) {
+      console.log("[PriceAlerts] BLOCKED - No email provided");
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const alertData = {
       vehicleId: selectedVehicle.id,
       email: alertEmail,
       phone: alertPhone || undefined,
       priceAtSubscription: selectedVehicle.price,
-    });
+    };
+    
+    console.log("[PriceAlerts] Validation passed - creating alert for:", selectedVehicle.year, selectedVehicle.make, selectedVehicle.model);
+    createAlertMutation.mutate(alertData);
   };
 
   const getAlertForVehicle = (vehicleId: string) => {
