@@ -19,6 +19,7 @@ import { useSEO, generateVehicleSchema } from "@/hooks/use-seo";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useToast } from "@/hooks/use-toast";
 import { useSavedVehicles } from "@/hooks/use-saved-vehicles";
+import { VehicleAlerts } from "@/components/VehicleAlerts";
 
 function SaveButton({ vehicleId }: { vehicleId: string }) {
   const { toggleSaved, isSaved } = useSavedVehicles();
@@ -750,6 +751,9 @@ export default function VehicleDetails({ id, legacyRedirect }: { id: string; leg
                 <MessageSquare className="h-5 w-5" />
                 Interested? Contact Us
               </Button>
+              <div className="mt-3">
+                <VehicleAlerts className="w-full gap-2" fullWidth />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

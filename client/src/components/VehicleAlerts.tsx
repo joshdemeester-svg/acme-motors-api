@@ -8,7 +8,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Bell, Mail, Phone, CheckCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-export function VehicleAlerts() {
+interface VehicleAlertsProps {
+  className?: string;
+  fullWidth?: boolean;
+}
+
+export function VehicleAlerts({ className, fullWidth }: VehicleAlertsProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -210,7 +215,11 @@ export function VehicleAlerts() {
       if (!isOpen) resetForm();
     }}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2 bg-white text-[#1a2a3c] border-white/80 hover:bg-white/90" data-testid="button-vehicle-alerts">
+        <Button 
+          variant="outline" 
+          className={className || `gap-2 bg-white text-[#1a2a3c] border-white/80 hover:bg-white/90 ${fullWidth ? 'w-full' : ''}`}
+          data-testid="button-vehicle-alerts"
+        >
           <Bell className="h-4 w-4" />
           Get Vehicle Alerts
         </Button>
