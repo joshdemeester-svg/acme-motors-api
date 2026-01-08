@@ -447,23 +447,34 @@ export function VehicleAlerts({ className, fullWidth }: VehicleAlertsProps) {
             </div>
           </div>
           
-          <Button 
-            type="submit" 
-            className="w-full"
-            disabled={createAlert.isPending || !phoneVerified}
-            data-testid="button-submit-alert"
-          >
-            {createAlert.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Creating...
-              </>
-            ) : !phoneVerified ? (
-              "Verify Phone to Continue"
-            ) : (
-              "Create Alert"
-            )}
-          </Button>
+          <div className="flex gap-3">
+            <Button 
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => setOpen(false)}
+              data-testid="button-close-alert"
+            >
+              Close
+            </Button>
+            <Button 
+              type="submit" 
+              className="flex-1"
+              disabled={createAlert.isPending || !phoneVerified}
+              data-testid="button-submit-alert"
+            >
+              {createAlert.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : !phoneVerified ? (
+                "Verify Phone to Continue"
+              ) : (
+                "Create Alert"
+              )}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
