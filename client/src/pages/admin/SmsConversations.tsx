@@ -20,6 +20,21 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 
+function parseMessageBody(body: string): string {
+  if (!body) return "";
+  
+  if (body.startsWith("{") && body.includes('"body"')) {
+    try {
+      const parsed = JSON.parse(body);
+      if (parsed.body && typeof parsed.body === "string") {
+        return parsed.body;
+      }
+    } catch (e) {
+    }
+  }
+  return body;
+}
+
 type SmsMessage = {
   id: string;
   leadId: string;
@@ -345,7 +360,7 @@ export default function SmsConversations() {
                                   : "bg-muted"
                               }`}
                             >
-                              <p className="text-sm">{msg.body}</p>
+                              <p className="text-sm">{parseMessageBody(msg.body)}</p>
                               <p className={`text-xs mt-1 ${
                                 msg.direction === "outbound" ? "text-primary-foreground/70" : "text-muted-foreground"
                               }`}>

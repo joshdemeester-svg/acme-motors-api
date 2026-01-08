@@ -223,20 +223,46 @@ export function usePushNotifications() {
       }
 
       let subscription: PushSubscription;
+      const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
+      
+      const attemptSubscribe = async (retryCount = 0): Promise<PushSubscription> => {
+        try {
+          return await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey
+          });
+        } catch (pushError: any) {
+          if ((pushError.name === 'AbortError' || pushError.name === 'InvalidStateError') && retryCount < 2) {
+            console.log(`Push subscription ${pushError.name}, attempting to clear and retry...`);
+            
+            try {
+              const existingSub = await registration.pushManager.getSubscription();
+              if (existingSub) {
+                await existingSub.unsubscribe();
+                console.log("Unsubscribed existing subscription, retrying...");
+              }
+            } catch (unsubError) {
+              console.log("No existing subscription to clear");
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await navigator.serviceWorker.ready;
+            
+            return attemptSubscribe(retryCount + 1);
+          }
+          throw pushError;
+        }
+      };
+      
       try {
-        const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
-        
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey
-        });
+        subscription = await attemptSubscribe();
       } catch (pushError: any) {
         let error = pushError.message || "Push subscription failed";
         
         if (pushError.name === 'NotAllowedError') {
           error = "Push notifications were blocked. Please check your browser settings.";
         } else if (pushError.name === 'AbortError') {
-          error = "Push subscription was aborted. Please try again.";
+          error = "Push subscription failed after retries. Please refresh the page and try again.";
         } else if (pushError.name === 'InvalidStateError') {
           error = "Push subscription is in an invalid state. Try refreshing the page.";
         } else if (pushError.message?.includes('applicationServerKey')) {
