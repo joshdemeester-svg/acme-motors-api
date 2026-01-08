@@ -4322,6 +4322,9 @@ ${urls.join('')}
         isRead: true,
       });
 
+      // Track last outbound timestamp for recent contacts
+      await storage.updateSmsContactLastOutbound(digitsOnly);
+
       res.json({ success: true, message });
     } catch (error) {
       console.error("Error sending SMS:", error);
@@ -4421,6 +4424,9 @@ ${urls.join('')}
         isRead: false,
       });
 
+      // Track last inbound timestamp for recent contacts
+      await storage.updateSmsContactLastInbound(normalizedPhone);
+
       res.status(200).json({ received: true });
     } catch (error) {
       console.error("Error processing SMS webhook:", error);
@@ -4440,6 +4446,60 @@ ${urls.join('')}
     } catch (error) {
       console.error("Error marking messages as read:", error);
       res.status(500).json({ error: "Failed to mark messages as read" });
+    }
+  });
+
+  // Get recently viewed SMS contacts
+  app.get("/api/sms/recent", requireAdmin, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const contacts = await storage.getRecentSmsContacts(limit);
+      res.json(contacts);
+    } catch (error) {
+      console.error("Error fetching recent contacts:", error);
+      res.status(500).json({ error: "Failed to fetch recent contacts" });
+    }
+  });
+
+  // Update/set contact display name
+  app.put("/api/sms/contacts/:phone/name", requireAdmin, async (req, res) => {
+    try {
+      const { phone } = req.params;
+      const { displayName } = req.body;
+      
+      if (!displayName || typeof displayName !== 'string') {
+        return res.status(400).json({ error: "Display name is required" });
+      }
+      
+      const contact = await storage.upsertSmsContactName(phone, displayName.trim());
+      res.json(contact);
+    } catch (error) {
+      console.error("Error updating contact name:", error);
+      res.status(500).json({ error: "Failed to update contact name" });
+    }
+  });
+
+  // Mark contact as viewed (for recently viewed tracking)
+  app.post("/api/sms/contacts/:phone/view", requireAdmin, async (req, res) => {
+    try {
+      const { phone } = req.params;
+      await storage.updateSmsContactLastViewed(phone);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating contact view:", error);
+      res.status(500).json({ error: "Failed to update contact view" });
+    }
+  });
+
+  // Get contact info
+  app.get("/api/sms/contacts/:phone", requireAdmin, async (req, res) => {
+    try {
+      const { phone } = req.params;
+      const contact = await storage.getSmsContact(phone);
+      res.json(contact || { phone, displayName: null });
+    } catch (error) {
+      console.error("Error fetching contact:", error);
+      res.status(500).json({ error: "Failed to fetch contact" });
     }
   });
 

@@ -770,6 +770,21 @@ export const insertSmsMessageSchema = createInsertSchema(smsMessages).omit({
 export type InsertSmsMessage = z.infer<typeof insertSmsMessageSchema>;
 export type SmsMessage = typeof smsMessages.$inferSelect;
 
+// SMS Contacts - stores display names and recently viewed info for SMS conversations
+export const smsContacts = pgTable("sms_contacts", {
+  phone: text("phone").primaryKey(), // Normalized phone number (digits only)
+  displayName: text("display_name"),
+  lastViewedAt: timestamp("last_viewed_at"),
+  lastInboundAt: timestamp("last_inbound_at"),
+  lastOutboundAt: timestamp("last_outbound_at"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSmsContactSchema = createInsertSchema(smsContacts);
+
+export type InsertSmsContact = z.infer<typeof insertSmsContactSchema>;
+export type SmsContact = typeof smsContacts.$inferSelect;
+
 // Vehicle Saves - tracks when users save/heart vehicles
 export const vehicleSaves = pgTable("vehicle_saves", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

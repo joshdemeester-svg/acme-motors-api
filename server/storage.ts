@@ -22,6 +22,7 @@ import {
   pushSubscriptions,
   pushNotifications,
   smsMessages,
+  smsContacts,
   vehicleSaves,
   healthChecks,
   type User, 
@@ -67,6 +68,7 @@ import {
   type InsertPushNotification,
   type SmsMessage,
   type InsertSmsMessage,
+  type SmsContact,
   type VehicleSave,
   type InsertVehicleSave,
   type HealthCheck,
@@ -234,6 +236,14 @@ export interface IStorage {
   getConversationsWithUnread(): Promise<{ inquiryId: string; phone: string; unreadCount: number; lastMessageAt: Date }[]>;
   markSmsMessagesAsRead(phone: string): Promise<void>;
   getAllSmsConversations(): Promise<any[]>;
+  
+  // SMS Contacts
+  getSmsContact(phone: string): Promise<SmsContact | undefined>;
+  upsertSmsContactName(phone: string, displayName: string): Promise<SmsContact>;
+  updateSmsContactLastViewed(phone: string): Promise<void>;
+  updateSmsContactLastInbound(phone: string): Promise<void>;
+  updateSmsContactLastOutbound(phone: string): Promise<void>;
+  getRecentSmsContacts(limit?: number): Promise<SmsContact[]>;
   
   // Vehicle Saves
   toggleVehicleSave(vehicleId: string, sessionId: string): Promise<boolean>;
@@ -1131,6 +1141,71 @@ export class DatabaseStorage implements IStorage {
     }
     
     return conversations;
+  }
+
+  // SMS Contacts implementation
+  async getSmsContact(phone: string): Promise<SmsContact | undefined> {
+    const [contact] = await db.select().from(smsContacts).where(eq(smsContacts.phone, phone));
+    return contact || undefined;
+  }
+
+  async upsertSmsContactName(phone: string, displayName: string): Promise<SmsContact> {
+    const existing = await this.getSmsContact(phone);
+    if (existing) {
+      const [updated] = await db.update(smsContacts)
+        .set({ displayName, updatedAt: new Date() })
+        .where(eq(smsContacts.phone, phone))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(smsContacts)
+        .values({ phone, displayName, updatedAt: new Date() })
+        .returning();
+      return created;
+    }
+  }
+
+  async updateSmsContactLastViewed(phone: string): Promise<void> {
+    const existing = await this.getSmsContact(phone);
+    if (existing) {
+      await db.update(smsContacts)
+        .set({ lastViewedAt: new Date(), updatedAt: new Date() })
+        .where(eq(smsContacts.phone, phone));
+    } else {
+      await db.insert(smsContacts)
+        .values({ phone, lastViewedAt: new Date(), updatedAt: new Date() });
+    }
+  }
+
+  async updateSmsContactLastInbound(phone: string): Promise<void> {
+    const existing = await this.getSmsContact(phone);
+    if (existing) {
+      await db.update(smsContacts)
+        .set({ lastInboundAt: new Date(), updatedAt: new Date() })
+        .where(eq(smsContacts.phone, phone));
+    } else {
+      await db.insert(smsContacts)
+        .values({ phone, lastInboundAt: new Date(), updatedAt: new Date() });
+    }
+  }
+
+  async updateSmsContactLastOutbound(phone: string): Promise<void> {
+    const existing = await this.getSmsContact(phone);
+    if (existing) {
+      await db.update(smsContacts)
+        .set({ lastOutboundAt: new Date(), updatedAt: new Date() })
+        .where(eq(smsContacts.phone, phone));
+    } else {
+      await db.insert(smsContacts)
+        .values({ phone, lastOutboundAt: new Date(), updatedAt: new Date() });
+    }
+  }
+
+  async getRecentSmsContacts(limit: number = 10): Promise<SmsContact[]> {
+    return db.select()
+      .from(smsContacts)
+      .orderBy(desc(smsContacts.lastViewedAt))
+      .limit(limit);
   }
 
   // Vehicle Saves implementation

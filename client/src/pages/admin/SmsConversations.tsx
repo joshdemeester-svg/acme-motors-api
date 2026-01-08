@@ -6,13 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { 
   MessageSquare, 
   Send, 
   Search,
   User,
   Clock,
-  Loader2
+  Loader2,
+  Pencil,
+  History
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -34,10 +38,24 @@ type LeadWithMessages = {
   messages: SmsMessage[];
 };
 
+type SmsContact = {
+  phone: string;
+  displayName: string | null;
+  lastViewedAt: string | null;
+  lastInboundAt: string | null;
+  lastOutboundAt: string | null;
+};
+
 export default function SmsConversations() {
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [replyText, setReplyText] = useState("");
+  const [editNameDialogOpen, setEditNameDialogOpen] = useState(false);
+  const [editingPhone, setEditingPhone] = useState<string | null>(null);
+  const [editNameValue, setEditNameValue] = useState("");
+
+  const queryClient = useQueryClient();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: conversations, isLoading } = useQuery<LeadWithMessages[]>({
     queryKey: ["/api/sms/conversations"],
@@ -51,15 +69,51 @@ export default function SmsConversations() {
     },
   });
 
+  const { data: recentContacts } = useQuery<SmsContact[]>({
+    queryKey: ["/api/sms/recent"],
+    queryFn: async () => {
+      const res = await fetch("/api/sms/recent?limit=5");
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const { data: contactOverrides } = useQuery<Record<string, string>>({
+    queryKey: ["/api/sms/contacts/all"],
+    queryFn: async () => {
+      if (!conversations) return {};
+      const phones = conversations.map(c => c.phone);
+      const overrides: Record<string, string> = {};
+      for (const phone of phones) {
+        try {
+          const res = await fetch(`/api/sms/contacts/${phone}`);
+          if (res.ok) {
+            const contact = await res.json();
+            if (contact.displayName) {
+              overrides[phone] = contact.displayName;
+            }
+          }
+        } catch (e) {}
+      }
+      return overrides;
+    },
+    enabled: !!conversations && conversations.length > 0,
+  });
+
   const selectedConversation = conversations?.find(c => c.id === selectedLeadId);
 
-  const filteredConversations = conversations?.filter(c => 
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.phone.includes(searchQuery)
-  ) || [];
+  const getDisplayName = (conv: LeadWithMessages) => {
+    if (contactOverrides?.[conv.phone]) {
+      return contactOverrides[conv.phone];
+    }
+    return conv.name;
+  };
 
-  const queryClient = useQueryClient();
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const filteredConversations = conversations?.filter(c => {
+    const displayName = getDisplayName(c);
+    return displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.phone.includes(searchQuery);
+  }) || [];
 
   const sendMutation = useMutation({
     mutationFn: async ({ phone, body, inquiryId }: { phone: string; body: string; inquiryId?: string }) => {
@@ -80,6 +134,25 @@ export default function SmsConversations() {
     },
   });
 
+  const updateNameMutation = useMutation({
+    mutationFn: async ({ phone, displayName }: { phone: string; displayName: string }) => {
+      const res = await fetch(`/api/sms/contacts/${phone}/name`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ displayName }),
+      });
+      if (!res.ok) throw new Error("Failed to update name");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sms/contacts/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sms/recent"] });
+      setEditNameDialogOpen(false);
+      setEditingPhone(null);
+      setEditNameValue("");
+    },
+  });
+
   const handleSendReply = async () => {
     if (!replyText.trim() || !selectedConversation) return;
     sendMutation.mutate({
@@ -87,6 +160,29 @@ export default function SmsConversations() {
       body: replyText,
       inquiryId: selectedConversation.id !== selectedConversation.phone ? selectedConversation.id : undefined,
     });
+  };
+
+  const handleEditName = (phone: string, currentName: string) => {
+    setEditingPhone(phone);
+    setEditNameValue(currentName === "Unknown" ? "" : currentName);
+    setEditNameDialogOpen(true);
+  };
+
+  const handleSaveName = () => {
+    if (!editingPhone || !editNameValue.trim()) return;
+    updateNameMutation.mutate({ phone: editingPhone, displayName: editNameValue.trim() });
+  };
+
+  // Mark contact as viewed and messages as read when selecting a conversation
+  const handleSelectConversation = async (conv: LeadWithMessages) => {
+    setSelectedLeadId(conv.id);
+    
+    // Track view for recently viewed and refresh the recent contacts list
+    fetch(`/api/sms/contacts/${conv.phone}/view`, { method: "POST" })
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/sms/recent"] });
+      })
+      .catch(() => {});
   };
 
   // Mark messages as read when viewing a conversation
@@ -150,11 +246,36 @@ export default function SmsConversations() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <ScrollArea className="h-[calc(100vh-340px)]">
+                {/* Recently Viewed Section */}
+                {recentContacts && recentContacts.length > 0 && !searchQuery && (
+                  <div className="px-4 py-2 border-b bg-muted/30">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                      <History className="h-3 w-3" />
+                      <span>Recently Viewed</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {recentContacts.slice(0, 3).map((contact) => {
+                        const conv = conversations?.find(c => c.phone === contact.phone);
+                        if (!conv) return null;
+                        return (
+                          <button
+                            key={contact.phone}
+                            onClick={() => handleSelectConversation(conv)}
+                            className="text-xs px-2 py-1 rounded-full bg-background border hover:bg-muted transition-colors truncate max-w-[100px]"
+                          >
+                            {contact.displayName || getDisplayName(conv)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                
+                <ScrollArea className="h-[calc(100vh-400px)]">
                   {filteredConversations.map((conv) => (
                     <button
                       key={conv.id}
-                      onClick={() => setSelectedLeadId(conv.id)}
+                      onClick={() => handleSelectConversation(conv)}
                       className={`w-full p-4 text-left border-b hover:bg-muted/50 transition-colors ${
                         selectedLeadId === conv.id ? "bg-muted" : ""
                       }`}
@@ -166,7 +287,7 @@ export default function SmsConversations() {
                             <User className="h-5 w-5 text-primary" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium truncate">{conv.name}</p>
+                            <p className="font-medium truncate">{getDisplayName(conv)}</p>
                             <p className="text-sm text-muted-foreground truncate">{conv.phone}</p>
                           </div>
                         </div>
@@ -188,14 +309,25 @@ export default function SmsConversations() {
               {selectedConversation ? (
                 <>
                   <CardHeader className="border-b">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <User className="h-5 w-5 text-primary" />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <User className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">{getDisplayName(selectedConversation)}</CardTitle>
+                          <p className="text-sm text-muted-foreground">{selectedConversation.phone}</p>
+                        </div>
                       </div>
-                      <div>
-                        <CardTitle className="text-lg">{selectedConversation.name}</CardTitle>
-                        <p className="text-sm text-muted-foreground">{selectedConversation.phone}</p>
-                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleEditName(selectedConversation.phone, getDisplayName(selectedConversation))}
+                        data-testid="button-edit-contact-name"
+                      >
+                        <Pencil className="h-4 w-4 mr-1" />
+                        {getDisplayName(selectedConversation) === "Unknown" ? "Add Name" : "Edit Name"}
+                      </Button>
                     </div>
                   </CardHeader>
                   <CardContent className="flex-1 p-0">
@@ -260,6 +392,41 @@ export default function SmsConversations() {
           </div>
         )}
       </div>
+
+      {/* Edit Name Dialog */}
+      <Dialog open={editNameDialogOpen} onOpenChange={setEditNameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Contact Name</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="contactName">Display Name</Label>
+            <Input
+              id="contactName"
+              value={editNameValue}
+              onChange={(e) => setEditNameValue(e.target.value)}
+              placeholder="Enter contact name..."
+              className="mt-2"
+              data-testid="input-contact-name"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditNameDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveName} 
+              disabled={!editNameValue.trim() || updateNameMutation.isPending}
+              data-testid="button-save-contact-name"
+            >
+              {updateNameMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
