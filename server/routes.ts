@@ -4510,6 +4510,21 @@ ${urls.join('')}
     const passed = checks.filter(c => c.status === "pass").length;
     const warnings = checks.filter(c => c.status === "warning").length;
     const failed = checks.filter(c => c.status === "fail").length;
+    const overall = failed > 0 ? "fail" : warnings > 0 ? "warning" : "pass";
+    const overallStatus = overall === "fail" ? "unhealthy" : overall === "warning" ? "degraded" : "healthy";
+
+    // Save to database for history tracking
+    try {
+      await storage.createHealthCheck({
+        runAt: new Date(),
+        overallStatus,
+        results: JSON.stringify(checks),
+        duration: undefined,
+        triggeredBy: "manual"
+      });
+    } catch (saveError) {
+      console.error("[system-check] Failed to save health check:", saveError);
+    }
 
     res.json({
       timestamp: new Date().toISOString(),
@@ -4518,10 +4533,27 @@ ${urls.join('')}
         passed,
         warnings,
         failed,
-        overall: failed > 0 ? "fail" : warnings > 0 ? "warning" : "pass",
+        overall,
       },
       checks,
     });
+  });
+  
+  // Get system check history
+  app.get("/api/system-check/history", requireMasterAdmin, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 20;
+      const history = await storage.getHealthCheckHistory(limit);
+      res.json(history.map(h => ({
+        id: h.id,
+        runAt: h.runAt,
+        overallStatus: h.overallStatus,
+        checks: JSON.parse(h.results),
+        triggeredBy: h.triggeredBy
+      })));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
   });
 
   return httpServer;

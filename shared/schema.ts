@@ -785,3 +785,28 @@ export const insertVehicleSaveSchema = createInsertSchema(vehicleSaves).omit({
 
 export type InsertVehicleSave = z.infer<typeof insertVehicleSaveSchema>;
 export type VehicleSave = typeof vehicleSaves.$inferSelect;
+
+// Health Checks - stores system health check results
+export const healthChecks = pgTable("health_checks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  runAt: timestamp("run_at").notNull().defaultNow(),
+  overallStatus: text("overall_status").notNull(), // 'healthy', 'degraded', 'unhealthy'
+  results: text("results").notNull(), // JSON string of check results
+  duration: integer("duration"), // milliseconds
+  triggeredBy: text("triggered_by").default("manual"), // 'manual', 'scheduled', 'startup'
+});
+
+export const insertHealthCheckSchema = createInsertSchema(healthChecks).omit({
+  id: true,
+});
+
+export type InsertHealthCheck = z.infer<typeof insertHealthCheckSchema>;
+export type HealthCheck = typeof healthChecks.$inferSelect;
+
+export type HealthCheckResult = {
+  name: string;
+  category: 'database' | 'api' | 'external' | 'storage';
+  status: 'pass' | 'fail' | 'warn';
+  message: string;
+  duration?: number;
+};
