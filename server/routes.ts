@@ -1,10 +1,25 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertConsignmentSchema, insertInventoryCarSchema, insertCreditApplicationSchema, generateVehicleSlug, generateVehicleSlugLegacy, extractIdFromSlug, slugify, type InsertConsignment } from "@shared/schema";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { z } from "zod";
 import crypto from "crypto";
+
+// Global WebSocket server for real-time updates
+let wss: WebSocketServer | null = null;
+
+function broadcastSmsMessage(data: any) {
+  if (!wss) return;
+  
+  const message = JSON.stringify({ type: 'sms_message', data });
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
+}
 
 declare module "express-serve-static-core" {
   interface Request {
@@ -500,6 +515,23 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  
+  // Set up WebSocket server for real-time updates
+  wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  wss.on('connection', (ws) => {
+    console.log('[WS] Client connected');
+    
+    ws.on('close', () => {
+      console.log('[WS] Client disconnected');
+    });
+    
+    ws.on('error', (error) => {
+      console.error('[WS] Error:', error);
+    });
+  });
+  
+  console.log('[WS] WebSocket server initialized on /ws');
   
   registerObjectStorageRoutes(app);
 
@@ -4412,7 +4444,7 @@ ${urls.join('')}
       console.log("[SMS Webhook] Sender name resolved to:", senderName || "Unknown");
 
       // Store the inbound message
-      await storage.createSmsMessage({
+      const smsMessage = await storage.createSmsMessage({
         inquiryId: matchingInquiry?.id || null,
         ghlContactId: contactId,
         ghlConversationId: conversationId,
@@ -4426,6 +4458,13 @@ ${urls.join('')}
 
       // Track last inbound timestamp for recent contacts
       await storage.updateSmsContactLastInbound(normalizedPhone);
+
+      // Broadcast real-time update to connected admin clients
+      broadcastSmsMessage({
+        ...smsMessage,
+        senderName: senderName || null,
+      });
+      console.log("[SMS Webhook] Broadcasted message to WebSocket clients");
 
       res.status(200).json({ received: true });
     } catch (error) {
