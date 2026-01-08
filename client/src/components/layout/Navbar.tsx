@@ -57,7 +57,7 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-20 items-center justify-between px-4 md:px-6" style={{ maxWidth: '90%' }}>
+      <div className="mx-auto flex items-center justify-between px-4 md:px-6 py-3" style={{ maxWidth: '90%', minHeight: '5rem' }}>
         <Link href="/" className="flex items-center gap-2 font-serif text-2xl font-bold tracking-tighter text-foreground transition-opacity hover:opacity-80 flex-shrink-0 py-2 mr-4">
           {settings?.logoUrl ? (
             <>
@@ -66,7 +66,7 @@ export function Navbar() {
                 alt={siteName} 
                 style={{ 
                   maxWidth: `${settings.logoWidth || 120}px`, 
-                  maxHeight: '48px',
+                  maxHeight: '64px',
                   width: 'auto',
                   height: 'auto',
                   objectFit: 'contain'
@@ -78,7 +78,7 @@ export function Navbar() {
                 alt={siteName} 
                 style={{ 
                   maxWidth: `${settings.mobileLogoWidth || settings.logoWidth || 100}px`, 
-                  maxHeight: '40px',
+                  maxHeight: '52px',
                   width: 'auto',
                   height: 'auto',
                   objectFit: 'contain'
@@ -166,7 +166,7 @@ export function Navbar() {
                     alt={siteName} 
                     style={{ 
                       maxWidth: `${settings.mobileLogoWidth || settings.logoWidth || '100'}px`, 
-                      maxHeight: '48px',
+                      maxHeight: '56px',
                       width: 'auto',
                       height: 'auto',
                       objectFit: 'contain'
