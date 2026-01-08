@@ -54,7 +54,7 @@ export default function IntegrationsPage() {
   const saveMutation = useMutation({
     mutationFn: async (data: Partial<SiteSettings>) => {
       const res = await fetch("/api/settings", {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
