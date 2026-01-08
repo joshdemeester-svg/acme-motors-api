@@ -17,7 +17,9 @@ import {
   Bell,
   Shield,
   MessageSquare,
-  HelpCircle
+  HelpCircle,
+  Plug,
+  UserCog
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -69,9 +71,16 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    title: "Configuration",
+    items: [
+      { label: "Integrations", href: "/admin/integrations", icon: <Plug className="h-5 w-5" /> },
+    ],
+  },
+  {
     title: "Admin Only",
     masterOnly: true,
     items: [
+      { label: "Users", href: "/admin/users", icon: <UserCog className="h-5 w-5" />, masterOnly: true },
       { label: "System Check", href: "/admin/system-check", icon: <Shield className="h-5 w-5" />, masterOnly: true },
       { label: "Roadmap", href: "/admin/roadmap", icon: <Map className="h-5 w-5" />, masterOnly: true },
     ],
