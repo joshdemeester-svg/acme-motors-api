@@ -22,7 +22,11 @@ import {
   HelpCircle,
   BellPlus,
   BellOff,
-  TestTube2
+  TestTube2,
+  Car,
+  Mail,
+  Phone,
+  Trash2
 } from "lucide-react";
 import { AdminHelpBox } from "@/components/admin/AdminHelpBox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -63,6 +67,24 @@ type PushSubscription = {
   notifySpecialOffers?: boolean;
   notifyHotListings?: boolean;
   userAgent?: string;
+  createdAt: string;
+};
+
+type VehicleAlert = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  makes: string[] | null;
+  models: string[] | null;
+  minYear: number | null;
+  maxYear: number | null;
+  minPrice: number | null;
+  maxPrice: number | null;
+  notifyEmail: boolean;
+  notifySms: boolean;
+  phoneVerified: boolean;
+  active: boolean;
   createdAt: string;
 };
 
@@ -187,6 +209,40 @@ export default function PushNotifications() {
       const res = await fetch("/api/push/subscriptions");
       if (!res.ok) return [];
       return res.json();
+    },
+  });
+
+  const { data: vehicleAlerts = [] } = useQuery<VehicleAlert[]>({
+    queryKey: ["/api/vehicle-alerts"],
+    queryFn: async () => {
+      const res = await fetch("/api/vehicle-alerts", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const deleteAlertMutation = useMutation({
+    mutationFn: async (alertId: string) => {
+      const res = await fetch(`/api/vehicle-alerts/${alertId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete alert");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicle-alerts"] });
+      toast({
+        title: "Alert deleted",
+        description: "Vehicle alert subscription removed.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Failed to delete",
+        description: "Could not delete the alert.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -396,7 +452,11 @@ export default function PushNotifications() {
             </TabsTrigger>
             <TabsTrigger value="subscribers" className="gap-1.5">
               <Users className="w-4 h-4" />
-              Subscribers
+              Push Subscribers
+            </TabsTrigger>
+            <TabsTrigger value="vehicle-alerts" className="gap-1.5">
+              <Car className="w-4 h-4" />
+              Vehicle Alerts ({vehicleAlerts.length})
             </TabsTrigger>
           </TabsList>
 
@@ -547,6 +607,103 @@ export default function PushNotifications() {
                           {sub.notifyPriceDrops && <Badge variant="outline" className="text-xs">Drops</Badge>}
                           {sub.notifySpecialOffers && <Badge variant="outline" className="text-xs">Offers</Badge>}
                           {sub.notifyHotListings && <Badge variant="outline" className="text-xs">Hot</Badge>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="vehicle-alerts" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Vehicle Alert Subscriptions</CardTitle>
+                <CardDescription>
+                  {vehicleAlerts.length} phone-verified alert subscriptions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {vehicleAlerts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Car className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">No vehicle alerts yet</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Customers can subscribe via the "Get Vehicle Alerts" button on the website
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {vehicleAlerts.map((alert) => (
+                      <div 
+                        key={alert.id} 
+                        className={`p-4 border rounded-lg ${!alert.active ? 'opacity-50 bg-muted/30' : ''}`}
+                        data-testid={`vehicle-alert-${alert.id}`}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{alert.name}</p>
+                              {alert.phoneVerified && (
+                                <Badge variant="outline" className="text-xs text-green-600 border-green-600">
+                                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                                  Verified
+                                </Badge>
+                              )}
+                              {!alert.active && (
+                                <Badge variant="secondary" className="text-xs">Inactive</Badge>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Mail className="w-3 h-3" />
+                                {alert.email}
+                              </span>
+                              {alert.phone && (
+                                <span className="flex items-center gap-1">
+                                  <Phone className="w-3 h-3" />
+                                  {alert.phone}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {alert.makes && alert.makes.length > 0 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Makes: {alert.makes.join(", ")}
+                                </Badge>
+                              )}
+                              {(alert.minPrice || alert.maxPrice) && (
+                                <Badge variant="secondary" className="text-xs">
+                                  ${alert.minPrice?.toLocaleString() || "0"} - ${alert.maxPrice?.toLocaleString() || "Any"}
+                                </Badge>
+                              )}
+                              {(alert.minYear || alert.maxYear) && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {alert.minYear || "Any"} - {alert.maxYear || "Any"}
+                                </Badge>
+                              )}
+                              {alert.notifyEmail && (
+                                <Badge variant="outline" className="text-xs">Email</Badge>
+                              )}
+                              {alert.notifySms && (
+                                <Badge variant="outline" className="text-xs">SMS</Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Created {format(new Date(alert.createdAt), "MMM d, yyyy 'at' h:mm a")}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteAlertMutation.mutate(alert.id)}
+                            disabled={deleteAlertMutation.isPending}
+                            className="text-destructive hover:text-destructive"
+                            data-testid={`delete-alert-${alert.id}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
                     ))}
