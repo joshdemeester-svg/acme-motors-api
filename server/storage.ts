@@ -23,6 +23,7 @@ import {
   pushNotifications,
   smsMessages,
   vehicleSaves,
+  healthChecks,
   type User, 
   type InsertUser,
   type ConsignmentSubmission,
@@ -67,7 +68,9 @@ import {
   type SmsMessage,
   type InsertSmsMessage,
   type VehicleSave,
-  type InsertVehicleSave
+  type InsertVehicleSave,
+  type HealthCheck,
+  type InsertHealthCheck
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, lt } from "drizzle-orm";
@@ -238,6 +241,11 @@ export interface IStorage {
   getVehicleSaveCount(vehicleId: string): Promise<number>;
   getTotalSavesCount(): Promise<number>;
   getTopSavedVehicles(limit?: number): Promise<{ vehicleId: string; saveCount: number }[]>;
+  
+  // Health Checks
+  createHealthCheck(data: InsertHealthCheck): Promise<HealthCheck>;
+  getLatestHealthCheck(): Promise<HealthCheck | undefined>;
+  getHealthCheckHistory(limit?: number): Promise<HealthCheck[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1165,6 +1173,21 @@ export class DatabaseStorage implements IStorage {
       .map(([vehicleId, saveCount]) => ({ vehicleId, saveCount }))
       .sort((a, b) => b.saveCount - a.saveCount)
       .slice(0, limit);
+  }
+
+  // Health Checks implementation
+  async createHealthCheck(data: InsertHealthCheck): Promise<HealthCheck> {
+    const [check] = await db.insert(healthChecks).values(data).returning();
+    return check;
+  }
+
+  async getLatestHealthCheck(): Promise<HealthCheck | undefined> {
+    const [check] = await db.select().from(healthChecks).orderBy(desc(healthChecks.runAt)).limit(1);
+    return check || undefined;
+  }
+
+  async getHealthCheckHistory(limit: number = 20): Promise<HealthCheck[]> {
+    return db.select().from(healthChecks).orderBy(desc(healthChecks.runAt)).limit(limit);
   }
 }
 
