@@ -616,12 +616,54 @@ Returns normalized error array: `[{ path: "field.subfield", message: "..." }]`
 
 ---
 
-## 12. Next Steps (Phases 4-8)
+## 12. API Integration Tests (Phase 4)
 
-**Phase 4**: Backend Integration Tests
-- Implement Vitest + Supertest tests per coverage map
-- Database setup/teardown
-- Session persistence with Supertest agent
+### Test Framework
+
+| Component | Technology |
+|-----------|------------|
+| Test Runner | Vitest |
+| HTTP Client | Supertest |
+| App Bootstrap | `createApp()` factory (no `listen()`) |
+| DB Reset | Table truncation with CASCADE in `beforeEach` |
+
+### Test Files
+
+| File | P0 Coverage | Tests |
+|------|-------------|-------|
+| `tests/api/auth.test.ts` | P0-AUTH-1, P0-AUTH-2, P0-AUTH-3 | Login, logout, session |
+| `tests/api/seller.test.ts` | P0-AUTH-4 | Phone send-code, verify |
+| `tests/api/consignment.test.ts` | P0-FORM-1, P0-CRUD-4, P0-CRUD-5 | Submit, status change, approve |
+| `tests/api/inquiry.test.ts` | P0-FORM-2 | Vehicle inquiry |
+| `tests/api/tradein.test.ts` | P0-FORM-3 | Trade-in request |
+| `tests/api/creditapp.test.ts` | P0-FORM-4 | Credit application |
+| `tests/api/appointment.test.ts` | P0-FORM-5 | Appointment booking |
+| `tests/api/inventory.test.ts` | P0-CRUD-1/2/3, P0-PUB-1/2 | Create, edit, delete, list, details |
+
+### Test Helpers
+
+| File | Purpose |
+|------|---------|
+| `tests/setup.ts` | Global setup: seed admin, truncate tables |
+| `tests/helpers/db.ts` | `truncateTables()`, `seedAdmin()` |
+| `tests/helpers/auth.ts` | `loginAsAdmin()`, `loginAsSeller()` |
+| `tests/helpers/factories.ts` | Simple payload builders |
+
+### Running Tests
+
+```bash
+NODE_ENV=test npx vitest run tests/api
+```
+
+### Test Coverage Per Endpoint
+
+Each P0 endpoint includes:
+- ✓ Valid payload test (200/201)
+- ✓ Invalid payload test asserting `status 400`, `error.code === "VALIDATION_ERROR"`, `details` array
+
+---
+
+## 13. Next Steps (Phases 5-8)
 
 **Phase 5**: Frontend E2E Tests
 - Implement Playwright specs per coverage map
@@ -644,4 +686,4 @@ Returns normalized error array: `[{ path: "field.subfield", message: "..." }]`
 
 ---
 
-*End of Phase 3 Report*
+*End of Phase 4 Report*
