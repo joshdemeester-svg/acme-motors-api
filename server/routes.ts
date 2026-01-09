@@ -2606,6 +2606,8 @@ export async function registerRoutes(
         liveChatWidgetId
       } = req.body;
       
+      console.log("[settings] PATCH received - liveChatEnabled:", liveChatEnabled, "liveChatWidgetId:", liveChatWidgetId);
+      
       const updateData: Record<string, any> = {
         primaryColor, 
         backgroundColor,
