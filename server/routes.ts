@@ -4,7 +4,26 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
-import { insertConsignmentSchema, insertInventoryCarSchema, insertCreditApplicationSchema, generateVehicleSlug, generateVehicleSlugLegacy, extractIdFromSlug, slugify, type InsertConsignment } from "@shared/schema";
+import { 
+  insertConsignmentSchema, 
+  insertInventoryCarSchema, 
+  insertCreditApplicationSchema,
+  loginSchema,
+  sellerSendCodeSchema,
+  sellerVerifySchema,
+  tradeInSchema,
+  appointmentSchema,
+  updateInventoryCarSchema,
+  consignmentStatusUpdateSchema,
+  idParamSchema,
+  vehicleInquiryRequestSchema,
+  generateVehicleSlug, 
+  generateVehicleSlugLegacy, 
+  extractIdFromSlug, 
+  slugify, 
+  type InsertConsignment 
+} from "@shared/schema";
+import { validateBody, validateParams } from "./middleware/validation";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { z } from "zod";
 import crypto from "crypto";
@@ -567,12 +586,9 @@ export async function registerRoutes(
     res.status(statusCode).json(checks);
   });
 
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", validateBody(loginSchema), async (req, res) => {
     try {
       const { username, password } = req.body;
-      if (!username || !password) {
-        return res.status(400).json({ error: "Username and password required" });
-      }
 
       const user = await storage.getUserByUsername(username);
       if (!user || !verifyPassword(password, user.password)) {
@@ -927,13 +943,9 @@ export async function registerRoutes(
   const RATE_LIMIT_MAX = 3; // Max 3 requests per window
 
   // Seller Portal Authentication Routes
-  app.post("/api/seller/send-code", async (req, res) => {
+  app.post("/api/seller/send-code", validateBody(sellerSendCodeSchema), async (req, res) => {
     try {
       const { phone } = req.body;
-      if (!phone || phone.replace(/\D/g, "").length < 10) {
-        return res.status(400).json({ error: "Valid phone number required" });
-      }
-
       const normalizedPhone = normalizePhoneNumber(phone);
       
       // Check rate limit
@@ -982,13 +994,9 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/seller/verify", async (req, res) => {
+  app.post("/api/seller/verify", validateBody(sellerVerifySchema), async (req, res) => {
     try {
       const { phone, code } = req.body;
-      if (!phone || !code) {
-        return res.status(400).json({ error: "Phone and code are required" });
-      }
-
       const normalizedPhone = normalizePhoneNumber(phone);
       const verification = await storage.getValidPhoneVerification(normalizedPhone, code);
       if (!verification) {
@@ -1294,9 +1302,9 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/consignments", async (req, res) => {
+  app.post("/api/consignments", validateBody(insertConsignmentSchema), async (req, res) => {
     try {
-      const validatedData = insertConsignmentSchema.parse(req.body);
+      const validatedData = req.body;
       
       const normalizedPhone = normalizePhoneNumber(validatedData.phone);
       const isVerified = await storage.isPhoneVerified(normalizedPhone);
@@ -1370,12 +1378,9 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/consignments/:id/status", requireAdmin, async (req, res) => {
+  app.patch("/api/consignments/:id/status", requireAdmin, validateParams(idParamSchema), validateBody(consignmentStatusUpdateSchema), async (req, res) => {
     try {
       const { status, note } = req.body;
-      if (!status || !["pending", "approved", "rejected", "listed", "sold"].includes(status)) {
-        return res.status(400).json({ error: "Invalid status" });
-      }
       const updated = await storage.updateConsignmentStatus(req.params.id, status);
       if (!updated) {
         return res.status(404).json({ error: "Consignment not found" });
@@ -1569,27 +1574,9 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/vehicle-inquiry", async (req, res) => {
+  app.post("/api/vehicle-inquiry", validateBody(vehicleInquiryRequestSchema), async (req, res) => {
     try {
-      const inquirySchema = z.object({
-        vehicleId: z.string(),
-        vin: z.string(),
-        year: z.number(),
-        make: z.string(),
-        model: z.string(),
-        buyerName: z.string().min(1, "Name is required"),
-        buyerPhone: z.string().min(10, "Phone is required"),
-        buyerEmail: z.string().email("Valid email is required"),
-        message: z.string().optional(),
-        interestType: z.string().min(1, "Interest type is required"),
-        buyTimeline: z.string().optional(),
-        hasTradeIn: z.boolean().optional(),
-        financingPreference: z.string().optional(),
-        contactPreference: z.string().optional(),
-        bestTimeToContact: z.string().optional(),
-      });
-
-      const data = inquirySchema.parse(req.body);
+      const data = req.body;
 
       // Save inquiry to database
       const inquiry = await storage.createBuyerInquiry({
@@ -1733,24 +1720,9 @@ export async function registerRoutes(
   });
 
   // Trade-in value submission
-  const tradeInSchema = z.object({
-    firstName: z.string().min(1),
-    lastName: z.string().min(1),
-    email: z.string().email(),
-    phone: z.string().min(10),
-    year: z.string().min(4),
-    make: z.string().min(1),
-    model: z.string().min(1),
-    mileage: z.string().min(1),
-    condition: z.enum(["excellent", "good", "fair", "poor"]),
-    vin: z.string().optional(),
-    payoffAmount: z.string().optional(),
-    additionalInfo: z.string().optional(),
-  });
-
-  app.post("/api/trade-in", async (req, res) => {
+  app.post("/api/trade-in", validateBody(tradeInSchema), async (req, res) => {
     try {
-      const data = tradeInSchema.parse(req.body);
+      const data = req.body;
       const { locationId, apiToken } = await getGHLCredentials();
 
       if (locationId && apiToken) {
@@ -1818,23 +1790,9 @@ export async function registerRoutes(
   });
 
   // Appointment booking
-  const appointmentSchema = z.object({
-    firstName: z.string().min(1),
-    lastName: z.string().min(1),
-    email: z.string().email(),
-    phone: z.string().min(10),
-    appointmentType: z.enum(["test_drive", "showroom_visit", "inspection"]),
-    vehicleId: z.string().optional(),
-    preferredDate: z.string().min(1),
-    preferredTime: z.string().min(1),
-    alternateDate: z.string().optional(),
-    alternateTime: z.string().optional(),
-    notes: z.string().optional(),
-  });
-
-  app.post("/api/appointments", async (req, res) => {
+  app.post("/api/appointments", validateBody(appointmentSchema), async (req, res) => {
     try {
-      const data = appointmentSchema.parse(req.body);
+      const data = req.body;
       const { locationId, apiToken } = await getGHLCredentials();
 
       // Get vehicle details if provided
@@ -1906,9 +1864,9 @@ export async function registerRoutes(
   });
 
   // Credit Application Routes
-  app.post("/api/credit-applications", async (req, res) => {
+  app.post("/api/credit-applications", validateBody(insertCreditApplicationSchema), async (req, res) => {
     try {
-      const validatedData = insertCreditApplicationSchema.parse(req.body);
+      const validatedData = req.body;
       const application = await storage.createCreditApplication(validatedData);
 
       // Get site settings for GHL integration
@@ -2262,9 +2220,9 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/inventory", async (req, res) => {
+  app.post("/api/inventory", validateBody(insertInventoryCarSchema), async (req, res) => {
     try {
-      const validatedData = insertInventoryCarSchema.parse(req.body);
+      const validatedData = req.body;
       
       // Generate slug for new vehicle using entity-based format (no location)
       const settings = await storage.getSiteSettings();
@@ -2409,24 +2367,9 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/inventory/:id", requireAdmin, async (req, res) => {
+  app.patch("/api/inventory/:id", requireAdmin, validateParams(idParamSchema), validateBody(updateInventoryCarSchema), async (req, res) => {
     try {
-      const updateSchema = z.object({
-        vin: z.string().min(11).max(17).optional(),
-        year: z.number().int().min(1900).max(2100).optional(),
-        make: z.string().min(1).max(100).optional(),
-        model: z.string().min(1).max(100).optional(),
-        mileage: z.number().int().min(0).optional(),
-        color: z.string().min(1).max(50).optional(),
-        price: z.number().int().min(0).optional(),
-        featured: z.boolean().optional(),
-        status: z.enum(["available", "pending", "sold"]).optional(),
-        condition: z.string().min(1).max(100).optional(),
-        description: z.string().nullable().optional(),
-        photos: z.array(z.string()).optional(),
-      });
-
-      const validatedData = updateSchema.parse(req.body);
+      const validatedData = req.body;
 
       if (Object.keys(validatedData).length === 0) {
         return res.status(400).json({ error: "No valid fields to update" });
@@ -2438,15 +2381,12 @@ export async function registerRoutes(
       }
       res.json(updated);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Invalid data", details: error.errors });
-      }
       console.error("Error updating inventory car:", error);
       res.status(500).json({ error: "Failed to update car" });
     }
   });
 
-  app.delete("/api/inventory/:id", requireAdmin, async (req, res) => {
+  app.delete("/api/inventory/:id", requireAdmin, validateParams(idParamSchema), async (req, res) => {
     try {
       const deleted = await storage.deleteInventoryCar(req.params.id);
       if (!deleted) {
@@ -2459,7 +2399,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/consignments/:id/approve", requireAdmin, async (req, res) => {
+  app.post("/api/consignments/:id/approve", requireAdmin, validateParams(idParamSchema), async (req, res) => {
     try {
       const { price } = req.body;
       if (!price || typeof price !== "number") {

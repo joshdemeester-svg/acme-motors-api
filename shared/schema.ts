@@ -882,13 +882,31 @@ export const appointmentSchema = z.object({
 });
 export type AppointmentPayload = z.infer<typeof appointmentSchema>;
 
-// Inventory car update schema (partial for PATCH)
-export const updateInventoryCarSchema = insertInventoryCarSchema.partial();
+// Inventory car update schema (partial for PATCH with stricter validation)
+export const updateInventoryCarSchema = z.object({
+  vin: z.string().min(11).max(17).optional(),
+  year: z.number().int().min(1900).max(2100).optional(),
+  make: z.string().min(1).max(100).optional(),
+  model: z.string().min(1).max(100).optional(),
+  trim: z.string().nullable().optional(),
+  mileage: z.number().int().min(0).optional(),
+  color: z.string().min(1).max(50).optional(),
+  price: z.number().int().min(0).optional(),
+  featured: z.boolean().optional(),
+  status: z.enum(["available", "pending", "sold"]).optional(),
+  condition: z.string().min(1).max(100).optional(),
+  description: z.string().nullable().optional(),
+  photos: z.array(z.string()).optional(),
+  slug: z.string().nullable().optional(),
+  soldDate: z.union([z.string(), z.date()]).nullable().optional(),
+  stockNumber: z.string().nullable().optional(),
+  consignmentId: z.string().nullable().optional(),
+});
 export type UpdateInventoryCar = z.infer<typeof updateInventoryCarSchema>;
 
 // Consignment status update schema
 export const consignmentStatusUpdateSchema = z.object({
-  status: z.enum(["pending", "in_review", "approved", "rejected", "converted"]),
+  status: z.enum(["pending", "approved", "rejected", "listed", "sold"]),
   note: z.string().optional(),
 });
 export type ConsignmentStatusUpdate = z.infer<typeof consignmentStatusUpdateSchema>;
@@ -898,3 +916,23 @@ export const idParamSchema = z.object({
   id: z.string().min(1, "ID is required"),
 });
 export type IdParam = z.infer<typeof idParamSchema>;
+
+// Vehicle inquiry request schema (for POST /api/vehicle-inquiry)
+export const vehicleInquiryRequestSchema = z.object({
+  vehicleId: z.string().min(1, "Vehicle ID is required"),
+  vin: z.string().min(1),
+  year: z.number().int().min(1900).max(2100),
+  make: z.string().min(1),
+  model: z.string().min(1),
+  buyerName: z.string().min(1, "Name is required"),
+  buyerPhone: z.string().min(10, "Phone is required"),
+  buyerEmail: z.string().email("Valid email is required"),
+  message: z.string().optional(),
+  interestType: z.string().min(1, "Interest type is required"),
+  buyTimeline: z.string().optional(),
+  hasTradeIn: z.boolean().optional(),
+  financingPreference: z.string().optional(),
+  contactPreference: z.string().optional(),
+  bestTimeToContact: z.string().optional(),
+});
+export type VehicleInquiryRequest = z.infer<typeof vehicleInquiryRequestSchema>;

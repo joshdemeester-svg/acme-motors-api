@@ -551,12 +551,69 @@ npm audit --audit-level=moderate --omit=dev         # audit
 
 ---
 
-## 11. Next Steps (Phases 3-8)
+## 11. Schema Coverage (Phase 3)
 
-**Phase 3**: Shared Validation
-- Verify Zod schemas cover all P0 forms
-- Add validation middleware to Express routes
-- Standardize error response format
+### Shared Zod Schemas (`shared/schema.ts`)
+
+| Schema | Purpose |
+|--------|---------|
+| `loginSchema` | Admin login payload |
+| `sellerSendCodeSchema` | Phone verification request |
+| `sellerVerifySchema` | Phone code verification |
+| `insertConsignmentSchema` | Consignment submission form |
+| `insertBuyerInquirySchema` | Buyer inquiry from DB |
+| `vehicleInquiryRequestSchema` | Vehicle inquiry API request |
+| `tradeInSchema` | Trade-in form payload |
+| `appointmentSchema` | Appointment booking form |
+| `insertCreditApplicationSchema` | Credit application form |
+| `insertInventoryCarSchema` | Create inventory vehicle |
+| `updateInventoryCarSchema` | Partial update for vehicle PATCH |
+| `consignmentStatusUpdateSchema` | Consignment status change |
+| `idParamSchema` | Route parameter `:id` validation |
+
+### Validation Middleware (`server/middleware/validation.ts`)
+
+- `validateBody(schema)` - Request body validation
+- `validateParams(schema)` - Route params validation
+- `validateQuery(schema)` - Query string validation
+
+**Error Response Format:**
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request body validation failed",
+    "details": [
+      { "path": "email", "message": "Valid email is required" },
+      { "path": "phone", "message": "Valid phone number required" }
+    ]
+  }
+}
+```
+
+### P0 Endpoint Schema Coverage
+
+| Endpoint | Method | Schema | Middleware Applied |
+|----------|--------|--------|-------------------|
+| `/api/auth/login` | POST | `loginSchema` | ✓ |
+| `/api/seller/send-code` | POST | `sellerSendCodeSchema` | ✓ |
+| `/api/seller/verify` | POST | `sellerVerifySchema` | ✓ |
+| `/api/consignments` | POST | `insertConsignmentSchema` | ✓ |
+| `/api/consignments/:id/status` | PATCH | `consignmentStatusUpdateSchema` + `idParamSchema` | ✓ |
+| `/api/consignments/:id/approve` | POST | `idParamSchema` | ✓ |
+| `/api/vehicle-inquiry` | POST | `vehicleInquiryRequestSchema` | ✓ |
+| `/api/trade-in` | POST | `tradeInSchema` | ✓ |
+| `/api/appointments` | POST | `appointmentSchema` | ✓ |
+| `/api/credit-applications` | POST | `insertCreditApplicationSchema` | ✓ |
+| `/api/inventory` | POST | `insertInventoryCarSchema` | ✓ |
+| `/api/inventory/:id` | PATCH | `updateInventoryCarSchema` + `idParamSchema` | ✓ |
+| `/api/inventory/:id` | DELETE | `idParamSchema` | ✓ |
+
+**All 13 P0 endpoints now have validation middleware applied.**
+
+---
+
+## 12. Next Steps (Phases 4-8)
 
 **Phase 4**: Backend Integration Tests
 - Implement Vitest + Supertest tests per coverage map
@@ -574,7 +631,7 @@ npm audit --audit-level=moderate --omit=dev         # audit
 - Structured error logging
 
 **Phase 7**: Quality Gate Script
-- `npm run quality` command
+- `npm run quality` command (done - see `scripts/quality.sh`)
 - Deterministic execution order
 
 **Phase 8**: CI Pipeline
@@ -584,4 +641,4 @@ npm audit --audit-level=moderate --omit=dev         # audit
 
 ---
 
-*End of Phase 1 Report*
+*End of Phase 3 Report*
