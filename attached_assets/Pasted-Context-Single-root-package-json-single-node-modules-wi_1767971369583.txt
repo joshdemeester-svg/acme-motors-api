@@ -1,0 +1,142 @@
+Context
+Single root package.json (single node_modules) with collocated folders:
+- client/ (React 18 + TS, Vite, Tailwind v4, shadcn/ui, Wouter, React Query)
+- server/ (Express + TS)
+- shared/ (shared types/schemas)
+DB: Postgres + Drizzle ORM
+
+Goal
+Build an automated “Quality Gate” so I do not manually test every form, survey, and login. You must (1) inventory routes and flows, (2) implement tests (unit/integration/e2e), (3) add health checks and observability, (4) wire everything into a single command that outputs pass/fail.
+
+Non-negotiable outcomes
+- `npm run quality` runs lint + typecheck + unit + integration + e2e + audit and exits non-zero on failure.
+- Playwright E2E covers every P0 flow end-to-end.
+- API integration tests run against a real Postgres test database (Docker or CI service).
+- shared/ schemas (zod recommended) are the source of truth for request/response validation.
+
+Phase 1: Inventory and Test Plan (write QUALITY_REPORT.md first)
+1) Determine how the app runs in dev and prod:
+   - Which command starts Express (tsx, ts-node, nodemon, etc.)
+   - Which command starts Vite
+   - Whether Vite proxies to Express or Express serves the built client
+2) Enumerate frontend routes:
+   - Parse client routing (Wouter) and list all routes/pages
+   - For each route, list primary user actions (forms, submit buttons, CRUD)
+3) Enumerate backend routes:
+   - Scan server/ for Express route registrations and build a route table:
+     Method | Path | Auth required | Role required | Request schema | Response schema
+4) Identify P0 flows (must test) and P1 flows (nice to have).
+5) Create a Coverage Map that maps each P0 flow to at least one Playwright spec + relevant API integration tests.
+
+Phase 2: Tooling and Standards (single root config, folder-aware)
+Implement the following at repo root, configured to include client/, server/, shared/:
+A) Type checking
+- Ensure TS strict is enabled where feasible
+- Ensure path aliases work for Vite + server runtime + tests (fix tsconfig paths if needed)
+B) Lint/format
+- ESLint configured for TS + React hooks (client) and Node/Express (server)
+- Prettier configured for the whole repo
+C) Dependency safety
+- Add `npm audit` report mode to the quality gate
+
+Phase 3: Shared Validation and Contract Safety
+- In shared/, define zod schemas (or confirm they exist) for:
+  - Auth payloads
+  - Each major form/survey payload
+  - Key API responses (at least P0)
+- In server/, apply zod validation middleware using shared schemas.
+- In client/, use the same schemas for form validation (where practical) and request typing.
+- Ensure server returns consistent error shapes: { error: { code, message, details? } }
+
+Phase 4: Backend Integration Tests (Express + Drizzle + Postgres)
+Implement Vitest + Supertest integration tests:
+A) Test DB strategy (must be reliable in Replit + CI)
+- Prefer a Postgres container for tests (docker-compose) OR GitHub Actions service container
+- Use DATABASE_URL_TEST for test runs
+- Run Drizzle migrations before tests
+- Clean DB between tests (truncate tables or reset schema)
+B) Write integration tests for P0 endpoints:
+- Auth success/failure
+- Protected routes return 401 when not logged in
+- Role checks return 403
+- Core CRUD endpoints create/read/update correctly
+- Validation failures return 400 with details
+C) If auth is cookie-based sessions:
+- Use Supertest agent to persist cookies between requests and test session behavior.
+
+Phase 5: Frontend E2E Tests (Playwright) with stable selectors
+A) Add Playwright at root and configure webServer to start:
+- Express in TEST mode on a known port
+- Vite preview or dev server on a known port (prefer `vite preview` against a built client for stability)
+- Ensure Playwright waits for readiness (health endpoint + Vite availability)
+B) Add data-testid attributes to critical UI elements:
+- Login form fields/buttons
+- Primary navigation links
+- Each major form’s submit button
+- Survey submit button and confirmation success indicator
+C) Implement Playwright specs for every P0 flow:
+- Login (and signup if exists)
+- Session persistence (refresh page stays logged in)
+- Form submissions end-to-end (at least one spec per primary form)
+- Survey flow end-to-end (create/edit/submit/view results if applicable)
+- Role-based access (admin route blocked for normal user)
+- Negative tests (invalid input shows validation, unauthorized blocked)
+
+External services rule
+If any flows send email/SMS/push or hit third parties, implement an adapter interface:
+- Production adapter uses real provider
+- Test adapter uses an in-memory “outbox” table or array accessible via a test-only endpoint
+Playwright must assert “message sent” via this outbox without needing real credentials.
+
+Phase 6: Observability and Health
+A) Add GET /health on Express that checks:
+- DB connectivity
+- Required env vars presence
+- Basic query of expected tables
+B) Add request id middleware and structured error logging.
+C) Ensure React Query global error handling surfaces failures in UI (and logs).
+
+Phase 7: Root scripts: one-command Quality Gate
+Update root package.json scripts to include:
+- lint (all folders)
+- typecheck (all folders)
+- test:unit (if any)
+- test:integration (vitest + supertest + test DB)
+- test:e2e (playwright headless)
+- audit (npm audit --omit=dev or report as appropriate)
+- quality runs them all in deterministic order
+
+Example target scripts (adjust to match actual commands):
+- "dev": concurrently run server dev + client dev
+- "build": build client and build server (if needed)
+- "start": run built server
+- "quality": npm run lint && npm run typecheck && npm run test:integration && npm run test:e2e && npm run audit
+
+Phase 8: CI
+Add .github/workflows/ci.yml that:
+- Uses Node LTS
+- Starts Postgres service container
+- Sets DATABASE_URL_TEST
+- Runs migrations
+- Runs npm ci
+- Runs npm run quality
+
+Deliverables
+1) QUALITY_REPORT.md containing:
+- Frontend route inventory
+- Backend route inventory
+- P0/P1 flow list
+- Coverage map
+- Known gaps and why
+2) .env.example with all required vars (client and server)
+3) Fully working scripts in root package.json
+4) All tests committed (Vitest + Supertest + Playwright)
+5) A final summary of bugs found and fixed while adding this harness
+
+Do not ask me to manually click to verify. Automate verification. Start now: create QUALITY_REPORT.md with inventory and P0 plan, then implement all phases.
+
+Reliability requirements
+- Prefer `vite build` + `vite preview` for Playwright instead of dev server to reduce timing issues.
+- Ensure all Playwright tests run against a clean database state (reset between specs).
+- Save Playwright traces and screenshots on failure.
+
