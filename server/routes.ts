@@ -2,6 +2,8 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 import { insertConsignmentSchema, insertInventoryCarSchema, insertCreditApplicationSchema, generateVehicleSlug, generateVehicleSlugLegacy, extractIdFromSlug, slugify, type InsertConsignment } from "@shared/schema";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { z } from "zod";
@@ -2760,6 +2762,40 @@ export async function registerRoutes(
         success: false, 
         error: "Failed to connect to GoHighLevel - network error" 
       });
+    }
+  });
+
+  // Diagnostic endpoint to check database schema (admin only)
+  app.get("/api/admin/db-schema-check", requireAdmin, async (req, res) => {
+    try {
+      const result = await db.execute(sql`
+        SELECT column_name, data_type, is_nullable 
+        FROM information_schema.columns 
+        WHERE table_name = 'site_settings' 
+        ORDER BY ordinal_position
+      `);
+      
+      const columns = result.rows.map((row: any) => ({
+        name: row.column_name,
+        type: row.data_type,
+        nullable: row.is_nullable
+      }));
+      
+      const liveChatColumns = columns.filter((c: any) => 
+        c.name.includes('live_chat')
+      );
+      
+      res.json({
+        environment: process.env.NODE_ENV,
+        totalColumns: columns.length,
+        liveChatColumns,
+        hasLiveChatEnabled: columns.some((c: any) => c.name === 'live_chat_enabled'),
+        hasLiveChatWidgetId: columns.some((c: any) => c.name === 'live_chat_widget_id'),
+        allColumns: columns
+      });
+    } catch (error) {
+      console.error("Error checking schema:", error);
+      res.status(500).json({ error: "Failed to check schema", details: String(error) });
     }
   });
 
