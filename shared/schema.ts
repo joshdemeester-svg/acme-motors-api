@@ -825,3 +825,76 @@ export type HealthCheckResult = {
   message: string;
   duration?: number;
 };
+
+// ============================================
+// P0 API Request Validation Schemas
+// ============================================
+
+// Auth schemas
+export const loginSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+});
+export type LoginPayload = z.infer<typeof loginSchema>;
+
+// Seller portal auth schemas
+export const sellerSendCodeSchema = z.object({
+  phone: z.string().min(10, "Valid phone number required"),
+});
+export type SellerSendCodePayload = z.infer<typeof sellerSendCodeSchema>;
+
+export const sellerVerifySchema = z.object({
+  phone: z.string().min(10, "Valid phone number required"),
+  code: z.string().length(6, "Verification code must be 6 digits"),
+});
+export type SellerVerifyPayload = z.infer<typeof sellerVerifySchema>;
+
+// Trade-in form schema
+export const tradeInSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Valid email is required"),
+  phone: z.string().min(10, "Valid phone number required"),
+  year: z.string().min(4, "Year is required"),
+  make: z.string().min(1, "Make is required"),
+  model: z.string().min(1, "Model is required"),
+  mileage: z.string().min(1, "Mileage is required"),
+  condition: z.enum(["excellent", "good", "fair", "poor"]),
+  vin: z.string().optional(),
+  payoffAmount: z.string().optional(),
+  additionalInfo: z.string().optional(),
+});
+export type TradeInPayload = z.infer<typeof tradeInSchema>;
+
+// Appointment booking schema
+export const appointmentSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Valid email is required"),
+  phone: z.string().min(10, "Valid phone number required"),
+  appointmentType: z.enum(["test_drive", "showroom_visit", "inspection"]),
+  vehicleId: z.string().optional(),
+  preferredDate: z.string().min(1, "Preferred date is required"),
+  preferredTime: z.string().min(1, "Preferred time is required"),
+  alternateDate: z.string().optional(),
+  alternateTime: z.string().optional(),
+  notes: z.string().optional(),
+});
+export type AppointmentPayload = z.infer<typeof appointmentSchema>;
+
+// Inventory car update schema (partial for PATCH)
+export const updateInventoryCarSchema = insertInventoryCarSchema.partial();
+export type UpdateInventoryCar = z.infer<typeof updateInventoryCarSchema>;
+
+// Consignment status update schema
+export const consignmentStatusUpdateSchema = z.object({
+  status: z.enum(["pending", "in_review", "approved", "rejected", "converted"]),
+  note: z.string().optional(),
+});
+export type ConsignmentStatusUpdate = z.infer<typeof consignmentStatusUpdateSchema>;
+
+// Common param schemas for route parameters
+export const idParamSchema = z.object({
+  id: z.string().min(1, "ID is required"),
+});
+export type IdParam = z.infer<typeof idParamSchema>;
