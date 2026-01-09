@@ -537,6 +537,36 @@ export async function registerRoutes(
   
   registerObjectStorageRoutes(app);
 
+  // Health check endpoint for monitoring and Playwright
+  app.get("/api/health", async (req, res) => {
+    const checks = {
+      status: "ok" as "ok" | "degraded" | "error",
+      timestamp: new Date().toISOString(),
+      database: { status: "unknown" as "ok" | "error", message: "" },
+      environment: { status: "ok" as "ok" | "error", missing: [] as string[] },
+    };
+
+    // Check database connectivity
+    try {
+      await db.execute(sql`SELECT 1`);
+      checks.database = { status: "ok", message: "Connected" };
+    } catch (error) {
+      checks.database = { status: "error", message: "Connection failed" };
+      checks.status = "error";
+    }
+
+    // Check required environment variables
+    const requiredEnvVars = ["DATABASE_URL"];
+    const missing = requiredEnvVars.filter((key) => !process.env[key]);
+    if (missing.length > 0) {
+      checks.environment = { status: "error", missing };
+      checks.status = "degraded";
+    }
+
+    const statusCode = checks.status === "ok" ? 200 : checks.status === "degraded" ? 200 : 503;
+    res.status(statusCode).json(checks);
+  });
+
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
