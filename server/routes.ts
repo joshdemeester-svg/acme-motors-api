@@ -23,7 +23,7 @@ import {
   slugify, 
   type InsertConsignment 
 } from "@shared/schema";
-import { validateBody, validateParams } from "./middleware/validation";
+import { validateBody, validateParams } from "./middleware/validate";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { z } from "zod";
 import crypto from "crypto";
