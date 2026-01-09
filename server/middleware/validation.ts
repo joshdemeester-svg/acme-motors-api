@@ -1,13 +1,24 @@
 import { Request, Response, NextFunction } from "express";
-import { z, ZodError, ZodSchema } from "zod";
-import { fromZodError } from "zod-validation-error";
+import { ZodError, ZodSchema } from "zod";
+
+export interface ValidationErrorItem {
+  path: string;
+  message: string;
+}
 
 export interface ApiError {
   error: {
     code: string;
     message: string;
-    details?: Record<string, string[]>;
+    details?: ValidationErrorItem[];
   };
+}
+
+function normalizeZodErrors(error: ZodError): ValidationErrorItem[] {
+  return error.errors.map((err) => ({
+    path: err.path.join(".") || "_root",
+    message: err.message,
+  }));
 }
 
 export function validateBody<T extends ZodSchema>(schema: T) {
@@ -17,21 +28,11 @@ export function validateBody<T extends ZodSchema>(schema: T) {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        const validationError = fromZodError(error);
-        const details: Record<string, string[]> = {};
-        
-        error.errors.forEach((err) => {
-          const path = err.path.join(".");
-          if (!details[path]) {
-            details[path] = [];
-          }
-          details[path].push(err.message);
-        });
-
+        const details = normalizeZodErrors(error);
         const response: ApiError = {
           error: {
             code: "VALIDATION_ERROR",
-            message: validationError.message,
+            message: "Request body validation failed",
             details,
           },
         };
@@ -49,11 +50,12 @@ export function validateQuery<T extends ZodSchema>(schema: T) {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        const validationError = fromZodError(error);
+        const details = normalizeZodErrors(error);
         const response: ApiError = {
           error: {
             code: "VALIDATION_ERROR",
-            message: validationError.message,
+            message: "Query parameter validation failed",
+            details,
           },
         };
         return res.status(400).json(response);
@@ -70,11 +72,12 @@ export function validateParams<T extends ZodSchema>(schema: T) {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        const validationError = fromZodError(error);
+        const details = normalizeZodErrors(error);
         const response: ApiError = {
           error: {
             code: "VALIDATION_ERROR",
-            message: validationError.message,
+            message: "Route parameter validation failed",
+            details,
           },
         };
         return res.status(400).json(response);
@@ -84,7 +87,7 @@ export function validateParams<T extends ZodSchema>(schema: T) {
   };
 }
 
-export function formatError(code: string, message: string, details?: Record<string, string[]>): ApiError {
+export function formatError(code: string, message: string, details?: ValidationErrorItem[]): ApiError {
   return {
     error: {
       code,
@@ -99,7 +102,7 @@ export function sendError(
   statusCode: number,
   code: string,
   message: string,
-  details?: Record<string, string[]>
+  details?: ValidationErrorItem[]
 ) {
   return res.status(statusCode).json(formatError(code, message, details));
 }
