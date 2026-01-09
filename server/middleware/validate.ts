@@ -1,6 +1,40 @@
 import { Request, Response, NextFunction } from "express";
-import { ZodSchema } from "zod";
+import { ZodSchema, ZodIssue } from "zod";
 import { formatZodError } from "@shared/utils/formatZodError";
+import { loginSchema } from "@shared/schemas/auth";
+
+function isMissingCredentialIssue(issue: ZodIssue): boolean {
+  const path = issue.path[0];
+  if (path !== "username" && path !== "password") return false;
+  
+  if (issue.code === "invalid_type" && (issue as any).received === "undefined") return true;
+  if (issue.message === "Required") return true;
+  
+  return false;
+}
+
+export function validateLoginBody() {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const result = loginSchema.safeParse(req.body);
+    if (!result.success) {
+      const hasMissingCredential = result.error.issues.some(isMissingCredentialIssue);
+      
+      if (hasMissingCredential) {
+        return res.status(400).json({ error: "Username and password required" });
+      }
+      
+      return res.status(400).json({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Invalid request",
+          details: formatZodError(result.error),
+        },
+      });
+    }
+    req.body = result.data;
+    next();
+  };
+}
 
 export function validateBody<T extends ZodSchema>(schema: T) {
   return (req: Request, res: Response, next: NextFunction) => {

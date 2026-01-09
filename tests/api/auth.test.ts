@@ -42,13 +42,13 @@ describe("P0-AUTH: Authentication Endpoints", () => {
       expect(res.body.error).toBe("Username and password required");
     });
 
-    it("ignores extra unknown fields and allows login", async () => {
+    it("returns 400 VALIDATION_ERROR for extra unknown fields (strict schema)", async () => {
       const res = await request(app)
         .post("/api/auth/login")
         .send({ ...buildLoginPayload(), unknownField: "test" });
 
-      expect(res.status).toBe(200);
-      expect(res.body.user).toBeDefined();
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("VALIDATION_ERROR");
     });
 
     it("returns 401 for invalid password", async () => {
