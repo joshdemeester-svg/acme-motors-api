@@ -132,3 +132,94 @@ export async function seedAdmin(): Promise<void> {
   // Insert test admin user and site settings
 }
 ```
+
+---
+
+## Running Tests with Coverage
+
+```bash
+# Run API tests with coverage
+NODE_ENV=test npx vitest run tests/api --coverage
+
+# Run with JUnit output (for CI)
+NODE_ENV=test npx vitest run tests/api --coverage --reporter=default --reporter=junit
+```
+
+### Coverage Thresholds
+
+The project enforces minimum coverage thresholds:
+
+| Metric | Threshold |
+|--------|-----------|
+| Statements | 30% |
+| Branches | 25% |
+| Functions | 25% |
+| Lines | 30% |
+
+Tests will fail if coverage drops below these thresholds.
+
+---
+
+## Test Isolation
+
+### Order Independence
+
+Tests are configured to run in **random order** (`sequence.shuffle: true` in vitest.config.ts) to ensure no test depends on another's side effects.
+
+### Database Reset Strategy
+
+Each test file:
+1. `beforeAll`: Seeds minimal required data (admin user, site settings)
+2. `beforeEach`: Truncates all tables with CASCADE, re-seeds admin
+3. `afterAll`: Final cleanup
+
+This ensures every test starts with a clean, predictable state.
+
+---
+
+## Flaky Test Handling
+
+### Definition
+
+A **flaky test** is one that passes and fails intermittently without code changes. Common causes:
+- Timing dependencies (network, DB, async operations)
+- Shared state between tests
+- Non-deterministic data (dates, random values)
+- External service dependencies
+
+### Prevention Strategies
+
+1. **Use deterministic test data** - Never use `Date.now()` or `Math.random()` in tests
+2. **Mock external services** - GHL API, SMS providers should be mocked in tests
+3. **Avoid `setTimeout`** - Use proper async/await patterns
+4. **Isolate test state** - Each test should set up its own data
+5. **Run tests in random order** - Catches hidden order dependencies
+
+### Handling Flaky Tests
+
+When a flaky test is identified:
+
+1. **Quarantine immediately** - Add `.skip` to prevent CI failures
+2. **Document the flakiness** - Add comment explaining the issue
+3. **File a tracking issue** - Include reproduction steps
+4. **Fix within 1 sprint** - Flaky tests degrade CI trust
+
+```typescript
+// Quarantined: Flaky due to timing issue with SMS delivery
+// Tracking: Issue #123
+it.skip("sends SMS notification on consignment approval", async () => {
+  // ...
+});
+```
+
+### Retry Strategy
+
+For tests that are inherently timing-sensitive (e.g., external API responses), use controlled retries:
+
+```typescript
+it("external API test", { retry: 2 }, async () => {
+  // Test with up to 2 retries
+});
+```
+
+**Note:** Retries should be used sparingly and only for legitimate timing issues, not to mask bugs.

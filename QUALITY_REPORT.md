@@ -1,8 +1,10 @@
-# Quality Gate Report - Phase 1: Inventory and Test Plan
+# Quality Gate Report
 
 **Generated:** January 2026  
 **Project:** Prestige Auto Consignment  
 **Stack:** React 18 + Express.js + PostgreSQL (Drizzle ORM)
+
+![API Tests](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/api-tests.yml/badge.svg)
 
 ---
 
@@ -663,12 +665,102 @@ Each P0 endpoint includes:
 
 ---
 
-## 13. Next Steps (Phases 5-8)
+## 13. CI + Quality Gates (Phase 5)
 
-**Phase 5**: Frontend E2E Tests
-- Implement Playwright specs per coverage map
-- Add data-testid attributes to forms
-- Configure webServer for test startup
+### CI Workflow
+
+| Component | Configuration |
+|-----------|---------------|
+| Platform | GitHub Actions |
+| Trigger | Push/PR to main/master |
+| Database | PostgreSQL 15 (service container) |
+| Test Runner | Vitest + Supertest |
+| Artifacts | Coverage report, JUnit XML |
+
+### Coverage Thresholds
+
+| Metric | Minimum | Status |
+|--------|---------|--------|
+| Statements | 30% | Enforced |
+| Branches | 25% | Enforced |
+| Functions | 25% | Enforced |
+| Lines | 30% | Enforced |
+
+CI will fail if coverage drops below these thresholds.
+
+### Endpoint → Test Mapping
+
+| Endpoint | Test File | Test Cases |
+|----------|-----------|------------|
+| `POST /api/auth/login` | `auth.test.ts` | Valid credentials, missing username, missing password, extra fields, invalid password |
+| `POST /api/auth/logout` | `auth.test.ts` | Session cleared after logout |
+| `GET /api/auth/session` | `auth.test.ts` | Unauthenticated response, authenticated response |
+| `POST /api/seller/send-code` | `seller.test.ts` | Valid phone, missing phone, phone too short, extra fields |
+| `POST /api/seller/verify` | `seller.test.ts` | Missing phone, missing code, wrong code length, extra fields |
+| `POST /api/consignments` | `consignment.test.ts` | Valid payload, missing fields, invalid email, extra fields |
+| `PATCH /api/consignments/:id/status` | `consignment.test.ts` | Valid update, unauthenticated, invalid status |
+| `POST /api/consignments/:id/approve` | `consignment.test.ts` | Valid approval, unauthenticated |
+| `POST /api/vehicle-inquiry` | `inquiry.test.ts` | Valid payload, invalid email, missing fields, extra fields |
+| `POST /api/trade-in` | `tradein.test.ts` | Valid payload, missing fields, invalid condition, invalid email |
+| `POST /api/credit-applications` | `creditapp.test.ts` | Valid payload, missing fields, invalid email, negative income |
+| `POST /api/appointments` | `appointment.test.ts` | Valid payload, missing fields, invalid type, invalid email |
+| `POST /api/inventory` | `inventory.test.ts` | Valid payload (auth), missing fields, extra fields |
+| `PATCH /api/inventory/:id` | `inventory.test.ts` | Valid update (auth), unauthenticated, invalid price, extra fields |
+| `DELETE /api/inventory/:id` | `inventory.test.ts` | Valid delete (auth), unauthenticated |
+| `GET /api/inventory` | `inventory.test.ts` | Returns array |
+| `GET /api/inventory/:id` | `inventory.test.ts` | Existing vehicle, non-existent vehicle |
+
+### Regression Policy
+
+#### Definition
+
+A **regression** is any behavior change that breaks existing functionality or reduces code coverage below thresholds.
+
+#### Prevention
+
+1. **All PRs require passing CI** - No merges without green tests
+2. **Coverage thresholds enforced** - CI fails if coverage drops
+3. **Tests run in random order** - Catches hidden dependencies
+4. **Database isolation** - Each test starts with clean state
+
+#### Handling Regressions
+
+When a regression is detected:
+
+1. **Revert the offending commit** - Restore working state immediately
+2. **Investigate root cause** - Understand why tests failed
+3. **Add missing test coverage** - Prevent future regressions
+4. **Re-submit with fixes** - Include regression test
+
+#### Coverage Regression
+
+If coverage drops below thresholds:
+- CI will fail with threshold violation error
+- Developer must add tests to restore coverage
+- No exceptions without team approval
+
+### Running Tests Locally
+
+```bash
+# Run API tests
+NODE_ENV=test npx vitest run tests/api
+
+# Run with coverage
+NODE_ENV=test npx vitest run tests/api --coverage
+
+# Run with JUnit output
+NODE_ENV=test npx vitest run tests/api --reporter=junit --outputFile=./test-results/junit.xml
+```
+
+### CI Artifacts
+
+After each CI run, the following artifacts are uploaded:
+- `coverage-report/` - HTML coverage report
+- `test-results/` - JUnit XML test results
+
+---
+
+## 14. Next Steps (Phases 6-8)
 
 **Phase 6**: Observability
 - Health endpoint (done)
@@ -679,11 +771,11 @@ Each P0 endpoint includes:
 - `npm run quality` command (done - see `scripts/quality.sh`)
 - Deterministic execution order
 
-**Phase 8**: CI Pipeline
-- GitHub Actions workflow
-- Postgres service container
-- Artifact collection
+**Phase 8**: Frontend E2E Tests
+- Implement Playwright specs per coverage map
+- Add data-testid attributes to forms
+- Configure webServer for test startup
 
 ---
 
-*End of Phase 4 Report*
+*End of Phase 5 Report*
