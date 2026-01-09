@@ -532,7 +532,14 @@ Tests require deterministic data:
 2. ESLint (client, server, shared)
 3. Prettier format check
 4. npm audit (moderate+ severity)
-5. Integration tests (if server running)
+
+### Manual Commands
+```bash
+npx tsc --noEmit                                    # typecheck
+npx eslint client/src server shared                 # lint
+npx prettier --check "client/src/**/*.{ts,tsx}" ... # format:check
+npm audit --audit-level=moderate --omit=dev         # audit
+```
 
 ### Current Status
 | Check | Status |
