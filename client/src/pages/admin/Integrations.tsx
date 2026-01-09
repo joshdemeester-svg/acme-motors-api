@@ -103,6 +103,7 @@ export default function IntegrationsPage() {
     if (ghlApiToken) {
       (dataToSave as any).ghlApiToken = ghlApiToken;
     }
+    console.log("[Integrations] Saving data:", { liveChatEnabled: dataToSave.liveChatEnabled, liveChatWidgetId: dataToSave.liveChatWidgetId });
     saveMutation.mutate(dataToSave);
   };
 
@@ -297,9 +298,7 @@ export default function IntegrationsPage() {
           <CardContent>
             <div className="rounded-lg border p-4 bg-muted/50">
               <div className="flex items-center gap-3">
-                <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                  process.env.VAPID_PUBLIC_KEY ? "bg-green-500/10" : "bg-orange-500/10"
-                }`}>
+                <div className="h-10 w-10 rounded-full flex items-center justify-center bg-green-500/10">
                   <Bell className="h-5 w-5 text-green-500" />
                 </div>
                 <div>
