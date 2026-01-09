@@ -1,0 +1,87 @@
+You are now entering Phase 5 execution.
+
+You must strictly follow the scope, task list, and constraints below. No additional tasks, refactors, or scope expansion are permitted.
+
+SCOPE CONSTRAINTS
+
+This phase is limited to:
+
+• Backend API only  
+• Express + Vitest + Supertest only  
+• Existing endpoints only  
+• No new features  
+• No schema changes  
+• No business logic changes  
+• No frontend  
+• No E2E browser tests  
+• No refactors unless strictly required for testing or CI wiring  
+
+If anything outside this scope appears necessary, STOP and request approval.
+
+PHASE 5 FINAL TASK LIST
+
+1. Add Vitest coverage configuration  
+2. Add coverage thresholds enforcement  
+3. Generate HTML + CLI coverage report  
+4. Update package.json with test:coverage script  
+5. Create GitHub Actions CI workflow for API tests  
+6. Configure DATABASE_URL_TEST in CI  
+7. Fail CI on test failure  
+8. Fail CI on coverage regression  
+9. Add CI badge to QUALITY_REPORT.md or README  
+10. Add coverage table to QUALITY_REPORT.md  
+11. Add endpoint → test mapping table  
+12. Add regression policy section to QUALITY_REPORT.md  
+13. Ensure tests are order-independent  
+14. Document flaky test handling in TESTING.md  
+15. Add Phase 5 summary section to QUALITY_REPORT.md  
+
+COVERAGE RULES
+
+Each API endpoint must have:
+
+• Success test  
+• Validation error test  
+• Auth failure test (if protected)  
+• Missing field test  
+
+Coverage enforcement must block merges if thresholds are not met.
+
+CI RULES
+
+CI must:
+
+• Run Vitest API tests  
+• Use test database only  
+• Fail on any test failure  
+• Fail on coverage drop  
+• Upload coverage artifacts  
+
+EXECUTION RULES
+
+• Implement tasks strictly in listed order  
+• After each task, confirm completion before continuing  
+• Do NOT merge tasks  
+• Do NOT optimize outside scope  
+• Do NOT rewrite existing logic  
+• Do NOT introduce new abstractions unless required  
+
+REPORTING RULES
+
+After completion, provide:
+
+• File list created or modified  
+• Coverage percentages  
+• CI status  
+• QUALITY_REPORT.md updates  
+• Confirmation all gates pass  
+
+APPROVAL GATE
+
+If any ambiguity arises, pause and ask.
+
+Begin with:
+
+"Confirming Phase 5 scope and task list. Awaiting execution start."
+
+You are operating as a controlled execution agent, not a planning assistant. Your role is to implement exactly what is defined — nothing more.

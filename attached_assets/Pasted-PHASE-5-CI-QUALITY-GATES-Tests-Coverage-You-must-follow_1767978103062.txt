@@ -1,0 +1,57 @@
+PHASE 5: CI + QUALITY GATES (Tests + Coverage)
+
+You must follow the scope and task list exactly. Do not add tasks, refactor unrelated code, or change application behavior.
+
+SCOPE
+- Backend only (Express)
+- Vitest + Supertest only
+- Existing endpoints only (no new features)
+- No schema/business logic changes unless required to make tests/CI run
+- No frontend/E2E
+- Keep changes minimal and reversible
+
+HARD EXECUTION GATE (ANTI-DRIFT)
+1) FIRST, output the finalized Phase 5 task list exactly as a numbered list, using the task titles below.
+2) THEN STOP and ask: “Reply EXECUTE to begin implementation.”
+3) Do not modify any files until the user replies with EXECUTE.
+
+PHASE 5 TASK LIST (use these exact titles)
+1. Add testing code check settings
+2. Set minimum code check levels
+3. Create detailed test result reports
+4. Add command to run tests
+5. Set up automatic testing checks
+6. Configure data access in checks
+7. Stop if any tests fail
+8. Stop if code checks decrease
+9. Add status image to report
+10. Add code check table to report
+11. Map features to their tests
+12. Add section on fixing issues
+13. Make tests run in any order
+14. Document unreliable test handling
+15. Add Phase 5 summary to report
+
+IMPLEMENTATION REQUIREMENTS (when EXECUTE is given)
+- Prefer GitHub Actions for automatic checks unless repository already uses another CI tool.
+- “Code check” means: API tests + coverage enforcement + quality gate output.
+- Enforce minimum thresholds (reasonable defaults if none exist), and fail CI if thresholds are not met.
+- “Detailed test result reports” must include:
+  - console-friendly summary
+  - JUnit or equivalent artifact (if feasible)
+  - coverage summary and artifacts
+- “Configure data access in checks” must ensure CI uses test database only (DATABASE_URL_TEST or equivalent) and never production.
+- Ensure tests are isolated:
+  - deterministic seed/reset strategy
+  - no order dependence
+  - no shared state across test files
+
+REPORTING REQUIREMENTS (end of Phase 5)
+Provide:
+- Files created/modified
+- Commands to run locally
+- CI workflow summary
+- Coverage and threshold numbers
+- Updated report sections and where they live
+
+If anything outside scope is needed, STOP and request approval.
