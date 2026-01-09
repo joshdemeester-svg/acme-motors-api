@@ -4014,6 +4014,80 @@ export async function registerRoutes(
     }
   });
 
+  // Push notification diagnostics (admin)
+  app.get("/api/push/diagnostics", requireAdmin, async (req, res) => {
+    try {
+      const diagnostics: Record<string, any> = {
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || "development",
+        vapidKeys: {
+          publicKeyConfigured: !!process.env.VAPID_PUBLIC_KEY,
+          privateKeyConfigured: !!process.env.VAPID_PRIVATE_KEY,
+          publicKeyLength: process.env.VAPID_PUBLIC_KEY?.length || 0,
+        },
+        database: {
+          pushSubscriptionsTable: false,
+          pushNotificationsTable: false,
+          subscriptionCount: 0,
+          notificationCount: 0,
+        },
+        serviceWorker: {
+          expectedPath: "/sw.js",
+          registrationNote: "Check browser console for '[SW] Service worker registered' message",
+        },
+        https: {
+          required: true,
+          note: "Push notifications require HTTPS (except localhost for development)",
+        },
+        lastSendAttempt: null as any,
+      };
+
+      // Check database tables
+      try {
+        const count = await storage.getPushSubscriptionCount();
+        diagnostics.database.pushSubscriptionsTable = true;
+        diagnostics.database.subscriptionCount = count;
+      } catch (e: any) {
+        diagnostics.database.pushSubscriptionsTableError = e.message;
+      }
+
+      try {
+        const notifications = await storage.getAllPushNotifications();
+        diagnostics.database.pushNotificationsTable = true;
+        diagnostics.database.notificationCount = notifications.length;
+        if (notifications.length > 0) {
+          const last = notifications[0];
+          diagnostics.lastSendAttempt = {
+            id: last.id,
+            title: last.title,
+            sentAt: last.sentAt,
+            sentCount: last.sentCount,
+          };
+        }
+      } catch (e: any) {
+        diagnostics.database.pushNotificationsTableError = e.message;
+      }
+
+      // Get recent subscriptions for debugging
+      try {
+        const subs = await storage.getAllPushSubscriptions();
+        diagnostics.recentSubscriptions = subs.slice(0, 5).map(s => ({
+          id: s.id,
+          endpointPreview: s.endpoint.substring(0, 50) + "...",
+          createdAt: s.createdAt,
+          userAgent: s.userAgent?.substring(0, 50),
+        }));
+      } catch (e: any) {
+        diagnostics.subscriptionError = e.message;
+      }
+
+      res.json(diagnostics);
+    } catch (error: any) {
+      console.error("Error getting push diagnostics:", error);
+      res.status(500).json({ error: "Failed to get diagnostics: " + error.message });
+    }
+  });
+
   // ====================== SEO ENDPOINTS ======================
   
   // robots.txt - dynamic based on settings
