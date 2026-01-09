@@ -1,0 +1,35 @@
+import { z } from "zod";
+
+export const creditApplicationSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  dateOfBirth: z.string().min(1, "Date of birth is required"),
+  phone: z.string().min(10, "Valid phone number required"),
+  email: z.string().email("Valid email is required"),
+  currentAddress: z.string().min(1, "Current address is required"),
+  currentCity: z.string().min(1, "City is required"),
+  currentState: z.string().min(1, "State is required"),
+  currentZip: z.string().min(1, "ZIP code is required"),
+  currentHowLong: z.string().min(1, "Time at address is required"),
+  housingStatus: z.string().min(1, "Housing status is required"),
+  monthlyPayment: z.number().int().optional(),
+  previousAddress: z.string().optional(),
+  previousCity: z.string().optional(),
+  previousState: z.string().optional(),
+  previousZip: z.string().optional(),
+  previousHowLong: z.string().optional(),
+  employerName: z.string().min(1, "Employer name is required"),
+  employerPhone: z.string().optional(),
+  jobTitle: z.string().min(1, "Job title is required"),
+  employmentLength: z.string().min(1, "Employment length is required"),
+  monthlyIncome: z.number().int().min(0, "Monthly income is required"),
+  previousEmployer: z.string().optional(),
+  previousJobTitle: z.string().optional(),
+  previousEmploymentLength: z.string().optional(),
+  additionalIncome: z.number().int().optional(),
+  additionalIncomeSource: z.string().optional(),
+  vehicleInterest: z.string().optional(),
+  tcpaConsent: z.boolean(),
+}).strict();
+
+export type CreditApplicationPayload = z.infer<typeof creditApplicationSchema>;

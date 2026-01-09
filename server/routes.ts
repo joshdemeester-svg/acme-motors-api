@@ -5,24 +5,26 @@ import { storage } from "./storage";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { 
-  insertConsignmentSchema, 
-  insertInventoryCarSchema, 
-  insertCreditApplicationSchema,
-  loginSchema,
-  sellerSendCodeSchema,
-  sellerVerifySchema,
-  tradeInSchema,
-  appointmentSchema,
-  updateInventoryCarSchema,
-  consignmentStatusUpdateSchema,
-  idParamSchema,
-  vehicleInquiryRequestSchema,
   generateVehicleSlug, 
   generateVehicleSlugLegacy, 
   extractIdFromSlug, 
   slugify, 
   type InsertConsignment 
 } from "@shared/schema";
+import {
+  loginSchema,
+  sellerSendCodeSchema,
+  sellerVerifySchema,
+  consignmentSchema,
+  consignmentStatusUpdateSchema,
+  vehicleInquirySchema,
+  tradeInSchema,
+  creditApplicationSchema,
+  appointmentSchema,
+  createInventorySchema,
+  updateInventorySchema,
+  idParamSchema,
+} from "@shared/schemas";
 import { validateBody, validateParams } from "./middleware/validate";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { z } from "zod";
@@ -1302,7 +1304,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/consignments", validateBody(insertConsignmentSchema), async (req, res) => {
+  app.post("/api/consignments", validateBody(consignmentSchema), async (req, res) => {
     try {
       const validatedData = req.body;
       
@@ -1574,7 +1576,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/vehicle-inquiry", validateBody(vehicleInquiryRequestSchema), async (req, res) => {
+  app.post("/api/vehicle-inquiry", validateBody(vehicleInquirySchema), async (req, res) => {
     try {
       const data = req.body;
 
@@ -1864,7 +1866,7 @@ export async function registerRoutes(
   });
 
   // Credit Application Routes
-  app.post("/api/credit-applications", validateBody(insertCreditApplicationSchema), async (req, res) => {
+  app.post("/api/credit-applications", validateBody(creditApplicationSchema), async (req, res) => {
     try {
       const validatedData = req.body;
       const application = await storage.createCreditApplication(validatedData);
@@ -2220,7 +2222,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/inventory", validateBody(insertInventoryCarSchema), async (req, res) => {
+  app.post("/api/inventory", validateBody(createInventorySchema), async (req, res) => {
     try {
       const validatedData = req.body;
       
@@ -2297,7 +2299,7 @@ export async function registerRoutes(
       
       for (const vehicle of vehicles) {
         try {
-          const validatedData = insertInventoryCarSchema.parse({
+          const validatedData = createInventorySchema.parse({
             vin: vehicle.vin,
             year: vehicle.year,
             make: vehicle.make,
@@ -2367,7 +2369,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/inventory/:id", requireAdmin, validateParams(idParamSchema), validateBody(updateInventoryCarSchema), async (req, res) => {
+  app.patch("/api/inventory/:id", requireAdmin, validateParams(idParamSchema), validateBody(updateInventorySchema), async (req, res) => {
     try {
       const validatedData = req.body;
 

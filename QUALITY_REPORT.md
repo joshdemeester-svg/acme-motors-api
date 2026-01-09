@@ -553,36 +553,39 @@ npm audit --audit-level=moderate --omit=dev         # audit
 
 ## 11. Schema Coverage (Phase 3)
 
-### Shared Zod Schemas (`shared/schema.ts`)
+### Schema Files (`shared/schemas/`)
 
-| Schema | Purpose |
-|--------|---------|
-| `loginSchema` | Admin login payload |
-| `sellerSendCodeSchema` | Phone verification request |
-| `sellerVerifySchema` | Phone code verification |
-| `insertConsignmentSchema` | Consignment submission form |
-| `insertBuyerInquirySchema` | Buyer inquiry from DB |
-| `vehicleInquiryRequestSchema` | Vehicle inquiry API request |
-| `tradeInSchema` | Trade-in form payload |
-| `appointmentSchema` | Appointment booking form |
-| `insertCreditApplicationSchema` | Credit application form |
-| `insertInventoryCarSchema` | Create inventory vehicle |
-| `updateInventoryCarSchema` | Partial update for vehicle PATCH |
-| `consignmentStatusUpdateSchema` | Consignment status change |
-| `idParamSchema` | Route parameter `:id` validation |
+| File | Schemas | Purpose |
+|------|---------|---------|
+| `auth.ts` | `loginSchema` | Admin login payload |
+| `seller.ts` | `sellerSendCodeSchema`, `sellerVerifySchema` | Phone verification flow |
+| `consignment.ts` | `consignmentSchema`, `consignmentStatusUpdateSchema` | Consignment submission and status updates |
+| `inquiry.ts` | `vehicleInquirySchema` | Vehicle inquiry API request |
+| `tradein.ts` | `tradeInSchema` | Trade-in form payload |
+| `appointment.ts` | `appointmentSchema` | Appointment booking form |
+| `creditapp.ts` | `creditApplicationSchema` | Credit application form |
+| `inventory.ts` | `createInventorySchema`, `updateInventorySchema` | Create/update inventory vehicles |
+| `params.ts` | `idParamSchema` | Route parameter `:id` validation |
+| `index.ts` | (re-exports all schemas) | Barrel export |
 
-### Validation Middleware (`server/middleware/validation.ts`)
+### Validation Middleware (`server/middleware/validate.ts`)
 
-- `validateBody(schema)` - Request body validation
-- `validateParams(schema)` - Route params validation
-- `validateQuery(schema)` - Query string validation
+| Function | Purpose |
+|----------|---------|
+| `validateBody(schema)` | Request body validation |
+| `validateParams(schema)` | Route params validation (e.g., `:id`) |
+| `validateQuery(schema)` | Query string validation |
+
+### Error Helper (`shared/utils/formatZodError.ts`)
+
+Returns normalized error array: `[{ path: "field.subfield", message: "..." }]`
 
 **Error Response Format:**
 ```json
 {
   "error": {
     "code": "VALIDATION_ERROR",
-    "message": "Request body validation failed",
+    "message": "Invalid request",
     "details": [
       { "path": "email", "message": "Valid email is required" },
       { "path": "phone", "message": "Valid phone number required" }
@@ -593,23 +596,23 @@ npm audit --audit-level=moderate --omit=dev         # audit
 
 ### P0 Endpoint Schema Coverage
 
-| Endpoint | Method | Schema | Middleware Applied |
-|----------|--------|--------|-------------------|
-| `/api/auth/login` | POST | `loginSchema` | ✓ |
-| `/api/seller/send-code` | POST | `sellerSendCodeSchema` | ✓ |
-| `/api/seller/verify` | POST | `sellerVerifySchema` | ✓ |
-| `/api/consignments` | POST | `insertConsignmentSchema` | ✓ |
-| `/api/consignments/:id/status` | PATCH | `consignmentStatusUpdateSchema` + `idParamSchema` | ✓ |
-| `/api/consignments/:id/approve` | POST | `idParamSchema` | ✓ |
-| `/api/vehicle-inquiry` | POST | `vehicleInquiryRequestSchema` | ✓ |
-| `/api/trade-in` | POST | `tradeInSchema` | ✓ |
-| `/api/appointments` | POST | `appointmentSchema` | ✓ |
-| `/api/credit-applications` | POST | `insertCreditApplicationSchema` | ✓ |
-| `/api/inventory` | POST | `insertInventoryCarSchema` | ✓ |
-| `/api/inventory/:id` | PATCH | `updateInventoryCarSchema` + `idParamSchema` | ✓ |
-| `/api/inventory/:id` | DELETE | `idParamSchema` | ✓ |
+| Endpoint | Method | Schema File | Schema | Middleware Applied |
+|----------|--------|-------------|--------|-------------------|
+| `/api/auth/login` | POST | `auth.ts` | `loginSchema` | `validateBody` |
+| `/api/seller/send-code` | POST | `seller.ts` | `sellerSendCodeSchema` | `validateBody` |
+| `/api/seller/verify` | POST | `seller.ts` | `sellerVerifySchema` | `validateBody` |
+| `/api/consignments` | POST | `consignment.ts` | `consignmentSchema` | `validateBody` |
+| `/api/consignments/:id/status` | PATCH | `consignment.ts`, `params.ts` | `consignmentStatusUpdateSchema`, `idParamSchema` | `validateBody`, `validateParams` |
+| `/api/consignments/:id/approve` | POST | `params.ts` | `idParamSchema` | `validateParams` |
+| `/api/vehicle-inquiry` | POST | `inquiry.ts` | `vehicleInquirySchema` | `validateBody` |
+| `/api/trade-in` | POST | `tradein.ts` | `tradeInSchema` | `validateBody` |
+| `/api/appointments` | POST | `appointment.ts` | `appointmentSchema` | `validateBody` |
+| `/api/credit-applications` | POST | `creditapp.ts` | `creditApplicationSchema` | `validateBody` |
+| `/api/inventory` | POST | `inventory.ts` | `createInventorySchema` | `validateBody` |
+| `/api/inventory/:id` | PATCH | `inventory.ts`, `params.ts` | `updateInventorySchema`, `idParamSchema` | `validateBody`, `validateParams` |
+| `/api/inventory/:id` | DELETE | `params.ts` | `idParamSchema` | `validateParams` |
 
-**All 13 P0 endpoints now have validation middleware applied.**
+**All 13 P0 endpoints have validation middleware applied with strict Zod schemas.**
 
 ---
 

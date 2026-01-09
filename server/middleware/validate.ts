@@ -1,63 +1,54 @@
 import { Request, Response, NextFunction } from "express";
-import { ZodError, ZodSchema } from "zod";
+import { ZodSchema } from "zod";
 import { formatZodError } from "@shared/utils/formatZodError";
 
 export function validateBody<T extends ZodSchema>(schema: T) {
   return (req: Request, res: Response, next: NextFunction) => {
-    try {
-      req.body = schema.parse(req.body);
-      next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        return res.status(400).json({
-          error: {
-            code: "VALIDATION_ERROR",
-            message: "Request body validation failed",
-            details: formatZodError(error),
-          },
-        });
-      }
-      next(error);
+    const result = schema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Invalid request",
+          details: formatZodError(result.error),
+        },
+      });
     }
+    req.body = result.data;
+    next();
   };
 }
 
 export function validateParams<T extends ZodSchema>(schema: T) {
   return (req: Request, res: Response, next: NextFunction) => {
-    try {
-      req.params = schema.parse(req.params);
-      next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        return res.status(400).json({
-          error: {
-            code: "VALIDATION_ERROR",
-            message: "Route parameter validation failed",
-            details: formatZodError(error),
-          },
-        });
-      }
-      next(error);
+    const result = schema.safeParse(req.params);
+    if (!result.success) {
+      return res.status(400).json({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Invalid request",
+          details: formatZodError(result.error),
+        },
+      });
     }
+    req.params = result.data as typeof req.params;
+    next();
   };
 }
 
 export function validateQuery<T extends ZodSchema>(schema: T) {
   return (req: Request, res: Response, next: NextFunction) => {
-    try {
-      req.query = schema.parse(req.query);
-      next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        return res.status(400).json({
-          error: {
-            code: "VALIDATION_ERROR",
-            message: "Query parameter validation failed",
-            details: formatZodError(error),
-          },
-        });
-      }
-      next(error);
+    const result = schema.safeParse(req.query);
+    if (!result.success) {
+      return res.status(400).json({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Invalid request",
+          details: formatZodError(result.error),
+        },
+      });
     }
+    req.query = result.data as typeof req.query;
+    next();
   };
 }
