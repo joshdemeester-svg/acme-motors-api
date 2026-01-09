@@ -310,11 +310,39 @@ Generated: January 2026
 
 ## Known Gaps
 
-1. **No existing test infrastructure** - Need to add Vitest, Playwright from scratch
+1. ~~No existing test infrastructure~~ - ✅ Added Vitest + Playwright
 2. **External service mocking needed** - GoHighLevel CRM calls need adapter pattern
 3. **SMS/Push external calls** - Need test outbox for verification
 4. **File uploads** - Object storage integration needs mocking in tests
 5. **Session-based auth in tests** - Need Supertest agent for cookie persistence
+6. **Playwright in Replit** - E2E tests run in GitHub Actions CI only (browser deps unavailable locally)
+
+## Running Tests
+
+### Integration Tests (runs locally)
+```bash
+npx vitest run
+```
+- Requires server running at localhost:5000
+- 23 tests covering auth, inventory, settings, forms, health
+
+### E2E Tests (runs in CI only)
+```bash
+# In GitHub Actions:
+npx playwright install --with-deps chromium
+npx playwright test
+```
+- Requires browser dependencies not available in Replit
+- 13 tests covering auth, navigation, public pages
+
+### Full Quality Gate (CI)
+See `.github/workflows/ci.yml` for automated quality gate with:
+- TypeScript check
+- Database setup
+- Server startup
+- Integration tests
+- E2E tests
+- Security audit
 
 ---
 

@@ -6,6 +6,7 @@ import session from "express-session";
 import MemoryStore from "memorystore";
 import path from "path";
 import { pool } from "./db";
+import { requestIdMiddleware } from "./middleware/requestId";
 
 const app = express();
 const httpServer = createServer(app);
@@ -49,6 +50,8 @@ app.use(
     }),
   })
 );
+
+app.use(requestIdMiddleware);
 
 app.use(
   express.json({
