@@ -5,6 +5,7 @@ import { createServer } from "http";
 import session from "express-session";
 import MemoryStore from "memorystore";
 import path from "path";
+import { pool } from "./db";
 
 const app = express();
 const httpServer = createServer(app);
@@ -96,9 +97,50 @@ app.use((req, res, next) => {
   next();
 });
 
+async function autoMigrateSiteSettings() {
+  console.log("[migrate] Checking site_settings schema...");
+  try {
+    const client = await pool.connect();
+    try {
+      // Check and add missing columns to site_settings table
+      const columnsToCheck = [
+        { name: "live_chat_enabled", type: "BOOLEAN DEFAULT FALSE" },
+        { name: "live_chat_widget_id", type: "TEXT" },
+        { name: "footer_logo_width", type: "TEXT" },
+        { name: "mobile_logo_width", type: "TEXT" },
+        { name: "slug_include_location", type: "BOOLEAN DEFAULT TRUE" },
+        { name: "slug_location_first", type: "BOOLEAN DEFAULT FALSE" },
+        { name: "slug_include_stock", type: "BOOLEAN DEFAULT FALSE" },
+        { name: "hot_listing_threshold", type: "INTEGER DEFAULT 5" },
+      ];
+      
+      for (const col of columnsToCheck) {
+        const checkResult = await client.query(`
+          SELECT column_name FROM information_schema.columns 
+          WHERE table_name = 'site_settings' AND column_name = $1
+        `, [col.name]);
+        
+        if (checkResult.rows.length === 0) {
+          console.log(`[migrate] Adding missing column: ${col.name}`);
+          await client.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS ${col.name} ${col.type}`);
+        }
+      }
+      console.log("[migrate] Site settings schema up to date");
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("[migrate] Error checking/updating schema:", error);
+  }
+}
+
 (async () => {
   await registerRoutes(httpServer, app);
   await initializeDefaultAdmin();
+  
+  // Auto-migrate: ensure all site_settings columns exist
+  await autoMigrateSiteSettings();
+  
   await seedDatabaseFromConfig();
   await autoBackfillSlugs();
 
