@@ -27,8 +27,6 @@ export async function truncateTables(): Promise<void> {
       lead_notes,
       activity_log,
       credit_applications,
-      appointments,
-      trade_in_requests,
       phone_verifications,
       inventory_cars,
       consignment_submissions,
