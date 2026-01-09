@@ -2691,18 +2691,18 @@ export async function registerRoutes(
         liveChatWidgetId
       };
       
-      // Validate GHL credentials only when explicitly changing them
+      // Only validate GHL credentials when explicitly providing a NEW API token
+      // This prevents blocking saves of unrelated settings (like live chat) when
+      // GHL credentials in production are expired or different from development
       const currentSettings = await storage.getSiteSettings();
       const newToken = ghlApiToken && ghlApiToken.trim().length > 0 ? ghlApiToken : null;
-      const isChangingGhlLocation = ghlLocationId !== undefined && ghlLocationId !== currentSettings?.ghlLocationId;
       
-      // Only validate if explicitly adding/changing GHL credentials
-      if (newToken || isChangingGhlLocation) {
-        const effectiveToken = newToken || currentSettings?.ghlApiToken;
-        const effectiveLocation = ghlLocationId !== undefined ? ghlLocationId : currentSettings?.ghlLocationId;
+      // Only validate if a new API token is explicitly being provided
+      if (newToken) {
+        const effectiveLocation = ghlLocationId || currentSettings?.ghlLocationId;
         
-        if (effectiveToken && effectiveLocation) {
-          const testResult = await testGHLCredentials(effectiveToken, effectiveLocation);
+        if (effectiveLocation) {
+          const testResult = await testGHLCredentials(newToken, effectiveLocation);
           if (!testResult.success) {
             return res.status(400).json({ 
               error: `GoHighLevel credentials invalid: ${testResult.error}`,
@@ -2710,9 +2710,6 @@ export async function registerRoutes(
             });
           }
         }
-      }
-      
-      if (newToken) {
         updateData.ghlApiToken = ghlApiToken;
       }
       
