@@ -41,13 +41,29 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
-      - name: Run integration tests
+      - name: Setup database and seed
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/prestige_auto_test
           NODE_ENV: test
         run: |
           npx drizzle-kit push
-          npx vitest run --config vitest.config.ts
+          
+      - name: Start server for tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/prestige_auto_test
+          NODE_ENV: test
+          PORT: 5000
+        run: |
+          npm run dev &
+          sleep 10
+          curl -f http://localhost:5000/api/health || exit 1
+
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/prestige_auto_test
+          NODE_ENV: test
+          TEST_BASE_URL: http://localhost:5000
+        run: npx vitest run --config vitest.config.ts
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
