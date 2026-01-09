@@ -588,9 +588,13 @@ export async function registerRoutes(
     res.status(statusCode).json(checks);
   });
 
-  app.post("/api/auth/login", validateBody(loginSchema), async (req, res) => {
+  app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
+
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password required" });
+      }
 
       const user = await storage.getUserByUsername(username);
       if (!user || !verifyPassword(password, user.password)) {
