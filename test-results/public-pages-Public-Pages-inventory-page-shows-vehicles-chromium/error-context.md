@@ -1,0 +1,128 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications (F8)":
+      - list
+    - generic [ref=e3]:
+      - navigation [ref=e4]:
+        - generic [ref=e5]:
+          - link "Navarre Motors, Inc" [ref=e6] [cursor=pointer]:
+            - /url: /
+            - img "Navarre Motors, Inc" [ref=e7]
+          - generic [ref=e8]:
+            - link "Home" [ref=e9] [cursor=pointer]:
+              - /url: /
+            - link "Inventory" [ref=e10] [cursor=pointer]:
+              - /url: /inventory
+            - link "Consign" [ref=e11] [cursor=pointer]:
+              - /url: /consign
+            - link "Trade-In" [ref=e12] [cursor=pointer]:
+              - /url: /trade-in
+            - link "Get Approved" [ref=e13] [cursor=pointer]:
+              - /url: /get-approved
+            - link "Book Appt" [ref=e14] [cursor=pointer]:
+              - /url: /appointments
+            - button "Login" [ref=e15]:
+              - img
+              - text: Login
+            - link [ref=e16] [cursor=pointer]:
+              - /url: /saved
+              - button [ref=e17]:
+                - img
+            - button "Contact Us" [ref=e18]
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - generic [ref=e21]:
+            - heading "Current Inventory" [level=1] [ref=e22]
+            - paragraph [ref=e23]: Browse our collection of available premium vehicles.
+          - generic [ref=e24]:
+            - generic [ref=e25]:
+              - img [ref=e26]
+              - textbox "Search make or model..." [ref=e29]
+            - button [ref=e30]:
+              - img
+            - button "Get Vehicle Alerts" [ref=e31]:
+              - img
+              - text: Get Vehicle Alerts
+        - generic [ref=e32]:
+          - heading "No vehicles found" [level=3] [ref=e33]
+          - paragraph [ref=e34]: Check back soon for new arrivals.
+      - contentinfo [ref=e35]:
+        - generic [ref=e36]:
+          - generic [ref=e37]:
+            - generic [ref=e38]:
+              - link "Navarre Motors, Inc" [ref=e39] [cursor=pointer]:
+                - /url: /
+                - img "Navarre Motors, Inc" [ref=e40]
+              - paragraph [ref=e41]: Luxury automotive consignment services for discerning collectors and enthusiasts.
+            - generic [ref=e42]:
+              - heading "Navigation" [level=3] [ref=e43]
+              - list [ref=e44]:
+                - listitem [ref=e45]:
+                  - link "Home" [ref=e46] [cursor=pointer]:
+                    - /url: /
+                - listitem [ref=e47]:
+                  - link "Inventory" [ref=e48] [cursor=pointer]:
+                    - /url: /inventory
+                - listitem [ref=e49]:
+                  - link "Consign Your Car" [ref=e50] [cursor=pointer]:
+                    - /url: /consign
+                - listitem [ref=e51]:
+                  - link "About Us" [ref=e52] [cursor=pointer]:
+                    - /url: "#"
+            - generic [ref=e53]:
+              - heading "Contact" [level=3] [ref=e54]
+              - list [ref=e55]:
+                - listitem [ref=e56]: 9100 Navarre Pkwy
+                - listitem [ref=e57]: Navarre, FL 32566
+                - listitem [ref=e58]:
+                  - link "850-461-8301" [ref=e59] [cursor=pointer]:
+                    - /url: tel:8504618301
+                - listitem [ref=e60]:
+                  - link "josh@acmecars.com" [ref=e61] [cursor=pointer]:
+                    - /url: mailto:josh@acmecars.com
+            - generic [ref=e62]:
+              - heading "Social" [level=3] [ref=e63]
+              - generic [ref=e64]:
+                - link [ref=e65] [cursor=pointer]:
+                  - /url: "#"
+                  - img [ref=e66]
+                - link [ref=e69] [cursor=pointer]:
+                  - /url: "#"
+                  - img [ref=e70]
+                - link [ref=e72] [cursor=pointer]:
+                  - /url: "#"
+                  - img [ref=e73]
+          - generic [ref=e75]:
+            - paragraph [ref=e76]: © 2026 Navarre Motors, Inc Auto Consignment. All rights reserved.
+            - generic [ref=e77]:
+              - link "Privacy Policy" [ref=e78] [cursor=pointer]:
+                - /url: /privacy
+              - link "Terms of Service" [ref=e79] [cursor=pointer]:
+                - /url: /terms
+    - generic [ref=e83]:
+      - img [ref=e85]
+      - generic [ref=e88]:
+        - heading "Stay Updated" [level=3] [ref=e89]
+        - paragraph [ref=e90]: Get instant alerts for new luxury listings and price drops
+        - generic [ref=e91]:
+          - button "Enable" [ref=e92]:
+            - img
+            - text: Enable
+          - button "Customize" [ref=e93]:
+            - img
+            - text: Customize
+          - button "Not now" [ref=e94]
+      - button "Dismiss" [ref=e95]:
+        - img [ref=e96]
+  - generic [ref=e99]:
+    - generic [ref=e101] [cursor=pointer]:
+      - img "Avatar" [ref=e102]
+      - generic [ref=e103]: Hi there, have a question? Text us here.
+      - button [ref=e104]:
+        - img [ref=e105]
+    - button "Select to open the chat widget" [ref=e107] [cursor=pointer]:
+      - img [ref=e109]
+```

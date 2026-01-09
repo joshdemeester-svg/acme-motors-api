@@ -1,0 +1,158 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications (F8)":
+      - list
+    - generic [ref=e3]:
+      - navigation [ref=e4]:
+        - generic [ref=e5]:
+          - link "Navarre Motors, Inc" [ref=e6] [cursor=pointer]:
+            - /url: /
+            - img "Navarre Motors, Inc" [ref=e7]
+          - generic [ref=e8]:
+            - link "Home" [ref=e9] [cursor=pointer]:
+              - /url: /
+            - link "Inventory" [ref=e10] [cursor=pointer]:
+              - /url: /inventory
+            - link "Consign" [ref=e11] [cursor=pointer]:
+              - /url: /consign
+            - link "Trade-In" [ref=e12] [cursor=pointer]:
+              - /url: /trade-in
+            - link "Get Approved" [ref=e13] [cursor=pointer]:
+              - /url: /get-approved
+            - link "Book Appt" [ref=e14] [cursor=pointer]:
+              - /url: /appointments
+            - button "Login" [ref=e15]:
+              - img
+              - text: Login
+            - link [ref=e16] [cursor=pointer]:
+              - /url: /saved
+              - button [ref=e17]:
+                - img
+            - button "Contact Us" [ref=e18]
+      - generic [ref=e19]:
+        - img "Luxury Car in Studio" [ref=e21]
+        - generic [ref=e25]:
+          - generic [ref=e26]: Premium Automotive Consignment
+          - heading "Maximize Your Vehicle's Value" [level=1] [ref=e27]:
+            - text: Maximize Your
+            - text: Vehicle's Value
+          - paragraph [ref=e28]: Experience a seamless, secure, and professional consignment process. We handle marketing, inquiries, and paperwork so you don't have to.
+          - generic [ref=e29]:
+            - link "Start Consignment" [ref=e30] [cursor=pointer]:
+              - /url: /consign
+              - button "Start Consignment" [ref=e31]
+            - link "View Inventory" [ref=e32] [cursor=pointer]:
+              - /url: /inventory
+              - button "View Inventory" [ref=e33]
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - heading "The Consignment Process" [level=2] [ref=e37]
+          - paragraph [ref=e38]: We make selling your exotic or luxury vehicle effortless. From valuation to final sale, we handle every detail.
+        - generic [ref=e39]:
+          - generic [ref=e40]:
+            - generic [ref=e41]: "1"
+            - heading "Submit Details" [level=3] [ref=e42]
+            - paragraph [ref=e43]: Share your vehicle's information and photos through our secure online portal.
+          - generic [ref=e44]:
+            - generic [ref=e45]: "2"
+            - heading "Expert Valuation" [level=3] [ref=e46]
+            - paragraph [ref=e47]: Our market analysts provide a competitive valuation based on real-time market data.
+          - generic [ref=e48]:
+            - generic [ref=e49]: "3"
+            - heading "Global Exposure" [level=3] [ref=e50]
+            - paragraph [ref=e51]: Your vehicle is marketed to our exclusive network of qualified buyers worldwide.
+      - generic [ref=e53]:
+        - heading "Why Consign With Prestige?" [level=2] [ref=e54]
+        - generic [ref=e55]:
+          - generic [ref=e56]:
+            - img [ref=e57]
+            - generic [ref=e60]: Market Leading Prices
+          - generic [ref=e61]:
+            - img [ref=e62]
+            - generic [ref=e65]: Secure Storage
+          - generic [ref=e66]:
+            - img [ref=e67]
+            - generic [ref=e70]: Professional Photography
+          - generic [ref=e71]:
+            - img [ref=e72]
+            - generic [ref=e75]: Verified Buyers
+      - contentinfo [ref=e76]:
+        - generic [ref=e77]:
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - link "Navarre Motors, Inc" [ref=e80] [cursor=pointer]:
+                - /url: /
+                - img "Navarre Motors, Inc" [ref=e81]
+              - paragraph [ref=e82]: Luxury automotive consignment services for discerning collectors and enthusiasts.
+            - generic [ref=e83]:
+              - heading "Navigation" [level=3] [ref=e84]
+              - list [ref=e85]:
+                - listitem [ref=e86]:
+                  - link "Home" [ref=e87] [cursor=pointer]:
+                    - /url: /
+                - listitem [ref=e88]:
+                  - link "Inventory" [ref=e89] [cursor=pointer]:
+                    - /url: /inventory
+                - listitem [ref=e90]:
+                  - link "Consign Your Car" [ref=e91] [cursor=pointer]:
+                    - /url: /consign
+                - listitem [ref=e92]:
+                  - link "About Us" [ref=e93] [cursor=pointer]:
+                    - /url: "#"
+            - generic [ref=e94]:
+              - heading "Contact" [level=3] [ref=e95]
+              - list [ref=e96]:
+                - listitem [ref=e97]: 9100 Navarre Pkwy
+                - listitem [ref=e98]: Navarre, FL 32566
+                - listitem [ref=e99]:
+                  - link "850-461-8301" [ref=e100] [cursor=pointer]:
+                    - /url: tel:8504618301
+                - listitem [ref=e101]:
+                  - link "josh@acmecars.com" [ref=e102] [cursor=pointer]:
+                    - /url: mailto:josh@acmecars.com
+            - generic [ref=e103]:
+              - heading "Social" [level=3] [ref=e104]
+              - generic [ref=e105]:
+                - link [ref=e106] [cursor=pointer]:
+                  - /url: "#"
+                  - img [ref=e107]
+                - link [ref=e110] [cursor=pointer]:
+                  - /url: "#"
+                  - img [ref=e111]
+                - link [ref=e113] [cursor=pointer]:
+                  - /url: "#"
+                  - img [ref=e114]
+          - generic [ref=e116]:
+            - paragraph [ref=e117]: © 2026 Navarre Motors, Inc Auto Consignment. All rights reserved.
+            - generic [ref=e118]:
+              - link "Privacy Policy" [ref=e119] [cursor=pointer]:
+                - /url: /privacy
+              - link "Terms of Service" [ref=e120] [cursor=pointer]:
+                - /url: /terms
+    - generic [ref=e124]:
+      - img [ref=e126]
+      - generic [ref=e129]:
+        - heading "Stay Updated" [level=3] [ref=e130]
+        - paragraph [ref=e131]: Get instant alerts for new luxury listings and price drops
+        - generic [ref=e132]:
+          - button "Enable" [ref=e133]:
+            - img
+            - text: Enable
+          - button "Customize" [ref=e134]:
+            - img
+            - text: Customize
+          - button "Not now" [ref=e135]
+      - button "Dismiss" [ref=e136]:
+        - img [ref=e137]
+  - generic [ref=e140]:
+    - generic [ref=e142] [cursor=pointer]:
+      - img "Avatar" [ref=e143]
+      - generic [ref=e144]: Hi there, have a question? Text us here.
+      - button [ref=e145]:
+        - img [ref=e146]
+    - button "Select to open the chat widget" [ref=e148] [cursor=pointer]:
+      - img [ref=e150]
+```

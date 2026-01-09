@@ -1,0 +1,134 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - generic [ref=e3]:
+    - navigation [ref=e4]:
+      - generic [ref=e5]:
+        - link "Navarre Motors, Inc" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img "Navarre Motors, Inc" [ref=e7]
+        - generic [ref=e8]:
+          - link "Home" [ref=e9] [cursor=pointer]:
+            - /url: /
+          - link "Inventory" [ref=e10] [cursor=pointer]:
+            - /url: /inventory
+          - link "Consign" [ref=e11] [cursor=pointer]:
+            - /url: /consign
+          - link "Trade-In" [ref=e12] [cursor=pointer]:
+            - /url: /trade-in
+          - link "Get Approved" [ref=e13] [cursor=pointer]:
+            - /url: /get-approved
+          - link "Book Appt" [ref=e14] [cursor=pointer]:
+            - /url: /appointments
+          - button "Login" [ref=e15]:
+            - img
+            - text: Login
+          - link [ref=e16] [cursor=pointer]:
+            - /url: /saved
+            - button [ref=e17]:
+              - img
+          - button "Contact Us" [ref=e18]
+    - main [ref=e19]:
+      - generic [ref=e21]:
+        - heading "Terms of Service" [level=1] [ref=e22]
+        - paragraph [ref=e23]:
+          - strong [ref=e24]: "Last Updated: 1/9/2026"
+        - heading "Agreement to Terms" [level=2] [ref=e25]
+        - paragraph [ref=e26]: By accessing or using Navarre Motors, Inc, you agree to be bound by these Terms of Service.
+        - heading "Consignment Services" [level=2] [ref=e27]
+        - paragraph [ref=e28]: "Our platform facilitates the consignment sale of luxury and exotic vehicles. By submitting a vehicle for consignment, you agree to:"
+        - list [ref=e29]:
+          - listitem [ref=e30]: Provide accurate and complete information about your vehicle
+          - listitem [ref=e31]: Confirm that you are the legal owner or authorized representative
+          - listitem [ref=e32]: Allow us to market and display your vehicle on our platform
+          - listitem [ref=e33]: Pay applicable commission fees upon successful sale
+        - heading "User Responsibilities" [level=2] [ref=e34]
+        - paragraph [ref=e35]: "You are responsible for:"
+        - list [ref=e36]:
+          - listitem [ref=e37]: Maintaining the accuracy of your account information
+          - listitem [ref=e38]: Keeping your login credentials secure
+          - listitem [ref=e39]: Complying with all applicable laws and regulations
+        - heading "Commission and Fees" [level=2] [ref=e40]
+        - paragraph [ref=e41]: Our commission rate and fee structure will be disclosed to you before you agree to consign your vehicle. Commission is only due upon successful completion of a sale.
+        - heading "Limitation of Liability" [level=2] [ref=e42]
+        - paragraph [ref=e43]: We are not liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of our services.
+        - heading "Changes to Terms" [level=2] [ref=e44]
+        - paragraph [ref=e45]: We may modify these terms at any time. Continued use of our services after changes constitutes acceptance of the modified terms.
+        - heading "Contact Us" [level=2] [ref=e46]
+        - paragraph [ref=e47]: "If you have questions about these Terms, please contact us at:"
+        - list [ref=e48]:
+          - listitem [ref=e49]: "Email: josh@acmecars.com"
+          - listitem [ref=e50]: "Phone: 850-461-8301"
+          - listitem [ref=e51]: "Address: 9100 Navarre Pkwy, Navarre, FL 32566"
+    - contentinfo [ref=e52]:
+      - generic [ref=e53]:
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - link "Navarre Motors, Inc" [ref=e56] [cursor=pointer]:
+              - /url: /
+              - img "Navarre Motors, Inc" [ref=e57]
+            - paragraph [ref=e58]: Luxury automotive consignment services for discerning collectors and enthusiasts.
+          - generic [ref=e59]:
+            - heading "Navigation" [level=3] [ref=e60]
+            - list [ref=e61]:
+              - listitem [ref=e62]:
+                - link "Home" [ref=e63] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=e64]:
+                - link "Inventory" [ref=e65] [cursor=pointer]:
+                  - /url: /inventory
+              - listitem [ref=e66]:
+                - link "Consign Your Car" [ref=e67] [cursor=pointer]:
+                  - /url: /consign
+              - listitem [ref=e68]:
+                - link "About Us" [ref=e69] [cursor=pointer]:
+                  - /url: "#"
+          - generic [ref=e70]:
+            - heading "Contact" [level=3] [ref=e71]
+            - list [ref=e72]:
+              - listitem [ref=e73]: 9100 Navarre Pkwy
+              - listitem [ref=e74]: Navarre, FL 32566
+              - listitem [ref=e75]:
+                - link "850-461-8301" [ref=e76] [cursor=pointer]:
+                  - /url: tel:8504618301
+              - listitem [ref=e77]:
+                - link "josh@acmecars.com" [ref=e78] [cursor=pointer]:
+                  - /url: mailto:josh@acmecars.com
+          - generic [ref=e79]:
+            - heading "Social" [level=3] [ref=e80]
+            - generic [ref=e81]:
+              - link [ref=e82] [cursor=pointer]:
+                - /url: "#"
+                - img [ref=e83]
+              - link [ref=e86] [cursor=pointer]:
+                - /url: "#"
+                - img [ref=e87]
+              - link [ref=e89] [cursor=pointer]:
+                - /url: "#"
+                - img [ref=e90]
+        - generic [ref=e92]:
+          - paragraph [ref=e93]: © 2026 Navarre Motors, Inc Auto Consignment. All rights reserved.
+          - generic [ref=e94]:
+            - link "Privacy Policy" [ref=e95] [cursor=pointer]:
+              - /url: /privacy
+            - link "Terms of Service" [ref=e96] [cursor=pointer]:
+              - /url: /terms
+  - generic [ref=e100]:
+    - img [ref=e102]
+    - generic [ref=e105]:
+      - heading "Stay Updated" [level=3] [ref=e106]
+      - paragraph [ref=e107]: Get instant alerts for new luxury listings and price drops
+      - generic [ref=e108]:
+        - button "Enable" [ref=e109]:
+          - img
+          - text: Enable
+        - button "Customize" [ref=e110]:
+          - img
+          - text: Customize
+        - button "Not now" [ref=e111]
+    - button "Dismiss" [ref=e112]:
+      - img [ref=e113]
+```

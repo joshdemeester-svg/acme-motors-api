@@ -1,0 +1,145 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications (F8)":
+      - list
+    - generic [ref=e3]:
+      - navigation [ref=e4]:
+        - generic [ref=e5]:
+          - link "Navarre Motors, Inc" [ref=e6] [cursor=pointer]:
+            - /url: /
+            - img "Navarre Motors, Inc" [ref=e7]
+          - generic [ref=e8]:
+            - link "Home" [ref=e9] [cursor=pointer]:
+              - /url: /
+            - link "Inventory" [ref=e10] [cursor=pointer]:
+              - /url: /inventory
+            - link "Consign" [ref=e11] [cursor=pointer]:
+              - /url: /consign
+            - link "Trade-In" [ref=e12] [cursor=pointer]:
+              - /url: /trade-in
+            - link "Get Approved" [ref=e13] [cursor=pointer]:
+              - /url: /get-approved
+            - link "Book Appt" [ref=e14] [cursor=pointer]:
+              - /url: /appointments
+            - button "Login" [ref=e15]:
+              - img
+              - text: Login
+            - link [ref=e16] [cursor=pointer]:
+              - /url: /saved
+              - button [ref=e17]:
+                - img
+            - button "Contact Us" [ref=e18]
+      - main [ref=e19]:
+        - generic [ref=e21]:
+          - heading "Privacy Policy" [level=1] [ref=e22]
+          - paragraph [ref=e23]:
+            - strong [ref=e24]: "Last Updated: 1/9/2026"
+          - heading "Introduction" [level=2] [ref=e25]
+          - paragraph [ref=e26]: Welcome to Navarre Motors, Inc. We respect your privacy and are committed to protecting your personal data.
+          - heading "Information We Collect" [level=2] [ref=e27]
+          - paragraph [ref=e28]: "We may collect the following types of information:"
+          - list [ref=e29]:
+            - listitem [ref=e30]:
+              - strong [ref=e31]: Contact Information
+              - text: ": Name, email address, phone number, and mailing address"
+            - listitem [ref=e32]:
+              - strong [ref=e33]: Vehicle Information
+              - text: ": Details about vehicles you submit for consignment"
+            - listitem [ref=e34]:
+              - strong [ref=e35]: Usage Data
+              - text: ": Information about how you use our website"
+          - heading "How We Use Your Information" [level=2] [ref=e36]
+          - paragraph [ref=e37]: "We use your information to:"
+          - list [ref=e38]:
+            - listitem [ref=e39]: Process vehicle consignment submissions
+            - listitem [ref=e40]: Communicate with you about your consignment
+            - listitem [ref=e41]: Send you updates about your vehicle listing
+            - listitem [ref=e42]: Improve our services
+          - heading "Data Security" [level=2] [ref=e43]
+          - paragraph [ref=e44]: We implement appropriate security measures to protect your personal information from unauthorized access, alteration, disclosure, or destruction.
+          - heading "Contact Us" [level=2] [ref=e45]
+          - paragraph [ref=e46]: "If you have questions about this Privacy Policy, please contact us at:"
+          - list [ref=e47]:
+            - listitem [ref=e48]: "Email: josh@acmecars.com"
+            - listitem [ref=e49]: "Phone: 850-461-8301"
+            - listitem [ref=e50]: "Address: 9100 Navarre Pkwy, Navarre, FL 32566"
+      - contentinfo [ref=e51]:
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - generic [ref=e54]:
+              - link "Navarre Motors, Inc" [ref=e55] [cursor=pointer]:
+                - /url: /
+                - img "Navarre Motors, Inc" [ref=e56]
+              - paragraph [ref=e57]: Luxury automotive consignment services for discerning collectors and enthusiasts.
+            - generic [ref=e58]:
+              - heading "Navigation" [level=3] [ref=e59]
+              - list [ref=e60]:
+                - listitem [ref=e61]:
+                  - link "Home" [ref=e62] [cursor=pointer]:
+                    - /url: /
+                - listitem [ref=e63]:
+                  - link "Inventory" [ref=e64] [cursor=pointer]:
+                    - /url: /inventory
+                - listitem [ref=e65]:
+                  - link "Consign Your Car" [ref=e66] [cursor=pointer]:
+                    - /url: /consign
+                - listitem [ref=e67]:
+                  - link "About Us" [ref=e68] [cursor=pointer]:
+                    - /url: "#"
+            - generic [ref=e69]:
+              - heading "Contact" [level=3] [ref=e70]
+              - list [ref=e71]:
+                - listitem [ref=e72]: 9100 Navarre Pkwy
+                - listitem [ref=e73]: Navarre, FL 32566
+                - listitem [ref=e74]:
+                  - link "850-461-8301" [ref=e75] [cursor=pointer]:
+                    - /url: tel:8504618301
+                - listitem [ref=e76]:
+                  - link "josh@acmecars.com" [ref=e77] [cursor=pointer]:
+                    - /url: mailto:josh@acmecars.com
+            - generic [ref=e78]:
+              - heading "Social" [level=3] [ref=e79]
+              - generic [ref=e80]:
+                - link [ref=e81] [cursor=pointer]:
+                  - /url: "#"
+                  - img [ref=e82]
+                - link [ref=e85] [cursor=pointer]:
+                  - /url: "#"
+                  - img [ref=e86]
+                - link [ref=e88] [cursor=pointer]:
+                  - /url: "#"
+                  - img [ref=e89]
+          - generic [ref=e91]:
+            - paragraph [ref=e92]: © 2026 Navarre Motors, Inc Auto Consignment. All rights reserved.
+            - generic [ref=e93]:
+              - link "Privacy Policy" [ref=e94] [cursor=pointer]:
+                - /url: /privacy
+              - link "Terms of Service" [ref=e95] [cursor=pointer]:
+                - /url: /terms
+    - generic [ref=e99]:
+      - img [ref=e101]
+      - generic [ref=e104]:
+        - heading "Stay Updated" [level=3] [ref=e105]
+        - paragraph [ref=e106]: Get instant alerts for new luxury listings and price drops
+        - generic [ref=e107]:
+          - button "Enable" [ref=e108]:
+            - img
+            - text: Enable
+          - button "Customize" [ref=e109]:
+            - img
+            - text: Customize
+          - button "Not now" [ref=e110]
+      - button "Dismiss" [ref=e111]:
+        - img [ref=e112]
+  - generic [ref=e115]:
+    - generic [ref=e117] [cursor=pointer]:
+      - img "Avatar" [ref=e118]
+      - generic [ref=e119]: Hi there, have a question? Text us here.
+      - button [ref=e120]:
+        - img [ref=e121]
+    - button "Select to open the chat widget" [ref=e123] [cursor=pointer]:
+      - img [ref=e125]
+```
