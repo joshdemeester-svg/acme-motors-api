@@ -81,6 +81,7 @@ export default [
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
       "@typescript-eslint/no-explicit-any": "warn",
       "no-console": "off",
+      "no-undef": "off",
     },
   },
   {
@@ -93,6 +94,37 @@ export default [
     },
   },
   {
-    ignores: ["node_modules/**", "dist/**", "build/**", "*.config.js", "*.config.ts"],
+    files: ["tests/**/*.ts"],
+    languageOptions: {
+      parser: tsparser,
+      parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "module",
+      },
+      globals: {
+        console: "readonly",
+        process: "readonly",
+        describe: "readonly",
+        it: "readonly",
+        expect: "readonly",
+        beforeAll: "readonly",
+        afterAll: "readonly",
+        beforeEach: "readonly",
+        afterEach: "readonly",
+        vi: "readonly",
+        test: "readonly",
+      },
+    },
+    plugins: {
+      "@typescript-eslint": tseslint,
+    },
+    rules: {
+      ...tseslint.configs.recommended.rules,
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+  {
+    ignores: ["node_modules/**", "dist/**", "build/**", ".cache/**", "*.config.js", "*.config.ts", "script/**"],
   },
 ];
