@@ -26,7 +26,9 @@ import {
   Car,
   Mail,
   Phone,
-  Trash2
+  Trash2,
+  Settings,
+  RefreshCw
 } from "lucide-react";
 import { AdminHelpBox } from "@/components/admin/AdminHelpBox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -217,6 +219,18 @@ export default function PushNotifications() {
     queryFn: async () => {
       const res = await fetch("/api/vehicle-alerts", { credentials: "include" });
       if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const { data: diagnostics, error: diagnosticsError, refetch: refetchDiagnostics, isLoading: diagnosticsLoading } = useQuery<any>({
+    queryKey: ["/api/push/diagnostics"],
+    queryFn: async () => {
+      const res = await fetch("/api/push/diagnostics", { credentials: "include" });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: "Failed to load diagnostics" }));
+        throw new Error(errorData.error || `HTTP ${res.status}`);
+      }
       return res.json();
     },
   });
@@ -457,6 +471,10 @@ export default function PushNotifications() {
             <TabsTrigger value="vehicle-alerts" className="gap-1.5">
               <Car className="w-4 h-4" />
               Vehicle Alerts ({vehicleAlerts.length})
+            </TabsTrigger>
+            <TabsTrigger value="diagnostics" className="gap-1.5">
+              <Settings className="w-4 h-4" />
+              Diagnostics
             </TabsTrigger>
           </TabsList>
 
@@ -709,6 +727,136 @@ export default function PushNotifications() {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="diagnostics" className="mt-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Push Notification Diagnostics</CardTitle>
+                    <CardDescription>System status and configuration checks</CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => refetchDiagnostics()} data-testid="button-refresh-diagnostics">
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {diagnosticsError ? (
+                  <div className="flex items-start gap-3 p-4 bg-destructive/10 rounded-lg">
+                    <AlertCircle className="w-5 h-5 text-destructive mt-0.5" />
+                    <div>
+                      <p className="font-medium text-destructive">Failed to Load Diagnostics</p>
+                      <p className="text-sm text-muted-foreground">{(diagnosticsError as Error).message}</p>
+                      <Button variant="outline" size="sm" className="mt-2" onClick={() => refetchDiagnostics()}>
+                        Try Again
+                      </Button>
+                    </div>
+                  </div>
+                ) : diagnosticsLoading ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin" />
+                    Loading diagnostics...
+                  </div>
+                ) : diagnostics ? (
+                  <>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="p-4 border rounded-lg space-y-2">
+                        <h4 className="font-medium flex items-center gap-2">
+                          {diagnostics.vapidKeys?.publicKeyConfigured && diagnostics.vapidKeys?.privateKeyConfigured ? (
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 text-red-500" />
+                          )}
+                          VAPID Keys
+                        </h4>
+                        <div className="text-sm space-y-1">
+                          <p>Public Key: {diagnostics.vapidKeys?.publicKeyConfigured ? "✓ Configured" : "✗ Missing"}</p>
+                          <p>Private Key: {diagnostics.vapidKeys?.privateKeyConfigured ? "✓ Configured" : "✗ Missing"}</p>
+                          <p className="text-muted-foreground">Key Length: {diagnostics.vapidKeys?.publicKeyLength} chars</p>
+                        </div>
+                      </div>
+
+                      <div className="p-4 border rounded-lg space-y-2">
+                        <h4 className="font-medium flex items-center gap-2">
+                          {diagnostics.database?.pushSubscriptionsTable && diagnostics.database?.pushNotificationsTable ? (
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 text-red-500" />
+                          )}
+                          Database
+                        </h4>
+                        <div className="text-sm space-y-1">
+                          <p>Subscriptions Table: {diagnostics.database?.pushSubscriptionsTable ? "✓ Exists" : "✗ Missing"}</p>
+                          <p>Notifications Table: {diagnostics.database?.pushNotificationsTable ? "✓ Exists" : "✗ Missing"}</p>
+                          <p>Subscriptions: {diagnostics.database?.subscriptionCount || 0}</p>
+                          <p>Notifications Sent: {diagnostics.database?.notificationCount || 0}</p>
+                          {diagnostics.database?.pushSubscriptionsTableError && (
+                            <p className="text-red-500 text-xs">{diagnostics.database.pushSubscriptionsTableError}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="p-4 border rounded-lg space-y-2">
+                        <h4 className="font-medium flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          Service Worker
+                        </h4>
+                        <div className="text-sm space-y-1">
+                          <p>Expected Path: {diagnostics.serviceWorker?.expectedPath}</p>
+                          <p className="text-muted-foreground text-xs">{diagnostics.serviceWorker?.registrationNote}</p>
+                        </div>
+                      </div>
+
+                      <div className="p-4 border rounded-lg space-y-2">
+                        <h4 className="font-medium flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-yellow-500" />
+                          HTTPS Requirement
+                        </h4>
+                        <div className="text-sm space-y-1">
+                          <p className="text-muted-foreground">{diagnostics.https?.note}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {diagnostics.lastSendAttempt && (
+                      <div className="p-4 border rounded-lg space-y-2">
+                        <h4 className="font-medium">Last Notification Sent</h4>
+                        <div className="text-sm space-y-1">
+                          <p><strong>Title:</strong> {diagnostics.lastSendAttempt.title}</p>
+                          <p><strong>Sent:</strong> {diagnostics.lastSendAttempt.sentAt ? format(new Date(diagnostics.lastSendAttempt.sentAt), "MMM d, yyyy 'at' h:mm a") : "Not sent yet"}</p>
+                          <p><strong>Delivered To:</strong> {diagnostics.lastSendAttempt.sentCount || 0} subscribers</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {diagnostics.recentSubscriptions && diagnostics.recentSubscriptions.length > 0 && (
+                      <div className="p-4 border rounded-lg space-y-2">
+                        <h4 className="font-medium">Recent Subscriptions</h4>
+                        <div className="space-y-2">
+                          {diagnostics.recentSubscriptions.map((sub: any) => (
+                            <div key={sub.id} className="text-sm p-2 bg-muted rounded">
+                              <p className="font-mono text-xs truncate">{sub.endpointPreview}</p>
+                              <p className="text-muted-foreground text-xs">
+                                {sub.createdAt ? format(new Date(sub.createdAt), "MMM d, yyyy") : "Unknown"} 
+                                {sub.userAgent && ` • ${sub.userAgent}`}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="text-xs text-muted-foreground">
+                      Last checked: {diagnostics.timestamp ? format(new Date(diagnostics.timestamp), "MMM d, yyyy 'at' h:mm:ss a") : "Unknown"}
+                      {" • "}Environment: {diagnostics.environment}
+                    </div>
+                  </>
+                ) : null}
               </CardContent>
             </Card>
           </TabsContent>
