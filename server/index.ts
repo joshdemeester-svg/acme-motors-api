@@ -102,6 +102,27 @@ async function autoMigrateSiteSettings() {
   try {
     const client = await pool.connect();
     try {
+      // First check if table exists, preferring public schema
+      const tableCheck = await client.query(`
+        SELECT table_name, table_schema 
+        FROM information_schema.tables 
+        WHERE table_name = 'site_settings'
+        ORDER BY CASE WHEN table_schema = 'public' THEN 0 ELSE 1 END
+        LIMIT 1
+      `);
+      
+      if (tableCheck.rows.length === 0) {
+        console.log("[migrate] site_settings table not found, skipping migration");
+        return;
+      }
+      
+      const tableSchema = tableCheck.rows[0].table_schema;
+      console.log(`[migrate] Found site_settings table in schema: ${tableSchema}`);
+      
+      // Get properly quoted schema identifier
+      const quoteResult = await client.query(`SELECT quote_ident($1) as quoted_schema`, [tableSchema]);
+      const quotedSchema = quoteResult.rows[0].quoted_schema;
+      
       // Check and add missing columns to site_settings table
       const columnsToCheck = [
         { name: "live_chat_enabled", type: "BOOLEAN DEFAULT FALSE" },
@@ -114,18 +135,25 @@ async function autoMigrateSiteSettings() {
         { name: "hot_listing_threshold", type: "INTEGER DEFAULT 5" },
       ];
       
+      let addedColumns = 0;
       for (const col of columnsToCheck) {
         const checkResult = await client.query(`
           SELECT column_name FROM information_schema.columns 
-          WHERE table_name = 'site_settings' AND column_name = $1
-        `, [col.name]);
+          WHERE table_schema = $1 AND table_name = 'site_settings' AND column_name = $2
+        `, [tableSchema, col.name]);
         
         if (checkResult.rows.length === 0) {
           console.log(`[migrate] Adding missing column: ${col.name}`);
-          await client.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS ${col.name} ${col.type}`);
+          await client.query(`ALTER TABLE ${quotedSchema}.site_settings ADD COLUMN IF NOT EXISTS ${col.name} ${col.type}`);
+          addedColumns++;
         }
       }
-      console.log("[migrate] Site settings schema up to date");
+      
+      if (addedColumns > 0) {
+        console.log(`[migrate] Added ${addedColumns} missing columns to site_settings`);
+      } else {
+        console.log("[migrate] Site settings schema up to date");
+      }
     } finally {
       client.release();
     }
