@@ -68,8 +68,9 @@ export function PushNotificationPrompt() {
   const hasAnyPreference = Object.values(preferences).some(Boolean);
 
   return (
-    <Card className="fixed bottom-4 right-4 z-50 max-w-sm shadow-lg border-[#D4AF37]/30 bg-gray-900" data-testid="push-notification-prompt">
-      <CardContent className="p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" data-testid="push-notification-prompt">
+      <Card className="max-w-sm shadow-lg border-[#D4AF37]/30 bg-gray-900 mx-4">
+        <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-full bg-[#D4AF37]/20">
             <Bell className="w-5 h-5 text-[#D4AF37]" />
@@ -139,6 +140,7 @@ export function PushNotificationPrompt() {
           </button>
         </div>
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 }

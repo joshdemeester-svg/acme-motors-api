@@ -162,12 +162,83 @@ async function autoMigrateSiteSettings() {
   }
 }
 
+async function autoMigratePushTables() {
+  console.log("[migrate] Checking push notification tables...");
+  try {
+    const client = await pool.connect();
+    try {
+      // Check if push_subscriptions table exists
+      const pushSubsCheck = await client.query(`
+        SELECT table_name FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name = 'push_subscriptions'
+      `);
+      
+      if (pushSubsCheck.rows.length === 0) {
+        console.log("[migrate] Creating push_subscriptions table...");
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid()::text,
+            endpoint TEXT NOT NULL UNIQUE,
+            p256dh TEXT NOT NULL,
+            auth TEXT NOT NULL,
+            preferred_makes TEXT[] DEFAULT '{}',
+            notify_new_listings BOOLEAN DEFAULT TRUE,
+            notify_price_drops BOOLEAN DEFAULT TRUE,
+            notify_special_offers BOOLEAN DEFAULT TRUE,
+            notify_hot_listings BOOLEAN DEFAULT TRUE,
+            user_agent TEXT,
+            created_at TIMESTAMP DEFAULT NOW(),
+            last_used TIMESTAMP
+          )
+        `);
+        console.log("[migrate] Created push_subscriptions table");
+      } else {
+        console.log("[migrate] push_subscriptions table exists");
+      }
+      
+      // Check if push_notifications table exists
+      const pushNotifsCheck = await client.query(`
+        SELECT table_name FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name = 'push_notifications'
+      `);
+      
+      if (pushNotifsCheck.rows.length === 0) {
+        console.log("[migrate] Creating push_notifications table...");
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS push_notifications (
+            id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid()::text,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL,
+            url TEXT,
+            image_url TEXT,
+            target_type TEXT NOT NULL DEFAULT 'all',
+            target_category TEXT DEFAULT 'all',
+            target_makes TEXT[] DEFAULT '{}',
+            sent_count INTEGER DEFAULT 0,
+            sent_at TIMESTAMP,
+            created_by VARCHAR,
+            created_at TIMESTAMP DEFAULT NOW()
+          )
+        `);
+        console.log("[migrate] Created push_notifications table");
+      } else {
+        console.log("[migrate] push_notifications table exists");
+      }
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("[migrate] Error checking/creating push tables:", error);
+  }
+}
+
 (async () => {
   await registerRoutes(httpServer, app);
   await initializeDefaultAdmin();
   
-  // Auto-migrate: ensure all site_settings columns exist
+  // Auto-migrate: ensure all schema columns/tables exist
   await autoMigrateSiteSettings();
+  await autoMigratePushTables();
   
   await seedDatabaseFromConfig();
   await autoBackfillSlugs();
