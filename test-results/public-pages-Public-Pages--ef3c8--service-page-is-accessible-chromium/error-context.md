@@ -35,7 +35,7 @@
       - generic [ref=e21]:
         - heading "Terms of Service" [level=1] [ref=e22]
         - paragraph [ref=e23]:
-          - strong [ref=e24]: "Last Updated: 1/9/2026"
+          - strong [ref=e24]: "Last Updated: 1/10/2026"
         - heading "Agreement to Terms" [level=2] [ref=e25]
         - paragraph [ref=e26]: By accessing or using Navarre Motors, Inc, you agree to be bound by these Terms of Service.
         - heading "Consignment Services" [level=2] [ref=e27]

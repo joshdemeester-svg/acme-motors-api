@@ -36,7 +36,7 @@
         - generic [ref=e21]:
           - heading "Privacy Policy" [level=1] [ref=e22]
           - paragraph [ref=e23]:
-            - strong [ref=e24]: "Last Updated: 1/9/2026"
+            - strong [ref=e24]: "Last Updated: 1/10/2026"
           - heading "Introduction" [level=2] [ref=e25]
           - paragraph [ref=e26]: Welcome to Navarre Motors, Inc. We respect your privacy and are committed to protecting your personal data.
           - heading "Information We Collect" [level=2] [ref=e27]
