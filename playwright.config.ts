@@ -2,15 +2,23 @@ import { defineConfig, devices } from "@playwright/test";
 
 const isCI = !!process.env.CI;
 
-export default defineConfig({
+const ciConfig = defineConfig({
+  testDir: "./tests/e2e",
+  forbidOnly: true,
+  retries: 2,
+  workers: 1,
+  projects: [],
+});
+
+const localConfig = defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
-  forbidOnly: isCI,
-  retries: isCI ? 2 : 0,
-  workers: isCI ? 1 : undefined,
-  timeout: isCI ? 60000 : 30000,
+  forbidOnly: false,
+  retries: 0,
+  workers: undefined,
+  timeout: 30000,
   expect: {
-    timeout: isCI ? 15000 : 5000,
+    timeout: 5000,
   },
   reporter: [
     ["html", { outputFolder: "playwright-report" }],
@@ -32,7 +40,9 @@ export default defineConfig({
     command: "npm run dev",
     url: "http://localhost:5000/api/health",
     reuseExistingServer: true,
-    timeout: isCI ? 180000 : 120000,
+    timeout: 120000,
   },
   outputDir: "test-results",
 });
+
+export default isCI ? ciConfig : localConfig;
